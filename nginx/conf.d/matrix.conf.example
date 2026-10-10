@@ -1,0 +1,96 @@
+# Wzór konfiguracji Nginx. Skopiuj do nginx/conf.d/matrix.conf
+# (cp nginx/conf.d/matrix.conf.example nginx/conf.d/matrix.conf).
+# Drugi i trzeci blok (nazwa z Tailscale) są potrzebne tylko do dostępu z telefonu – jeśli
+# go nie używasz, usuń je. Wtedy podmień też TWOJ-TAILNET na swoją nazwę tailnetu.
+# Prawdziwego matrix.conf nie commituj – jest w .gitignore.
+
+server {
+    listen 80;
+    server_name matrix.local;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name matrix.local;
+
+    ssl_certificate     /etc/nginx/certs/matrix.crt;
+    ssl_certificate_key /etc/nginx/certs/matrix.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    client_max_body_size 50M;
+
+    # API Matrix -> Synapse
+    location ~ ^(/_matrix|/_synapse/client) {
+        proxy_pass http://synapse:8008;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 600s;
+    }
+
+    # Autodiscovery dla klientów
+    location = /.well-known/matrix/client {
+        default_type application/json;
+        add_header Access-Control-Allow-Origin * always;
+        return 200 '{"m.homeserver":{"base_url":"https://matrix.local"}}';
+    }
+
+    # Widżet książki adresowej (po HTTPS, inaczej Element zablokuje go jako mixed content)
+    location /widget/ {
+        proxy_pass http://widget:80/;
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        return 404;
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Dostęp z telefonu przez nazwę MagicDNS z Tailscale (certyfikat Let's Encrypt
+# z `tailscale cert`, bez instalowania rootCA na telefonie).
+# Pliki .crt/.key wygeneruj w katalogu certs/ poleceniem:
+#   sudo tailscale cert matrix-test.TWOJ-TAILNET.ts.net
+# server_name Synapse nadal = matrix.local; zmienia się tylko adres klienta.
+# ---------------------------------------------------------------------------
+server {
+    listen 80;
+    server_name matrix-test.TWOJ-TAILNET.ts.net;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name matrix-test.TWOJ-TAILNET.ts.net;
+
+    ssl_certificate     /etc/nginx/certs/matrix-test.TWOJ-TAILNET.ts.net.crt;
+    ssl_certificate_key /etc/nginx/certs/matrix-test.TWOJ-TAILNET.ts.net.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    client_max_body_size 50M;
+
+    location ~ ^(/_matrix|/_synapse/client) {
+        proxy_pass http://synapse:8008;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 600s;
+    }
+
+    # Autodiscovery wskazuje na TEN adres (nie matrix.local), bo telefon go nie rozwiąże
+    location = /.well-known/matrix/client {
+        default_type application/json;
+        add_header Access-Control-Allow-Origin * always;
+        return 200 '{"m.homeserver":{"base_url":"https://matrix-test.TWOJ-TAILNET.ts.net"}}';
+    }
+
+    location /widget/ {
+        proxy_pass http://widget:80/;
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        return 404;
+    }
+}

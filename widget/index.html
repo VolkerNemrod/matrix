@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Książka Adresowa</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1d21; --muted:#6b7280; --line:#e5e7eb; --accent:#0dbd8b; --hover:#f3f4f6; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#15191e; --fg:#e8eaed; --muted:#9aa0a6; --line:#2a3038; --hover:#1e242b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:12px; font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  h1 { font-size:16px; margin:0 0 10px; }
+  #q { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; }
+  #q:focus { outline:2px solid var(--accent); border-color:transparent; }
+  #count { margin:8px 2px; color:var(--muted); font-size:12px; }
+  ul { list-style:none; margin:0; padding:0; }
+  li { border-bottom:1px solid var(--line); }
+  a.person { display:flex; align-items:center; gap:10px; padding:8px 6px; color:inherit; text-decoration:none; border-radius:6px; }
+  a.person:hover { background:var(--hover); }
+  .avatar { flex:none; width:32px; height:32px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font-weight:600; font-size:13px; }
+  .name { font-weight:600; }
+  .meta { color:var(--muted); font-size:12px; }
+  #empty { display:none; padding:16px 6px; color:var(--muted); }
+</style>
+</head>
+<body>
+  <h1>Książka Adresowa</h1>
+  <input id="q" type="search" placeholder="Szukaj: imię, nazwisko, dział, login…" autocomplete="off" autofocus>
+  <div id="count"></div>
+  <ul id="list"></ul>
+  <div id="empty">Brak wyników.</div>
+
+<script>
+  // Dane testowe – odpowiadają kontom tworzonym w panelu LLDAP (login = część przed ":" w MXID).
+  const SERVER = "matrix.local";
+  const PEOPLE = [
+    { login: "j.kowalski", name: "Jan Kowalski",   dept: "Zarząd" },
+    { login: "a.nowak",    name: "Anna Nowak",     dept: "IT" },
+    // Dodaj kolejne osoby w tym samym formacie:
+    // { login: "login", name: "Imię Nazwisko", dept: "Dział" },
+  ];
+
+  const list = document.getElementById("list");
+  const q = document.getElementById("q");
+  const count = document.getElementById("count");
+  const empty = document.getElementById("empty");
+
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l");
+  const initials = n => n.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+
+  function render(items) {
+    list.textContent = "";
+    for (const p of items) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.className = "person";
+      a.href = `https://matrix.to/#/@${p.login}:${SERVER}`;
+      a.target = "_blank";
+      a.rel = "noopener";
+
+      const av = document.createElement("div");
+      av.className = "avatar";
+      av.textContent = initials(p.name);
+
+      const box = document.createElement("div");
+      const nm = document.createElement("div");
+      nm.className = "name";
+      nm.textContent = p.name;
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `${p.dept} · @${p.login}:${SERVER}`;
+      box.append(nm, meta);
+
+      a.append(av, box);
+      li.append(a);
+      list.append(li);
+    }
+    count.textContent = `Wyniki: ${items.length} / ${PEOPLE.length}`;
+    empty.style.display = items.length ? "none" : "block";
+  }
+
+  function filter() {
+    const words = norm(q.value).split(/\s+/).filter(Boolean);
+    render(PEOPLE.filter(p => {
+      const hay = norm(`${p.name} ${p.dept} ${p.login}`);
+      return words.every(w => hay.includes(w));
+    }));
+  }
+
+  q.addEventListener("input", filter);
+  filter();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+name: matrix-poc
+
+# PoC komunikatora Matrix – 6 usług. Sekrety w pliku .env (wzór: .env.example).
+
+services:
+  # 1. Reverse proxy – terminacja SSL (matrix.local)
+  proxy:
+    image: nginx:stable-alpine
+    container_name: matrix-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - synapse
+      - widget
+
+  # 2. Synapse – serwer Matrix (własny obraz z modułem LDAP)
+  synapse:
+    build:
+      context: ./docker/synapse
+    image: matrix-poc/synapse-ldap:local
+    container_name: matrix-synapse
+    restart: unless-stopped
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+    volumes:
+      - ./synapse:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lldap:
+        condition: service_started
+
+  # 3. PostgreSQL – baza Synapse (wymagana kolacja C)
+  postgres:
+    image: postgres:16-alpine
+    container_name: matrix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: synapse
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse -d synapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 4. Coturn – STUN/TURN dla WebRTC. Tryb host, bo potrzebuje zakresu portów relay;
+  #    external-ip = adres Tailscale serwera (TS_IP z .env).
+  coturn:
+    image: coturn/coturn:latest
+    container_name: matrix-coturn
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - "-n"
+      - "--log-file=stdout"
+      - "--realm=matrix.local"
+      - "--listening-port=3478"
+      - "--min-port=49160"
+      - "--max-port=49200"
+      - "--use-auth-secret"
+      - "--static-auth-secret=${TURN_SECRET}"
+      - "--external-ip=${TS_IP}"
+      - "--fingerprint"
+      - "--no-tls"
+      - "--no-cli"
+
+  # 5. LLDAP – lekki serwer katalogowy (symulacja AD)
+  lldap:
+    image: lldap/lldap:stable
+    container_name: matrix-lldap
+    restart: unless-stopped
+    ports:
+      - "17170:17170"   # panel WWW; LDAP (3890) tylko wewnątrz sieci Dockera
+    environment:
+      LLDAP_JWT_SECRET: ${LLDAP_JWT_SECRET}
+      LLDAP_KEY_SEED: ${LLDAP_KEY_SEED}
+      LLDAP_LDAP_BASE_DN: dc=matrix,dc=local
+      LLDAP_LDAP_USER_PASS: ${LLDAP_ADMIN_PASSWORD}
+    volumes:
+      - lldap_data:/data
+
+  # 6. Nginx (Widget) – statyczna książka adresowa; dostępna przez proxy: https://matrix.local/widget/
+  widget:
+    image: nginx:alpine
+    container_name: matrix-widget
+    restart: unless-stopped
+    volumes:
+      - ./widget:/usr/share/nginx/html:ro
+
+volumes:
+  pgdata:
+  lldap_data:

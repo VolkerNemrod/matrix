@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Mapa kroków instalacji</title>
+  <desc id="d">Dziesięć kroków: połączenie z VM, Docker, Tailscale, pliki projektu, sekrety, certyfikaty, uruchomienie usług, konta LLDAP, klienci i testy.</desc>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="460" rx="18" fill="#0b1410"/>
+  <text x="600" y="46" text-anchor="middle" font-size="26" font-weight="700" fill="#e8fff1">Mapa kroków instalacji</text>
+
+  <!-- ===== wiersz 1 ===== -->
+  <!-- 1 -->
+  <rect x="65" y="80" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="99" cy="112" r="18" fill="#00c853"/><text x="99" y="118" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">1</text>
+  <text x="81" y="158" font-size="17" font-weight="700" fill="#e8fff1">Połącz się z VM</text>
+  <text x="81" y="180" font-size="13" fill="#9bd6b3">połączenie przez ssh</text>
+  <rect x="81" y="192" width="50" height="26" rx="13" fill="#1f4f7a"/><text x="106" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC</text>
+
+  <!-- 2 -->
+  <rect x="285" y="80" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="319" cy="112" r="18" fill="#00c853"/><text x="319" y="118" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">2</text>
+  <text x="301" y="158" font-size="17" font-weight="700" fill="#e8fff1">Docker i Compose</text>
+  <text x="301" y="180" font-size="13" fill="#9bd6b3">sprawdzenie wersji</text>
+  <rect x="301" y="192" width="50" height="26" rx="13" fill="#1d5a38"/><text x="326" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
+
+  <!-- 3 -->
+  <rect x="505" y="80" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="539" cy="112" r="18" fill="#00c853"/><text x="539" y="118" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">3</text>
+  <text x="521" y="158" font-size="17" font-weight="700" fill="#e8fff1">Tailscale</text>
+  <text x="521" y="180" font-size="13" fill="#9bd6b3">prywatna sieć (VPN)</text>
+  <rect x="521" y="192" width="50" height="26" rx="13" fill="#1d5a38"/><text x="546" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
+
+  <!-- 4 -->
+  <rect x="725" y="80" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="759" cy="112" r="18" fill="#00c853"/><text x="759" y="118" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">4</text>
+  <text x="741" y="158" font-size="17" font-weight="700" fill="#e8fff1">Pliki projektu</text>
+  <text x="741" y="180" font-size="13" fill="#9bd6b3">git lub scp do /opt/matrix</text>
+  <rect x="741" y="192" width="80" height="26" rx="13" fill="#1d5a38"/><text x="781" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">PC · VM</text>
+
+  <!-- 5 -->
+  <rect x="945" y="80" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="979" cy="112" r="18" fill="#00c853"/><text x="979" y="118" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">5</text>
+  <text x="961" y="158" font-size="17" font-weight="700" fill="#e8fff1">Sekrety</text>
+  <text x="961" y="180" font-size="13" fill="#9bd6b3">.env + homeserver.yaml</text>
+  <rect x="961" y="192" width="50" height="26" rx="13" fill="#1d5a38"/><text x="986" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
+
+  <!-- strzałki wiersz 1 -->
+  <path d="M263 147 L277 155 L263 163 z" fill="#7dffb3"/>
+  <path d="M483 147 L497 155 L483 163 z" fill="#7dffb3"/>
+  <path d="M703 147 L717 155 L703 163 z" fill="#7dffb3"/>
+  <path d="M923 147 L937 155 L923 163 z" fill="#7dffb3"/>
+
+  <!-- przejście do wiersza 2 -->
+  <path d="M1040 232 L1040 250 L160 250 L160 268" fill="none" stroke="#7dffb3" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ===== wiersz 2 ===== -->
+  <!-- 6 -->
+  <rect x="65" y="270" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="99" cy="302" r="18" fill="#00c853"/><text x="99" y="308" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">6</text>
+  <text x="81" y="348" font-size="17" font-weight="700" fill="#e8fff1">Certyfikaty PKI</text>
+  <text x="81" y="370" font-size="13" fill="#9bd6b3">Root CA + cert serwera</text>
+  <rect x="81" y="382" width="50" height="26" rx="13" fill="#1d5a38"/><text x="106" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
+
+  <!-- 7 -->
+  <rect x="285" y="270" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="319" cy="302" r="18" fill="#00c853"/><text x="319" y="308" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">7</text>
+  <text x="301" y="348" font-size="17" font-weight="700" fill="#e8fff1">Uruchomienie usług</text>
+  <text x="301" y="370" font-size="13" fill="#9bd6b3">docker compose up</text>
+  <rect x="301" y="382" width="50" height="26" rx="13" fill="#1d5a38"/><text x="326" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
+
+  <!-- 8 -->
+  <rect x="505" y="270" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="539" cy="302" r="18" fill="#00c853"/><text x="539" y="308" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">8</text>
+  <text x="521" y="348" font-size="17" font-weight="700" fill="#e8fff1">Konta w LLDAP</text>
+  <text x="521" y="370" font-size="13" fill="#9bd6b3">grupy i użytkownicy</text>
+  <rect x="521" y="382" width="110" height="26" rx="13" fill="#5a4a1d"/><text x="576" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#ffe9a8">przeglądarka</text>
+
+  <!-- 9 -->
+  <rect x="725" y="270" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="759" cy="302" r="18" fill="#00c853"/><text x="759" y="308" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">9</text>
+  <text x="741" y="348" font-size="17" font-weight="700" fill="#e8fff1">Klienci</text>
+  <text x="741" y="370" font-size="13" fill="#9bd6b3">Windows i Android</text>
+  <rect x="741" y="382" width="115" height="26" rx="13" fill="#1f4f7a"/><text x="798" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC · Android</text>
+
+  <!-- 10 -->
+  <rect x="945" y="270" width="190" height="150" rx="12" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
+  <circle cx="979" cy="302" r="18" fill="#00e676"/><text x="979" y="308" text-anchor="middle" font-size="16" font-weight="800" fill="#04100a">10</text>
+  <text x="961" y="348" font-size="17" font-weight="700" fill="#e8fff1">Testy</text>
+  <text x="961" y="370" font-size="13" fill="#9bd6b3">logowanie · pokoje · A/V</text>
+  <rect x="961" y="382" width="50" height="26" rx="13" fill="#1f4f7a"/><text x="986" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC</text>
+
+  <!-- strzałki wiersz 2 -->
+  <path d="M263 337 L277 345 L263 353 z" fill="#7dffb3"/>
+  <path d="M483 337 L497 345 L483 353 z" fill="#7dffb3"/>
+  <path d="M703 337 L717 345 L703 353 z" fill="#7dffb3"/>
+  <path d="M923 337 L937 345 L923 353 z" fill="#7dffb3"/>
+</svg>

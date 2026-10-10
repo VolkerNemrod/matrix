@@ -1,0 +1,11 @@
+# Skrypty i konfiguracje uruchamiane na Linuksie zawsze z końcami linii LF.
+# (Windowsowe CRLF psuły generate-pki.sh: "$'\r': command not found".)
+* text=auto
+*.sh text eol=lf
+*.ext text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.conf text eol=lf
+*.config text eol=lf
+*.example text eol=lf
+Dockerfile text eol=lf

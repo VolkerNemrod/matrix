@@ -1,0 +1,28 @@
+# === SEKRETY I KLUCZE – nigdy do repozytorium ===
+.env
+*.key
+*.pem
+*.crt
+*.csr
+*.srl
+certs/
+
+# === Konfiguracja lokalna (hasła i dane środowiska) ===
+# W repozytorium są tylko wzory *.example – prawdziwe pliki tworzysz z nich u siebie.
+synapse/*
+!synapse/homeserver.yaml.example
+!synapse/matrix.local.log.config
+nginx/conf.d/*
+!nginx/conf.d/matrix.conf.example
+
+# === Notatki robocze z danymi środowiska (adresy IP, nazwy, użytkownicy) ===
+Szczegółowa_Instrukcja.md
+
+# === Dane uruchomieniowe ===
+*.log
+*.pid
+*.db
+media_store/
+
+# Wzór zmiennych środowiskowych MA być w repozytorium
+!.env.example

@@ -1,0 +1,76 @@
+# Synapse – wzór konfiguracji PoC dla matrix.local
+#
+# Skopiuj do synapse/homeserver.yaml (cp synapse/homeserver.yaml.example synapse/homeserver.yaml)
+# i podmień WSZYSTKIE wartości CHANGE_ME_... na te same, które wpisałeś w .env.
+# Prawdziwego homeserver.yaml NIGDY nie commituj – jest w .gitignore.
+server_name: "matrix.local"
+
+# Adres, pod którym klienci łączą się z serwerem. Synapse dokleja go do odpowiedzi na logowanie,
+# a klient się na niego przełącza – musi być rozwiązywalny na każdym kliencie.
+# Z komputerów z wpisem w hosts wystarczy matrix.local; dla telefonu (bez hosts) wpisz nazwę
+# MagicDNS z Tailscale, np. "https://matrix-test.TWOJ-TAILNET.ts.net/".
+public_baseurl: "https://matrix.local/"
+pid_file: /data/homeserver.pid
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ["0.0.0.0"]
+    resources:
+      - names: [client]   # brak zasobu "federation" – federacja wyłączona
+        compress: false
+
+# Federacja zablokowana (pusta biała lista) i brak zewnętrznych serwerów kluczy
+federation_domain_whitelist: []
+trusted_key_servers: []
+suppress_key_server_warning: true
+
+database:
+  name: psycopg2
+  args:
+    user: synapse
+    password: CHANGE_ME_postgres        # = POSTGRES_PASSWORD z .env
+    database: synapse
+    host: postgres
+    cp_min: 5
+    cp_max: 10
+
+log_config: "/data/matrix.local.log.config"
+media_store_path: /data/media_store
+signing_key_path: "/data/matrix.local.signing.key"
+report_stats: false
+
+enable_registration: false
+
+# Katalog uzytkownikow (ksiazka adresowa): true = wyszukiwarka w Elemencie znajduje WSZYSTKICH
+# uzytkownikow serwera, takze tych bez wspolnego pokoju. Domyslnie (false) widac tylko osoby
+# ze wspolnych lub publicznych pokoi. Uwaga: konto pojawia sie w katalogu dopiero po pierwszym logowaniu.
+user_directory:
+  search_all_users: true
+
+# Coturn (WebRTC) – host rozwiązywany przez wpis w hosts na klientach -> IP Tailscale
+turn_uris:
+  - "turn:matrix.local:3478?transport=udp"
+  - "turn:matrix.local:3478?transport=tcp"
+turn_shared_secret: "CHANGE_ME_turn"   # = TURN_SECRET z .env
+turn_user_lifetime: 86400000
+turn_allow_guests: false
+
+# Logowanie kontami z LLDAP
+modules:
+  - module: ldap_auth_provider.LdapAuthProviderModule
+    config:
+      enabled: true
+      uri: "ldap://lldap:3890"
+      start_tls: false
+      mode: "search"
+      base: "ou=people,dc=matrix,dc=local"
+      attributes:
+        uid: "uid"
+        mail: "mail"
+        name: "cn"
+      bind_dn: "uid=admin,ou=people,dc=matrix,dc=local"
+      bind_password: "CHANGE_ME_lldap_admin"   # = LLDAP_ADMIN_PASSWORD z .env
+      filter: "(objectClass=person)"

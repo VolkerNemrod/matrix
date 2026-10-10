@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Architektura Matrix PoC</title>
+  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i widżet książki adresowej.</desc>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
+    </marker>
+    <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6cb6ff"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="600" rx="18" fill="#0b1410"/>
+  <text x="600" y="46" text-anchor="middle" font-size="26" font-weight="700" fill="#e8fff1">Architektura Matrix PoC</text>
+
+  <!-- KLIENCI -->
+  <rect x="40" y="80" width="250" height="440" rx="14" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <text x="165" y="108" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="3" fill="#7dffb3">KLIENCI</text>
+
+  <rect x="60" y="130" width="210" height="100" rx="10" fill="#16382a" stroke="#3fa56b"/>
+  <text x="165" y="168" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">Element Desktop</text>
+  <text x="165" y="193" text-anchor="middle" font-size="13" fill="#9bd6b3">Windows · plik hosts</text>
+  <text x="165" y="213" text-anchor="middle" font-size="13" fill="#9bd6b3">+ Tailscale</text>
+
+  <rect x="60" y="260" width="210" height="100" rx="10" fill="#16382a" stroke="#3fa56b"/>
+  <text x="165" y="298" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">Element (Android)</text>
+  <text x="165" y="323" text-anchor="middle" font-size="13" fill="#9bd6b3">MagicDNS + cert Tailscale</text>
+  <text x="165" y="343" text-anchor="middle" font-size="13" fill="#9bd6b3">+ Tailscale</text>
+
+  <text x="165" y="400" text-anchor="middle" font-size="13" fill="#7fa893">Logowanie kontem z LLDAP</text>
+  <text x="165" y="420" text-anchor="middle" font-size="13" fill="#7fa893">(np. j.kowalski)</text>
+
+  <!-- TAILSCALE -->
+  <rect x="330" y="80" width="130" height="440" rx="14" fill="#6cb6ff" fill-opacity="0.07" stroke="#6cb6ff" stroke-width="1.5" stroke-dasharray="7 6"/>
+  <text x="395" y="108" text-anchor="middle" font-size="15" font-weight="700" fill="#9fd0ff">Tailscale</text>
+  <text x="395" y="126" text-anchor="middle" font-size="12" fill="#7fb4e6">prywatna sieć</text>
+
+  <!-- VM -->
+  <rect x="490" y="80" width="690" height="440" rx="14" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <text x="510" y="106" font-size="14" font-weight="700" fill="#7dffb3">VM · Proxmox · Docker Compose · /opt/matrix</text>
+
+  <!-- kontenery -->
+  <g>
+    <rect x="520" y="130" width="170" height="90" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="605" y="162" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-proxy</text>
+    <text x="605" y="184" text-anchor="middle" font-size="13" fill="#9bd6b3">Nginx + SSL</text>
+    <text x="605" y="203" text-anchor="middle" font-size="13" fill="#9bd6b3">port 443</text>
+
+    <rect x="520" y="260" width="170" height="80" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="605" y="292" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-widget</text>
+    <text x="605" y="314" text-anchor="middle" font-size="13" fill="#9bd6b3">widżet (wstrzymany)</text>
+
+    <rect x="760" y="170" width="180" height="110" rx="10" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
+    <text x="850" y="208" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">matrix-synapse</text>
+    <text x="850" y="232" text-anchor="middle" font-size="13" fill="#9bd6b3">serwer Matrix</text>
+    <text x="850" y="252" text-anchor="middle" font-size="13" fill="#9bd6b3">federacja wyłączona</text>
+
+    <rect x="990" y="130" width="170" height="80" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="1075" y="162" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-postgres</text>
+    <text x="1075" y="184" text-anchor="middle" font-size="13" fill="#9bd6b3">baza Synapse</text>
+
+    <rect x="990" y="250" width="170" height="100" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="1075" y="282" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-lldap</text>
+    <text x="1075" y="305" text-anchor="middle" font-size="13" fill="#9bd6b3">katalog użytkowników</text>
+    <text x="1075" y="325" text-anchor="middle" font-size="13" fill="#9bd6b3">LDAP + panel :17170</text>
+
+    <rect x="760" y="400" width="180" height="80" rx="10" fill="#16382a" stroke="#6cb6ff"/>
+    <text x="850" y="432" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-coturn</text>
+    <text x="850" y="452" text-anchor="middle" font-size="13" fill="#9fd0ff">STUN / TURN</text>
+    <text x="850" y="470" text-anchor="middle" font-size="12" fill="#9fd0ff">3478 · 49160–49200</text>
+  </g>
+
+  <!-- strzałki -->
+  <g fill="none" stroke-width="2">
+    <!-- klient -> proxy (HTTPS) -->
+    <path d="M290 175 L520 175" stroke="#7dffb3" marker-end="url(#arr)"/>
+    <!-- klient -> coturn (media) -->
+    <path d="M290 440 L760 440" stroke="#6cb6ff" stroke-dasharray="8 6" marker-end="url(#arrB)"/>
+    <!-- proxy -> synapse -->
+    <path d="M690 175 L760 200" stroke="#7dffb3" marker-end="url(#arr)"/>
+    <!-- proxy -> widget -->
+    <path d="M605 220 L605 260" stroke="#7dffb3" marker-end="url(#arr)"/>
+    <!-- synapse -> postgres -->
+    <path d="M940 195 L990 172" stroke="#7dffb3" marker-end="url(#arr)"/>
+    <!-- synapse -> lldap -->
+    <path d="M940 255 L990 290" stroke="#7dffb3" marker-end="url(#arr)"/>
+    <!-- synapse <-> coturn -->
+    <path d="M850 280 L850 400" stroke="#6cb6ff" stroke-dasharray="8 6" marker-start="url(#arrB)" marker-end="url(#arrB)"/>
+  </g>
+
+  <!-- etykiety strzałek -->
+  <text x="410" y="165" text-anchor="middle" font-size="13" font-weight="600" fill="#7dffb3">HTTPS</text>
+  <text x="410" y="430" text-anchor="middle" font-size="13" font-weight="600" fill="#9fd0ff">WebRTC A/V</text>
+  <text x="862" y="346" font-size="12" fill="#9fd0ff">wspólny sekret TURN</text>
+
+  <!-- legenda -->
+  <g font-size="13" fill="#9bd6b3">
+    <path d="M60 565 L110 565" stroke="#7dffb3" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="122" y="570">HTTPS / API / zapytania</text>
+    <path d="M330 565 L380 565" stroke="#6cb6ff" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrB)"/>
+    <text x="392" y="570">media rozmów audio/wideo (WebRTC)</text>
+    <text x="1180" y="570" text-anchor="end" fill="#7fa893">Uproszczony schemat · adresy: &lt;IP_TAILSCALE&gt; / &lt;PELNA-NAZWA-TS&gt;</text>
+  </g>
+</svg>
