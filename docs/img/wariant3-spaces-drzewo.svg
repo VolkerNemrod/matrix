@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t3 d3">
+  <title id="t3">Wariant 3 – Matrix Spaces jako drzewo organizacyjne</title>
+  <desc id="d3">Space „Firma” jako korzeń z sub-Spaces per dział (Księgowość, Wydział EFS, Dyrekcja, IT), widoczny w sidebarze Elementa jako rozwijane drzewo. W każdym dział-Space pokój-katalog z dołączonymi użytkownikami.</desc>
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="480" rx="18" fill="#0b1410"/>
+  <text x="600" y="44" text-anchor="middle" font-size="24" font-weight="700" fill="#e8fff1">Wariant 3 · Matrix Spaces jako drzewo organizacyjne</text>
+  <g>
+    <rect x="1020" y="18" width="150" height="30" rx="15" fill="#3a2a10" stroke="#ffcc66"/>
+    <text x="1095" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#ffcc66">NIESPRAWDZONE</text>
+  </g>
+
+  <rect x="500" y="90" width="200" height="64" rx="12" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
+  <text x="600" y="128" text-anchor="middle" font-size="18" font-weight="700" fill="#e8fff1">Space: Firma</text>
+
+  <path d="M600 154 L600 180" stroke="#3fa56b" stroke-width="2"/>
+  <path d="M170 180 L1030 180" stroke="#3fa56b" stroke-width="2"/>
+  <path d="M170 180 L170 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M430 180 L430 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M770 180 L770 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M1030 180 L1030 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+
+  <g font-size="15">
+    <rect x="60" y="206" width="220" height="60" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="170" y="242" text-anchor="middle" font-size="15" font-weight="700" fill="#e8fff1">Księgowość</text>
+    <rect x="60" y="280" width="220" height="150" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <text x="170" y="304" text-anchor="middle" font-size="12" fill="#9bd6b3">pokój-katalog</text>
+    <circle cx="100" cy="330" r="10" fill="#7dffb3"/><circle cx="140" cy="330" r="10" fill="#7dffb3"/><circle cx="180" cy="330" r="10" fill="#7dffb3"/><circle cx="220" cy="330" r="10" fill="#7dffb3"/>
+    <text x="170" y="365" text-anchor="middle" font-size="12" fill="#9bd6b3">klik na osobę = DM</text>
+
+    <rect x="320" y="206" width="220" height="60" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="430" y="242" text-anchor="middle" font-size="15" font-weight="700" fill="#e8fff1">Wydział EFS</text>
+    <rect x="320" y="280" width="220" height="150" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <text x="430" y="304" text-anchor="middle" font-size="12" fill="#9bd6b3">pokój-katalog</text>
+    <circle cx="360" cy="330" r="10" fill="#7dffb3"/><circle cx="400" cy="330" r="10" fill="#7dffb3"/><circle cx="440" cy="330" r="10" fill="#7dffb3"/><circle cx="480" cy="330" r="10" fill="#7dffb3"/>
+    <text x="430" y="365" text-anchor="middle" font-size="12" fill="#9bd6b3">klik na osobę = DM</text>
+
+    <rect x="660" y="206" width="220" height="60" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="770" y="242" text-anchor="middle" font-size="15" font-weight="700" fill="#e8fff1">Dyrekcja</text>
+    <rect x="660" y="280" width="220" height="150" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <text x="770" y="304" text-anchor="middle" font-size="12" fill="#9bd6b3">pokój-katalog</text>
+    <circle cx="700" cy="330" r="10" fill="#7dffb3"/><circle cx="740" cy="330" r="10" fill="#7dffb3"/><circle cx="780" cy="330" r="10" fill="#7dffb3"/>
+    <text x="770" y="365" text-anchor="middle" font-size="12" fill="#9bd6b3">klik na osobę = DM</text>
+
+    <rect x="920" y="206" width="220" height="60" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="1030" y="242" text-anchor="middle" font-size="15" font-weight="700" fill="#e8fff1">IT</text>
+    <rect x="920" y="280" width="220" height="150" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <text x="1030" y="304" text-anchor="middle" font-size="12" fill="#9bd6b3">pokój-katalog</text>
+    <circle cx="960" cy="330" r="10" fill="#7dffb3"/><circle cx="1000" cy="330" r="10" fill="#7dffb3"/><circle cx="1040" cy="330" r="10" fill="#7dffb3"/><circle cx="1080" cy="330" r="10" fill="#7dffb3"/>
+    <text x="1030" y="365" text-anchor="middle" font-size="12" fill="#9bd6b3">klik na osobę = DM</text>
+  </g>
+
+  <text x="600" y="455" text-anchor="middle" font-size="13" fill="#7fa893">Widoczne jako rozwijane drzewo w pasku bocznym Elementa — niewiadome: tworzenie przez Admin API, skalowanie na ~300 osób</text>
+</svg>

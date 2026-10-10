@@ -60,10 +60,11 @@ sequenceDiagram
 9. [Klienci: Windows i Android](#krok-9--klienci)
 10. [Testy](#krok-10--testy)
 11. [Książka adresowa dla całej firmy (zmiana planu)](#książka-adresowa-dla-całej-firmy-zmiana-planu)
-12. [Przydatne komendy](#przydatne-komendy)
-13. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
-14. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-15. [Znane ograniczenia](#znane-ograniczenia-poc)
+12. [💡 Pomysły do sprawdzenia: książka adresowa (niepotwierdzone)](#-pomysły-do-sprawdzenia-książka-adresowa-niepotwierdzone)
+13. [Przydatne komendy](#przydatne-komendy)
+14. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
+15. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+16. [Znane ograniczenia](#znane-ograniczenia-poc)
 
 <p align="center">
   <img src="docs/img/roadmap.svg" alt="Mapa kroków instalacji 1–10" width="100%">
@@ -571,6 +572,93 @@ użytkowników własnego serwera.
 
 Skutek: federacja pozostaje wyłączona (`federation_domain_whitelist: []`), a rozmiar jednej maszyny
 (obecnie 4 GB / 2 vCPU) trzeba oceniać pod ok. 300 użytkowników naraz – niesprawdzone.
+
+---
+
+## Pomysły do sprawdzenia: książka adresowa (niepotwierdzone)
+
+> UWAGA: to jest sekcja na pomysły, nie na instrukcje. Nic poniżej nie zostało sprawdzone w praktyce.
+> To zapis rozważań, żeby nie zgubić wątku między sesjami. Gdy któryś wariant zostanie przetestowany
+> i zadziała, jego opis przenosimy do sekcji Książka adresowa dla całej firmy jako właściwą
+> dokumentację (kolejny Etap w tabeli), a stąd znika.
+
+Mamy trzy rozważane warianty na to, jak ma wyglądać książka adresowa / widoczność struktury firmy
+(działy typu Księgowość, Wydział EFS, Dyrekcja, IT):
+
+### Wariant 1 - Wbudowany katalog użytkowników Synapse (WYBRANY kierunek, częściowo sprawdzony)
+
+<p align="center">
+  <img src="docs/img/wariant1-katalog-tekst.svg" alt="Wariant 1: wyszukiwanie tekstowe w katalogu Synapse, bez drzewa organizacyjnego" width="100%">
+</p>
+
+To jest aktualnie realizowana droga - pełny, żywy status (Etapy A-D, co działa, co nie) jest w sekcji
+Książka adresowa dla całej firmy wyżej - nie duplikujemy tego tutaj. Ograniczenie warte zapamiętania:
+dział/lokalizacja pokażą się tylko jako tekst w nazwie wyświetlanej (przeszukiwalny), nie jako
+drzewo organizacyjne - bez osobnej kolumny, filtra czy grupowania wizualnego.
+
+### Wariant 2 - Widget + Widget API navigate (pomysł, niesprawdzony)
+
+<p align="center">
+  <img src="docs/img/wariant2-widget-navigate.svg" alt="Wariant 2: widget wysyła akcję navigate do Elementa, który otwiera DM bez przeglądarki" width="100%">
+</p>
+
+Zamiast linku matrix.to otwieranego w przeglądarce (próbowany wcześniej), widget mógłby wysłać przez
+Widget API akcję navigate:
+
+```
+{ api: "fromWidget", action: "navigate", data: { uri: "https://matrix.to/#/@j.kowalski:matrix.local" } }
+```
+
+Idea: Element przechwytuje ten format URI i obsługuje lokalnie (otwiera DM w aplikacji) - matrix.to
+pełni tu rolę tylko formatu identyfikatora, nie serwisu internetowego, do którego trzeba się łączyć.
+To rozwiązałoby problem pośrednika wymagającego internetu.
+
+Czego NIE rozwiązuje: lista osób w widgecie nadal musiałaby być budowana dynamicznie (JS
+odpytujący user_directory API zamiast ręcznej listy), a widget nadal jest dodawany per pokój
+i pyta o zgodę przy dodaniu.
+
+Niepewności: czy Element Desktop w aktualnej wersji faktycznie wspiera akcję navigate w praktyce
+(sprawdzona tylko dokumentacja); czy działa dla DM-a, który jeszcze nie istnieje; czy wymaga
+dodatkowych uprawnień (capability) widgeta.
+
+### Wariant 3 - Matrix Spaces jako drzewo organizacyjne (pomysł, niesprawdzony)
+
+<p align="center">
+  <img src="docs/img/wariant3-spaces-drzewo.svg" alt="Wariant 3: Space Firma z sub-Spaces per dział, widoczny jako drzewo w sidebarze Elementa" width="100%">
+</p>
+
+Spaces w Matrixie to natywny mechanizm hierarchii, widoczny w pasku bocznym Elementa jako rozwijane
+drzewo - czyli dokładnie to, czego brakuje w user_directory. Pomysł:
+
+- Space "Firma" jako korzeń,
+- pod nim sub-Spaces per dział: "Księgowość", "Wydział EFS", "Dyrekcja", "IT" - widoczne jako
+  rozwijane drzewo w sidebarze,
+- w każdym dział-Space pokój-katalog z dołączonymi użytkownikami jako namiastka listy kontaktów
+  (klik na osobę w liście uczestników pokoju też otwiera DM).
+
+Niewiadome: czy Spaces da się tworzyć/zarządzać automatycznie przez Admin API tak jak konta, czy
+dobrze skaluje się na ~300 osób, jak wygląda UX dla kogoś kto należy do więcej niż jednego działu.
+
+### Wspólny fundament wszystkich wariantów
+
+Warianty 2 i 3 (a właściwie również wariant 1) zależą od tego samego kroku: Etapu B z sekcji wyżej
+(skrypt LLDAP -> Synapse Admin API, zakładanie kont bez logowania każdej osoby z osobna). Bez niego
+user_directory - z którego korzystałby też dynamiczny widget - jest pusty/niekompletny. To nie jest
+wybór "jeden z trzech" na starcie, tylko wspólny warunek wstępny dla każdego z nich.
+
+### Ustalona kolejność działania
+
+1. Zrobić Etap B (i tak wymagany w każdym wariancie) - z uwzględnieniem pre-provisioningu
+   wszystkich kont z wyprzedzeniem (przed pierwszym logowaniem kogokolwiek) i weryfikacją
+   auto_join_rooms, żeby nowa osoba od razu widziała kompletną listę kolegów i właściwe pokoje
+   (patrz uwagi w sekcji wyżej, Etapy B/E).
+2. Przetestować w praktyce Wariant 1 (wbudowany katalog) na realnej liczbie kont - do tego
+   planowana jest testowa struktura firmy w LLDAP (~200 fikcyjnych kont, działy + lokalizacja,
+   wspólne hasło testowe, zakładane skryptem przez GraphQL API LLDAP - LLDAP nie przyjmuje zapisów
+   przez zwykły LDAP/LDIF).
+3. Jeśli Wariant 1 okaże się niewystarczający (np. UX przy 300 osobach, brak struktury drzewa) -
+   dopiero wtedy zabrać się za Wariant 2 (widget).
+4. Wariant 3 (Spaces) do zbadania równolegle, jako "Plan C", gdy temat wróci.
 
 ---
 
