@@ -21,7 +21,12 @@ server {
     client_max_body_size 50M;
 
     # API Matrix -> Synapse
-    location ~ ^(/_matrix|/_synapse/client) {
+    # UWAGA: /_synapse/admin jest tu CELOWO wlaczone, zeby skrypty prowizjonujace
+    # (Etap B, scripts/provision_synapse_users.py) mogly dzialac z PC przez to samo
+    # proxy co klienci. Admin API i tak wymaga tokenu konta administratora Synapse
+    # (patrz README, Etap B) -- nie jest otwarte "na oscierz", ale w PoC-u wystawione
+    # publicznie razem z reszta. Na produkcji rozwazyc ograniczenie np. po IP (allow/deny).
+    location ~ ^(/_matrix|/_synapse/client|/_synapse/admin) {
         proxy_pass http://synapse:8008;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $remote_addr;

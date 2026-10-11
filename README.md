@@ -83,6 +83,9 @@ synapse/matrix.local.log.config     konfiguracja logowania Synapse
 nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL
 pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.local
 widget/index.html                   Książka Adresowa (wyszukiwarka JS)
+scripts/seed_test_employees.py      Etap B0: testowe konta w LLDAP (patrz Książka adresowa)
+scripts/provision_synapse_users.py  Etap B+C: zakładanie kont w Synapse z działem/lokalizacją
+scripts/requirements.txt            zależności Pythona dla skryptów wyżej (requests)
 Matrix.md                           pierwotny plan testów
 docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków)
 .gitignore, .gitattributes          wyłączenie sekretów z repozytorium, końce linii LF
@@ -536,8 +539,8 @@ ewentualny dodatek do przeglądania drzewka działów.
 |---|---|---|
 | **A** | Katalog użytkowników wyszukuje **wszystkich** (nie tylko osoby ze wspólnych pokoi) | ✅ sprawdzone na PoC |
 | **B0** | Testowa struktura firmy w LLDAP (skrypt, ~200–300 kont, do testów) | ✅ sprawdzone na PoC |
-| **B** | Automatyczne zakładanie kont w **Synapse** na podstawie LLDAP (skrypt) | do zrobienia |
-| **C** | Dział i lokalizacja w nazwie wyświetlanej | do zrobienia |
+| **B** | Automatyczne zakładanie kont w **Synapse** na podstawie LLDAP (skrypt) | ✅ sprawdzone na PoC |
+| **C** | Dział i lokalizacja w nazwie wyświetlanej | ✅ sprawdzone na PoC (zrobione razem z B) |
 | **D** | Wdrożenie klientów na stanowiskach (Element Desktop z domyślnym serwerem) | do sprawdzenia przy produkcji |
 
 ### Etap A – wyszukiwanie wszystkich użytkowników ✅ *(sprawdzone na PoC)*
@@ -649,22 +652,90 @@ logowaniem do Elementa – zadziałało za pierwszym poprawnym uruchomieniem.
 > naprawiliśmy hasło). Rozwiązanie: 🐧 **VM** `docker compose restart synapse` (czyści licznik),
 > potem spróbuj **raz**, nie wielokrotnie pod rząd.
 
-### Etap B – automatyczne zakładanie kont w Synapse *(niesprawdzone)*
+### Etap B + C – automatyczne zakładanie kont w Synapse, z działem i lokalizacją ✅ *(sprawdzone na PoC, 2026-10-11)*
 
-Inny temat niż Etap B0 wyżej (ten dotyczył LLDAP, ten dotyczy **Synapse**). Konto w Synapse powstaje
-dopiero przy **pierwszym logowaniu** przez LDAP, więc dopóki ktoś się nie zaloguje, nie ma go
-w katalogu użytkowników (user_directory). Dla ok. 300 osób potrzebny jest skrypt (np. cron na VM),
-który czyta użytkowników z LLDAP i zakłada ich w Synapse przez Admin API
-(`PUT /_synapse/admin/v2/users/@login:matrix.local` z nazwą wyświetlaną; wymaga tokenu konta
-administratora Synapse).
+Inny temat niż Etap B0 wyżej (ten dotyczył LLDAP, ten dotyczy **Synapse**). Konto w Synapse (i wpis
+w katalogu `user_directory`, z którego korzysta wyszukiwarka w Elemencie) powstaje domyślnie dopiero
+przy **pierwszym logowaniu** przez LDAP. Ten skrypt zakłada konta z wyprzedzeniem, przez Admin API
+Synapse, bez potrzeby logowania każdej osoby osobno – i przy okazji ustawia nazwę wyświetlaną
+w formacie `Imię Nazwisko – Dział, Lokalizacja` (Etap C), bo dane o dziale/lokalizacji i tak są już
+w grupach LLDAP z Etapu B0 – szkoda byłoby robić to w dwóch osobnych przebiegach.
 
-Do sprawdzenia: czy konto założone w ten sposób potem normalnie loguje się przez moduł LDAP i czy API
-wymaga hasła (wtedy losowego, nieużywanego).
+**Plik:** `scripts/provision_synapse_users.py` (uruchamiany na PC).
 
-### Etap C – dział i lokalizacja *(niesprawdzone)*
+**Wynik testu:** konto `a.kowalczyk` (nigdy wcześniej niezalogowane) zostało znalezione w wyszukiwarce
+Elementa po frazie „Kraków”/„Księgowość”, z poprawną nazwą wyświetlaną „Alicja Kowalczyk –
+Księgowość, Kraków”, a kliknięcie otworzyło DM. Po uruchomieniu na pełnej puli (~204 konta z LLDAP)
+skrypt przeszedł bez błędów.
 
-Prosty sposób: wpisać dział i lokalizację w nazwę wyświetlaną, np. `Imię Nazwisko – Dział, Lokalizacja`.
-Skrypt z etapu B skleja ją z grup i atrybutów LLDAP. Dokładny format do ustalenia.
+**Wymagania wstępne (jednorazowe):**
+
+**1. Konto administratora Synapse.** Zamiast zakładać nowe (co wymagałoby ustawienia
+`registration_shared_secret`, którego nie mamy skonfigurowanego), podnosimy uprawnienia jednemu
+z już istniejących, działających kont testowych z Etapu B0 (tu użyte: `s.lewandowski`) –
+bezpośrednim wpisem w bazie:
+
+🐧 **VM**, w `/opt/matrix` (koniecznie w tym katalogu – inaczej `docker compose` nie znajdzie
+`docker-compose.yml` i zwróci `no configuration file provided`):
+
+```bash
+docker compose exec postgres psql -U synapse -d synapse -c "UPDATE users SET admin = 1 WHERE name = '@s.lewandowski:matrix.local';"
+```
+
+Powinno pokazać `UPDATE 1`. To NIE zmienia hasla ani nic innego w LLDAP – tylko flagę admina w Synapse.
+
+**2. Admin API musi być przepuszczone przez reverse proxy.** ⚠️ **Złapane w praktyce (2026-10-11):**
+nginx miał (celowo, ze względów bezpieczeństwa z pierwotnego setupu) regułę, która przepuszczała tylko
+`/_matrix` i `/_synapse/client`, NIE `/_synapse/admin` – każde wywołanie Admin API kończyło się
+blokiem `404 Not Found` od samego nginx (nie od Synapse). W `nginx/conf.d/matrix.conf.example` jest to
+już poprawione (reguła zawiera `/_synapse/admin`), ale **prawdziwy plik na VM trzeba zaktualizować
+ręcznie** (jest w `.gitignore`, nie synchronizuje się automatycznie z repo):
+
+🐧 **VM**, w `/opt/matrix`:
+
+```bash
+sed -i 's#\^(/_matrix|/_synapse/client)#^(/_matrix|/_synapse/client|/_synapse/admin)#' nginx/conf.d/matrix.conf
+```
+
+> Jeśli `grep -A1 "API Matrix" nginx/conf.d/matrix.conf` nie pokaże zmiany – edytuj plik ręcznie
+> (`nano nginx/conf.d/matrix.conf`), dopisz `|/_synapse/admin` do regexu w linii
+> `location ~ ^(/_matrix|/_synapse/client) {`.
+
+Potem przeładuj nginx:
+
+```bash
+docker compose exec proxy nginx -s reload
+```
+
+> Admin API jest w ten sposób wystawione publicznie przez to samo proxy co klienci – wciąż chronione
+> tokenem administratora, ale na produkcji warto rozważyć dodatkowe ograniczenie (np. po adresie IP).
+
+**Uruchomienie (PC):**
+
+🪟 **PC**, PowerShell (ten sam `venv` co Etap B0):
+
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+python provision_synapse_users.py
+```
+
+Skrypt: (1) czyta wszystkich użytkowników z LLDAP razem z ich grupami (dział/lokalizacja) przez
+GraphQL, (2) loguje się do Synapse jako administrator (`s.lewandowski`, to samo hasło testowe co
+reszta kont z Etapu B0) przez zwykłe `/login`, (3) dla każdego usera woła
+`PUT /_synapse/admin/v2/users/@login:matrix.local` z `displayname` w formacie
+`Imię Nazwisko – Dział, Lokalizacja` (bez pola `password` – nie jest wymagane, bo logowanie i tak
+idzie przez LDAP). Jak w Etapie B0: **`LIMIT`** na górze pliku – zacznij od małej wartości, sprawdź,
+dopiero potem `LIMIT = None`.
+
+**Jak sprawdzić, czy zadziałało:** w Elemencie (kontem, którym normalnie pracujesz) wyszukaj jedną
+z przetworzonych osób po dziale/lokalizacji – **bez logowania się na jej konto**. Jeśli się znajdzie,
+konto istnieje w katalogu mimo braku logowania.
+
+> ⚠️ **Zaobserwowany efekt uboczny (nie błąd):** DM do konta założonego przez Admin API (nigdy
+> niezalogowanego) otwiera się jako **nieszyfrowany**, z ostrzeżeniem Elementa o braku E2E. To logiczne –
+> takie konto nie ma jeszcze żadnego urządzenia ani kluczy szyfrowania (powstają dopiero przy pierwszym
+> prawdziwym logowaniu tej osoby). Czy po jej zalogowaniu ten sam pokój automatycznie staje się
+> szyfrowany, czy trzeba nowego pokoju/weryfikacji – **niesprawdzone**.
 
 ### Etap D – klienci *(do sprawdzenia przy produkcji)*
 
@@ -759,17 +830,14 @@ wybór "jeden z trzech" na starcie, tylko wspólny warunek wstępny dla każdego
 
 ### Ustalona kolejność działania
 
-1. Zrobić Etap B (i tak wymagany w każdym wariancie) - z uwzględnieniem pre-provisioningu
-   wszystkich kont z wyprzedzeniem (przed pierwszym logowaniem kogokolwiek) i weryfikacją
-   auto_join_rooms, żeby nowa osoba od razu widziała kompletną listę kolegów i właściwe pokoje
-   (patrz uwagi w sekcji wyżej, Etapy B/E).
-2. Przetestować w praktyce Wariant 1 (wbudowany katalog) na realnej liczbie kont - do tego
-   planowana jest testowa struktura firmy w LLDAP (~200 fikcyjnych kont, działy + lokalizacja,
-   wspólne hasło testowe, zakładane skryptem przez GraphQL API LLDAP - LLDAP nie przyjmuje zapisów
-   przez zwykły LDAP/LDIF).
-3. Jeśli Wariant 1 okaże się niewystarczający (np. UX przy 300 osobach, brak struktury drzewa) -
-   dopiero wtedy zabrać się za Wariant 2 (widget).
-4. Wariant 3 (Spaces) do zbadania równolegle, jako "Plan C", gdy temat wróci.
+1. ~~Zrobić Etap B~~ ✅ ZROBIONE 2026-10-11 (patrz Etap B+C w sekcji Książka adresowa wyżej). Pre-provisioning
+   wszystkich kont z wyprzedzeniem działa; `auto_join_rooms` (wspólny pokój dla wszystkich) zostaje
+   osobnym, niesprawdzonym wątkiem (Etap D).
+2. ~~Przetestować w praktyce Wariant 1~~ ✅ ZROBIONE – działa dobrze na realnej skali (~204 konta),
+   wyszukiwanie po dziale/lokalizacji działa, DM otwiera się od razu.
+3. Skoro Wariant 1 + Etap B działają dobrze, Warianty 2 (widget) i 3 (Spaces) poniżej **nie są obecnie
+   potrzebne** – zostają jako zapisane pomysły na później, gdyby jednak zabrakło im czegoś (np. realnej
+   struktury drzewa zamiast wyszukiwania tekstowego).
 
 ---
 
