@@ -476,6 +476,36 @@ stary adres.
 
 Kolejność testów: najpierw w sieci lokalnej, potem przez Tailscale.
 
+### Drugie konto w Elemencie bez zamykania pierwszego (przydatne w testach)
+
+Do testów (np. rozmowa 1:1, test drugiego konta w książce adresowej) czasem wygodniej jest mieć na
+**jednym komputerze** dwie niezależne, równocześnie zalogowane sesje Elementa, zamiast wylogowywać się
+i logując ponownie za każdym razem. Element Desktop domyślnie trzyma dane jednej sesji w jednym profilu,
+więc zwykłe ponowne uruchomienie otworzy to samo, już zalogowane okno.
+
+🪟 **PC**, PowerShell – uruchom drugą, niezależną instancję z osobnym profilem (Electron, na którym
+działa Element, wspiera to natywnie przez flagę `--profile`):
+
+```powershell
+& "C:\Users\Admin\AppData\Local\element-desktop\Element.exe" --profile testowy2
+```
+
+Ścieżka do `Element.exe` zależy od instalacji – powyższa pasuje do instalacji per-użytkownik w
+`AppData\Local\element-desktop\`. Jeśli u Ciebie nie działa (np. `Nie można znaleźć ścieżki`), namierz
+ją samemu: kliknij prawym na skrócie do Elementa (pulpit albo menu Start) → **Właściwości** → pole
+**Element docelowy** pokaże pełną ścieżkę do `Element.exe` na Twoim komputerze.
+
+Druga instancja startuje jako zupełnie nowa, pusta aplikacja (własny katalog danych wyznaczony nazwą po
+`--profile`) – logujesz się w niej drugim kontem z LLDAP, a pierwsze okno zostaje zalogowane bez zmian.
+Można mieć otwarte oba naraz i np. wysyłać wiadomości między nimi bez drugiego komputera. Chcesz trzeci
+instancję – inna nazwa profilu (`--profile testowy3`).
+
+> ⚠️ **Alternatywa, NIEPOTWIERDZONA:** zalogowanie się przez `app.element.io` w przeglądarce, z serwerem
+> domowym ustawionym na `matrix.local` – to również daje niezależną sesję bez instalowania czegokolwiek.
+> Obie metody (profil Elementa Desktop i `app.element.io`) były rozważane przy pierwszym tekście drugiego
+> konta (Piotr Wiśniewski) – nie ustalono wtedy jednoznacznie, której faktycznie użyto, więc jeśli coś nie
+> zadziała tak jak opisano, spróbuj drugiej metody.
+
 ---
 
 ## Książka adresowa dla całej firmy (zmiana planu)
@@ -505,7 +535,8 @@ ewentualny dodatek do przeglądania drzewka działów.
 | Etap | Co | Status |
 |---|---|---|
 | **A** | Katalog użytkowników wyszukuje **wszystkich** (nie tylko osoby ze wspólnych pokoi) | ✅ sprawdzone na PoC |
-| **B** | Automatyczne zakładanie kont na podstawie LLDAP (skrypt) | do zrobienia |
+| **B0** | Testowa struktura firmy w LLDAP (skrypt, ~200–300 kont, do testów) | ✅ sprawdzone na PoC |
+| **B** | Automatyczne zakładanie kont w **Synapse** na podstawie LLDAP (skrypt) | do zrobienia |
 | **C** | Dział i lokalizacja w nazwie wyświetlanej | do zrobienia |
 | **D** | Wdrożenie klientów na stanowiskach (Element Desktop z domyślnym serwerem) | do sprawdzenia przy produkcji |
 
@@ -540,12 +571,92 @@ Kliknięcie znalezionej osoby otwiera od razu rozmowę 1:1 (sprawdzone 2026-10-1
 Osoby, które nigdy się nie logowały, nie istnieją w Synapse, więc nie ma ich w katalogu – to nie wymaga
 `regenerate_directory`, tylko założenia kont (etap B).
 
-### Etap B – automatyczne zakładanie kont *(niesprawdzone)*
+### Etap B0 – testowa struktura firmy w LLDAP ✅ *(sprawdzone na PoC, 2026-10-11)*
 
-Konto w Synapse powstaje dopiero przy **pierwszym logowaniu** przez LDAP, więc dopóki ktoś się nie zaloguje,
-nie ma go w katalogu. Dla ok. 300 osób potrzebny jest skrypt (np. cron na VM), który czyta użytkowników
-z LLDAP i zakłada ich w Synapse przez Admin API (`PUT /_synapse/admin/v2/users/@login:matrix.local`
-z nazwą wyświetlaną; wymaga tokenu konta administratora Synapse).
+Zanim zabierzemy się za Etap B (zakładanie kont w **Synapse**), trzeba mieć w LLDAP realną liczbę kont
+żeby w ogóle mieć co testować – kilka ręcznie wpisanych użytkowników (jak `j.kowalski`, `a.nowak`) nie
+pokazuje, jak zachowa się katalog przy setkach osób. Etap B0 to skrypt, który generuje taką testową
+strukturę **w samym LLDAP** (nie w Synapse – to osobna rzecz, patrz Etap B niżej).
+
+**Pliki:** `scripts/seed_test_employees.py` (uruchamiany na PC), `scripts/requirements.txt`.
+
+**Co robi:** tworzy ok. 200–300 fikcyjnych pracowników w LLDAP (imię+nazwisko, login w formacie
+`i.nazwisko` jak u istniejących kont), przypisanych do grup-działów (Księgowość, Wydział EFS,
+Dyrekcja, IT, Sprzedaż) i grup-lokalizacji (Warszawa, Kraków, Poznań – podmień na prawdziwe nazwy
+w pliku, jeśli mają być inne), wszystkich z **jednym wspólnym hasłem testowym**. Wyłącznie do
+testów PoC – nigdy tak na produkcji z prawdziwymi ludźmi.
+
+**Dlaczego dwa etapy, a nie jeden skrypt:** LLDAP tworzy użytkowników i grupy przez swoje GraphQL API
+(działa to zwykłym zapytaniem HTTP, więc można to robić wprost z PC). Ustawianie **haseł** jest inne –
+LLDAP używa do tego protokołu PAKE (Opaque) ze względów bezpieczeństwa, a nie zwykłego REST-a.
+
+> ⚠️ **Złapane w praktyce (2026-10-11):** pierwsza wersja skryptu próbowała ustawić hasło endpointem
+> `POST /api/users/{id}/set-password-force`. Endpoint **zwracał status sukcesu**, ale hasło faktycznie
+> nie działało – logowanie (do Elementa i do samego panelu LLDAP) kończyło się błędem
+> „Nieprawidłowa nazwa użytkownika i/lub hasło”. Poprawne narzędzie to oficjalny plik binarny
+> **`lldap_set_password`**, który siedzi **wewnątrz kontenera LLDAP** (ścieżka `/app/lldap_set_password`,
+> NIE jest w `$PATH` – trzeba pełną ścieżką). Działa tylko uruchomiony **na VM** (`docker compose exec`),
+> nie da się go wywołać zdalnie przez HTTP z PC.
+
+**Krok 1 – konta i grupy (PC):**
+
+🪟 **PC**, PowerShell:
+
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python seed_test_employees.py
+```
+
+Skrypt sam czyta adres serwera (`TS_IP`) i hasło admina (`LLDAP_ADMIN_PASSWORD`) z Twojego `.env` –
+nic nie trzeba wpisywać ręcznie ani commitować. Na górze pliku jest `LIMIT` – **zacznij od małej
+wartości (np. 3)**, sprawdź czy działa, dopiero potem ustaw `LIMIT = None` (wszyscy, do `TOTAL_TARGET`).
+Skrypt jest idempotentny – można go puszczać wielokrotnie, pomija już istniejące konta.
+
+Po zakończeniu w katalogu `scripts/` pojawi się plik `set_test_passwords.sh` (generowany, w
+`.gitignore` – nie trafia do repo).
+
+**Krok 2 – hasła (VM):**
+
+🪟 **PC**:
+
+```powershell
+scp "<KATALOG_PROJEKTU>\scripts\set_test_passwords.sh" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/scripts/
+```
+
+(jeśli `scp` zwraca `dest open ... Failure` – katalog `scripts/` prawdopodobnie jeszcze nie istnieje
+na VM; załóż go: 🐧 **VM** `mkdir -p /opt/matrix/scripts`).
+
+🐧 **VM**:
+
+```bash
+cd /opt/matrix
+bash scripts/set_test_passwords.sh
+```
+
+Ten skrypt czyta `LLDAP_ADMIN_PASSWORD` wprost z `.env` na VM i dla każdego konta woła
+`docker compose exec lldap /app/lldap_set_password`. Po zakończeniu spróbuj zalogować się do
+Elementa jednym z testowych kont (login z listy, hasło = `TEST_PASSWORD` z góry skryptu
+`seed_test_employees.py`, domyślnie `TestHaslo123!`).
+
+**Sprawdzone 2026-10-11:** pełny cykl (konta + grupy z PC → hasła na VM) zweryfikowany końcowym
+logowaniem do Elementa – zadziałało za pierwszym poprawnym uruchomieniem.
+
+> ⚠️ Jeśli przy logowaniu zobaczysz `M_LIMIT_EXCEEDED` – to limiter prób logowania w Synapse (ochrona
+> przed brute-force), nie błąd hasła. Napotkane po kilku nieudanych próbach pod rząd (zanim jeszcze
+> naprawiliśmy hasło). Rozwiązanie: 🐧 **VM** `docker compose restart synapse` (czyści licznik),
+> potem spróbuj **raz**, nie wielokrotnie pod rząd.
+
+### Etap B – automatyczne zakładanie kont w Synapse *(niesprawdzone)*
+
+Inny temat niż Etap B0 wyżej (ten dotyczył LLDAP, ten dotyczy **Synapse**). Konto w Synapse powstaje
+dopiero przy **pierwszym logowaniu** przez LDAP, więc dopóki ktoś się nie zaloguje, nie ma go
+w katalogu użytkowników (user_directory). Dla ok. 300 osób potrzebny jest skrypt (np. cron na VM),
+który czyta użytkowników z LLDAP i zakłada ich w Synapse przez Admin API
+(`PUT /_synapse/admin/v2/users/@login:matrix.local` z nazwą wyświetlaną; wymaga tokenu konta
+administratora Synapse).
 
 Do sprawdzenia: czy konto założone w ten sposób potem normalnie loguje się przez moduł LDAP i czy API
 wymaga hasła (wtedy losowego, nieużywanego).

@@ -24,5 +24,9 @@ Szczegółowa_Instrukcja.md
 *.db
 media_store/
 
+# === Wygenerowane przez skrypty testowe (Etap B0) ===
+scripts/set_test_passwords.sh
+scripts/venv/
+
 # Wzór zmiennych środowiskowych MA być w repozytorium
 !.env.example
