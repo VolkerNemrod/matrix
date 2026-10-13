@@ -20,6 +20,9 @@ w projekcie użyto `matrix.local` i Nginx).
 
 > **Status:** to środowisko testowe (PoC), nie produkcyjne. Przed wdrożeniem przejdź listę kontrolną
 > w sekcji [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym).
+>
+> Zwijane ramki **🏭 Produkcja** (w całym dokumencie) zbierają, co trzeba zmienić przy wdrożeniu
+> produkcyjnym – na PoC możesz je pominąć. Szukaj po 🏭.
 
 ---
 
@@ -89,6 +92,8 @@ pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.loca
 widget/index.html                   Książka Adresowa (wyszukiwarka JS)
 scripts/seed_test_employees.py      Etap B0: testowe konta w LLDAP (patrz Książka adresowa)
 scripts/provision_synapse_users.py  Etap B+C: zakładanie kont w Synapse z działem/lokalizacją
+scripts/generate_address_book_widget.py  ściąga struktury firmy → widget/index.html (dane z LLDAP)
+scripts/setup_main_room.py          dwa pokoje tylko do odczytu (ogłoszenia + struktura z widgetem), dołącza wszystkich (Admin API)
 scripts/requirements.txt            zależności Pythona dla skryptów wyżej (requests)
 Matrix.md                           pierwotny plan testów
 docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków)
@@ -809,7 +814,8 @@ konto istnieje w katalogu mimo braku logowania.
 - `rootCA.pem` na stanowiskach (docelowo przez GPO),
 - DNS zamiast wpisów w pliku `hosts`,
 - opcjonalnie `auto_join_rooms` (wspólny pokój dla wszystkich) – nie wiadomo, czy działa dla kont
-  zakładanych przez LDAP / Admin API.
+  zakładanych przez LDAP / Admin API. Dołączanie wszystkich kont do pokoju głównego robi na razie skrypt
+  `setup_main_room.py` (patrz [Skrypty automatyzujące](#-skrypty-automatyzujące)).
 
 ### Decyzja: jeden serwer dla całej firmy
 
@@ -957,6 +963,7 @@ Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowi
 | `seed_test_employees.py` | Tworzy testowe konta w LLDAP (działy + lokalizacje, wspólne hasło testowe) | Potrzebujesz testowej masy pracowników do testów na realnej skali |
 | `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział, Lokalizacja` | Żeby cała firma była od razu widoczna w katalogu Synapse |
 | `generate_address_book_widget.py` | Generuje statyczną „ściągę” (`widget/index.html`) – drzewo Dział → Lokalizacja → Osoby, BEZ klikalnych linków | Szybki wizualny podgląd struktury firmy w widgecie |
+| `setup_main_room.py` | Zakłada dwa pokoje tylko do odczytu – „Firma-Ogłoszenia” (tablica ogłoszeń) i „Struktura organizacyjna” (widget-ściąga na całe okno) – i dołącza do nich wszystkich | Po provisioningu kont – żeby ogłoszenia i ściągę miał **każdy** pracownik |
 
 ### `seed_test_employees.py` i `provision_synapse_users.py`
 
@@ -977,7 +984,9 @@ poprzednie podejście z klikalnymi linkami `matrix.to` miało udokumentowane pro
 wymagający internetu, patrz „Znane ograniczenia”) – ten widget ich unika, bo nic nie trzeba klikać.
 
 Dział i lokalizacja są zwijane/rozwijane (`<details>`); wyszukiwarka w widgecie filtruje i automatycznie
-rozwija pasujące sekcje, ale też niczego nie otwiera – to czysto wizualny filtr.
+rozwija pasujące sekcje, ale też niczego nie otwiera – to czysto wizualny filtr. Przy każdej osobie widać
+dopisek w tym samym formacie co nazwa wyświetlana w Elemencie (`Imię Nazwisko – Dział, Lokalizacja`), więc
+duplikaty imion i nazwisk da się odróżnić; sortowanie jest po polsku (nazwisko, potem imię).
 
 **Uruchomienie:**
 
@@ -1006,8 +1015,170 @@ scp "<KATALOG_PROJEKTU>\widget\index.html" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/widg
 Żaden restart kontenera nie jest potrzebny – nginx serwuje plik na żywo; w Elemencie wystarczy odświeżyć
 widget w pokoju.
 
-**Status:** ⚠️ niesprawdzone w praktyce na pełnej puli ~204 osób (napisane 2026-10-13, czeka na pierwsze
-uruchomienie i ocenę jak wygląda drzewo w realnym Elemencie).
+**Status:** ⚠️ plik wygenerowano lokalnie na ~204 osobach (2026-10-13), potem poprawiono skrypt (polskie sortowanie, dopiski z działem i lokalizacją, reset wyszukiwarki) – trzeba wygenerować go ponownie; widget nie został jeszcze
+obejrzany w realnym Elemencie.
+
+<details>
+<summary>🏭 <b>Produkcja:</b> widget-ściąga i skrypt, który go generuje</summary>
+
+- **Dane osobowe pod publicznym adresem.** Wygenerowany plik zawiera imiona, nazwiska i loginy wszystkich
+  pracowników i jest serwowany pod `/widget/` każdemu, kto dotrze do hosta. W PoC chroni to Tailscale. Na
+  produkcji ogranicz dostęp do sieci wewnętrznej (nginx `allow`/`deny`) albo przebuduj widget tak, żeby
+  pobierał dane dopiero po zalogowaniu (np. tokenem OpenID z Widget API) zamiast statycznego pliku.
+- **Gdzie uruchamiać.** Teraz skrypt działa na PC, kontem `admin` LLDAP i hasłem z `.env`. Na produkcji uruchamiaj
+  go na serwerze (cron albo zaraz po `provision_synapse_users.py`), najlepiej kontem tylko do odczytu
+  (grupa `lldap_strict_readonly` – do sprawdzenia, czy wystarcza do zapytania `users`).
+- **Listy działów i lokalizacji** (`DEPARTMENTS`, `LOCATIONS`) są wpisane na sztywno w trzech skryptach. Na
+  produkcji wynieś je do jednego pliku konfiguracyjnego albo czytaj z grup LLDAP.
+- **Repozytorium:** wygenerowany `widget/index.html` jest śledzony w git, a więc dane pracowników trafiają do
+  repo. Na produkcji dodaj go do `.gitignore` i generuj na serwerze.
+
+</details>
+
+### `setup_main_room.py` – dwa pokoje tylko do odczytu: ogłoszenia i struktura organizacyjna
+
+Widget w Matrixie jest przypisany do **pokoju** (to zdarzenie stanu pokoju), nie do użytkownika ani do całego
+serwera – ustawienia „widget dla wszystkich” nie ma. Żeby każdy pracownik miał ściągę, musi być w pokoju,
+w którym administrator ustawił widget i jego układ. Skrypt zakłada **dwa pokoje tylko do odczytu** (te same
+zasady uprawnień i ta sama lista piszących) i dołącza do nich wszystkich:
+
+| Pokój | Alias | Zawartość |
+|---|---|---|
+| **Firma-Ogłoszenia** | `#firma-ogloszenia:matrix.local` | tablica ogłoszeń, bez widgetu |
+| **Struktura organizacyjna** | `#struktura-organizacyjna:matrix.local` | widget-ściąga przypięty u góry na 100% wysokości okna |
+
+**Dlaczego dwa pokoje, a nie jeden z widgetem obok ogłoszeń** (sprawdzone w Elemencie Desktop, 2026-10-14):
+widget przypięty u góry (`top`) pokazuje się od razu, bez klikania (sprawdzone na koncie administratora), ale jako
+poziomy pasek nad wiadomościami. Widget w panelu bocznym (`right`) **nie otwiera się sam** – trzeba kliknąć
+„Rozszerzenia”, a szerokości panelu serwer nie ustawi (to ustawienie klienta; każdy ustawia ją u siebie).
+Dlatego widget trafił do osobnego pokoju, w którym zajmuje całe okno.
+
+Skrypt robi to automatycznie, dla każdego z pokoi:
+
+1. loguje się do Synapse jako administrator (to samo konto co w `provision_synapse_users.py`),
+2. znajduje pokój po aliasie (`MAIN_ROOM_ALIAS` dla ogłoszeń, `ORG_ROOM_ALIAS` dla struktury), a jeśli go nie ma – tworzy go
+   (albo używa pokoju wskazanego przez `--room-id`, razem z `--only`),
+3. ustawia nazwę, temat i uprawnienia: widget, jego układ, nazwę, temat i uprawnienia pokoju może zmieniać tylko
+   administrator. Przy `MAIN_ROOM_READONLY=true` oba pokoje są **tylko do odczytu**: czytają wszyscy, a pisać mogą
+   tylko administrator i osoby wpisane w `MAIN_ROOM_WRITERS` (reakcje emoji mogą dawać wszyscy; wątki i
+   odpowiedzi to zwykłe wiadomości, więc też wymagają prawa pisania),
+4. dołącza do pokoju wszystkie lokalne konta przez Admin API (bez zaproszeń i klikania); pomija osoby, które
+   już są w pokoju, oraz te, które same z niego wyszły (chyba że dasz `--rejoin`),
+5. w pokoju „Struktura organizacyjna” ustawia widget (adres z `WIDGET_URL`) i przypina go u góry na 100% wysokości
+   okna; w pokoju „Firma-Ogłoszenia” usuwa widget i jego przypięcie, jeśli kiedyś tam były (ręczne usunięcie
+   widgetu przez administratora cofa kolejne uruchomienie skryptu).
+
+Skrypt jest idempotentny – można go puszczać wielokrotnie (np. po każdym `provision_synapse_users.py`).
+
+**Wymagania wstępne:** konta istnieją w Synapse (Etap B + C), działa konto administratora i nginx przepuszcza
+`/_synapse/admin` (opisane w Etapie B + C), a w `.env` jest adres widgetu (wzór w `.env.example`):
+
+```
+# adres widgetu – w PoC nazwa z Tailscale, na produkcji prawdziwa domena
+WIDGET_URL=https://<PELNA-NAZWA-TS>/widget/
+
+# ustawienia pokoju (wszystko opcjonalne; poniżej wartości domyślne)
+# alias: małe litery, bez spacji i polskich znaków; READONLY=false oznacza zwykły pokój, w którym piszą wszyscy;
+# WRITERS: loginy osób z prawem pisania (oprócz admina), po przecinku
+# pokój ogłoszeń (bez widgetu)
+MAIN_ROOM_NAME=Firma-Ogłoszenia
+MAIN_ROOM_ALIAS=firma-ogloszenia
+MAIN_ROOM_TOPIC=Ogłoszenia dla wszystkich pracowników (tylko do odczytu)
+# pokój ze strukturą firmy (z widgetem na całe okno)
+ORG_ROOM_NAME=Struktura organizacyjna
+ORG_ROOM_ALIAS=struktura-organizacyjna
+ORG_ROOM_TOPIC=Ściąga: kto jest kim w firmie (tylko do odczytu)
+# zasady wspólne dla obu pokoi
+MAIN_ROOM_READONLY=true
+MAIN_ROOM_WRITERS=j.kowalski,a.nowak
+```
+
+Adres musi być osiągalny po HTTPS z **każdego** klienta – w PoC to nazwa z Tailscale (jak dla telefonu w kroku
+9.2), nie `matrix.local`. Zapisany w pokoju jest jeden adres, a `matrix.local` rozwiąże tylko komputer z wpisem
+w `hosts`.
+
+**Uruchomienie** (🪟 **PC**, to samo środowisko `venv` co pozostałe skrypty):
+
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+venv\Scripts\activate
+python setup_main_room.py --dry-run
+python setup_main_room.py
+```
+
+Najpierw `--dry-run` – pokazuje, co skrypt by zrobił (ile kont dołączy, czy pokój istnieje), niczego nie
+zapisując. Jeśli pokój jeszcze nie istnieje, tryb próbny sprawdza tylko logowanie i konfigurację i pomija
+resztę kroków. Bezpieczna kolejność przy pierwszym użyciu: `--only struktura --skip-join` (sam pokój i widget,
+bez ludzi), obejrzenie wyniku w Elemencie jako administrator, dopiero potem pełny przebieg bez `--skip-join`.
+Każde uruchomienie loguje konto administratora – nie uruchamiaj skryptu wielokrotnie pod rząd (patrz
+[Rozwiązywanie problemów](#rozwiązywanie-problemów), punkt 5).
+
+| Opcja | Co robi |
+|---|---|
+| `--dry-run` | tylko pokazuje plan, bez zapisu |
+| `--only ogloszenia` / `--only struktura` | obsługuje tylko jeden z dwóch pokoi (domyślnie oba) |
+| `--room-id '!abc:matrix.local'` | używa istniejącego pokoju zamiast aliasu; wymaga `--only` (konto admina musi być w nim członkiem z uprawnieniami moderatora) |
+| `--skip-join` | nie dołącza użytkowników (tylko uprawnienia i widget) |
+| `--rejoin` | dołącza też osoby, które wcześniej same wyszły z pokoju |
+
+> W PoC jest już ręcznie założony pokój `Firma-Ogólny` (bez aliasu). Domyślne ustawienia zakładają **nowe** pokoje
+> `Firma-Ogłoszenia` i `Struktura organizacyjna`, więc nie ma kolizji nazw. Jeśli wolisz użyć starego pokoju, wskaż go
+> przez `--only ... --room-id` (identyfikator: Element → ustawienia pokoju → Zaawansowane); konto administratora
+> musi być w nim członkiem.
+
+**Co sprawdzić po uruchomieniu:** zaloguj się **drugim kontem** (np. `--profile`, patrz Krok 10) i zobacz, czy
+oba pokoje są na liście, czy w „Strukturze organizacyjnej” widget zajmuje okno, a w „Firma-Ogłoszenia” widgetu nie
+ma, czy zwykły użytkownik nie może pisać i czy osoba z `MAIN_ROOM_WRITERS` może. Gdyby Element ograniczył
+wysokość widgetu poniżej 100%, można go rozwinąć przyciskiem „powiększ” w jego nagłówku.
+
+**Status:** napisane 2026-10-13, przerobione na dwa pokoje 2026-10-14.
+
+- ✅ Sprawdzone: skrypt loguje się, tworzy pokoje, ustawia uprawnienia, a widget zapisany przez skrypt wyświetlił się
+  w Elemencie na koncie administratora (u góry pokoju, przy wysokości 35%). Ponowne uruchomienie jest idempotentne
+  (`--dry-run` pokazuje „już poprawne” / „już ustawiony”).
+- ⚠️ Niesprawdzone: wygląd widgetu przy 100% wysokości; dołączenie ~204 kont do obu pokoi (przebieg uruchomiony
+  2026-10-14, wyniku nie potwierdzono); zachowanie na drugim koncie (czy zwykły użytkownik nie może pisać, czy
+  osoba z `MAIN_ROOM_WRITERS` może, czy reakcje emoji działają); czy Element przy pierwszym otwarciu zapyta
+  każdego użytkownika o zgodę na widget dodany przez inną osobę.
+
+Formaty zdarzeń stanu (`im.vector.modular.widgets`, `io.element.widgets.layout`) są napisane na podstawie tego, jak
+działa Element. Jeśli widget kiedyś przestanie się wyświetlać, dodaj go raz ręcznie (`/addwidget <WIDGET_URL>`),
+obejrzyj zapisane zdarzenie (`/devtools` → Eksploruj stan pokoju) i porównaj z tym, co zapisuje skrypt.
+
+<details>
+<summary>🏭 <b>Produkcja:</b> pokój główny, adres widgetu, konto administratora</summary>
+
+- **Domena widgetu.** Adres w pokoju jest jeden i musi działać na każdym kliencie, z certyfikatem zaufanym bez
+  ręcznej instalacji. `matrix.local` odpada (`.local` jest zarezerwowane dla mDNS, na PoC wymaga wpisu w `hosts`
+  i ręcznie zainstalowanego rootCA). Na produkcji: prawdziwa domena (np. `matrix.firma.pl`), DNS wewnętrzny lub
+  publiczny i certyfikat z Let's Encrypt albo z wewnętrznego CA rozdanego przez GPO/MDM. Adres trzymaj w
+  `WIDGET_URL`; po zmianie domeny wystarczy ponownie uruchomić skrypt.
+- **`server_name` jest nie do zmiany.** `matrix.local` jest wpisane w każdy identyfikator użytkownika
+  (`@login:matrix.local`) i Synapse nie pozwala tego zmienić po fakcie. Docelową domenę wybierz **przed**
+  założeniem kont produkcyjnych – migracja oznacza konta od nowa. (`public_baseurl` i adres widgetu mogą mieć
+  inną nazwę niż `server_name`.)
+- **Konto administratora.** W PoC: konto testowe `s.lewandowski`, hasło wpisane w skrypcie i flaga `admin` ustawiona
+  `UPDATE`-em w bazie. Na produkcji: osobne konto serwisowe (nie osoba z działu), założone przez
+  `register_new_matrix_user -a` (wymaga `registration_shared_secret`), z hasłem lub tokenem poza kodem
+  (`.env` albo menedżer sekretów).
+- **Admin API.** `/_synapse/admin` jest w PoC wystawione przez to samo proxy co klienci. Na produkcji ogranicz je
+  po adresie IP albo uruchamiaj skrypty na serwerze przez localhost.
+- **Nowi pracownicy.** Ustaw `auto_join_rooms` w `homeserver.yaml` (niesprawdzone dla kont z Admin API i LDAP)
+  i/lub uruchamiaj skrypt cyklicznie po provisioningu. Skrypt nie wciąga z powrotem osób, które same wyszły.
+- **Wyjście z pokoju.** Matrix nie pozwala zablokować wyjścia z pokoju – kto wyjdzie, traci widget. Opisz to w
+  instrukcji dla pracowników albo dołącz taką osobę ponownie (`--rejoin`).
+- **Kto może pisać.** Lista `MAIN_ROOM_WRITERS` w `.env` jest najprostsza na PoC. Na produkcji lepiej wyprowadzić ją
+  z grupy w LLDAP (np. `Ogloszenia`), żeby nie edytować pliku na serwerze przy każdej zmianie osoby.
+- **Szyfrowanie.** Pokój jest tworzony bez E2E (duży pokój zbiorczy, a zdarzenia stanu nie są szyfrowane i tak).
+  Zdecyduj świadomie, czy na produkcji ma być inaczej.
+- **Zgoda na widget.** Możliwe, że każdy pracownik zobaczy przy pierwszym otwarciu pytanie o zgodę na widget
+  dodany przez administratora – niesprawdzone. Jeśli tak, dopisz do instrukcji dla pracowników.
+- **Limit logowania (`rc_login`).** Każde uruchomienie skryptu loguje konto administratora, a Synapse ogranicza
+  liczbę prób (w PoC po kilku uruchomieniach pod rząd czekanie sięgnęło ok. 4 minut). Na produkcji uruchamiaj
+  skrypt rzadko (np. po provisioningu) albo użyj tokenu zamiast logowania hasłem; limit można też poluzować w
+  `homeserver.yaml` dla konta serwisowego.
+
+</details>
 
 ---
 
@@ -1043,6 +1214,10 @@ uruchomienie i ocenę jak wygląda drzewo w realnym Elemencie).
 6. Po zmianach przetestuj ponownie: logowanie kontem z LLDAP (Synapse → LDAP) i rozmowę A/V
    (Synapse ↔ Coturn).
 7. Rozmiar VM (4 GB / 2 vCPU) dla ok. 300 użytkowników jest **niesprawdzony**.
+8. **Domena i `server_name`:** wybierz docelową domenę przed założeniem kont – `server_name` jest wpisany
+   w każdy identyfikator użytkownika i nie da się go zmienić (szczegóły: ramka 🏭 przy `setup_main_room.py`).
+9. **Konto administratora Synapse:** osobne konto serwisowe zamiast testowego, hasło poza kodem skryptów.
+10. Przejrzyj wszystkie zwijane ramki **🏭 Produkcja** w tym dokumencie (szukaj po 🏭).
 
 ---
 
@@ -1081,12 +1256,21 @@ uruchomienie i ocenę jak wygląda drzewo w realnym Elemencie).
 - **Wskazówka:** `sudo ss -tn | grep IP_TELEFONU` na VM **nic nie pokazuje**, bo Nginx działa w kontenerze –
   do podglądu zapytań użyj logów (`docker compose logs -f --tail=0 proxy`).
 
+**5. Skrypt (`setup_main_room.py`) kończy się `HTTP 429 M_LIMIT_EXCEEDED` przy logowaniu administratora**
+- **Objawy:** `Logowanie admina 's.lewandowski' nie powiodło się: HTTP 429 ... retry_after_ms`.
+- **Przyczyna:** limiter prób logowania w Synapse (to nie jest błąd hasła). Każde uruchomienie skryptu loguje
+  to samo konto, a kilka uruchomień pod rząd wydłuża czas oczekiwania (2026-10-14: z kilkunastu sekund do ok.
+  4 minut).
+- **Rozwiązanie:** poczekaj. Skrypt sam czeka i ponawia logowanie (wypisuje `limit prób logowania, czekam Ns`) –
+  nie przerywaj go i nie uruchamiaj drugiego równolegle, bo to wydłuża czekanie. Ewentualnie `docker compose
+  restart synapse` czyści licznik (jak w uwadze przy Etapie B0).
+
 ### ⚠️ Możliwe, niesprawdzone (zajrzyj tu dopiero, jeśli zobaczysz taki objaw)
 
-**5. Błędy `\r` przy uruchamianiu skryptu** – windowsowe końce linii; naprawa:
+**6. Błędy `\r` przy uruchamianiu skryptu** – windowsowe końce linii; naprawa:
 `sed -i 's/\r$//' pki/generate-pki.sh pki/v3.ext`.
 
-**6. Synapse restartuje się, w logach brak klucza podpisu (`signing key`) lub brak uprawnień do `/data`**
+**7. Synapse restartuje się, w logach brak klucza podpisu (`signing key`) lub brak uprawnień do `/data`**
 Obraz Synapse nie zawsze sam tworzy klucz, a działa jako użytkownik `991`, który może nie mieć prawa zapisu
 w zamontowanym katalogu. Rozwiązanie (do potwierdzenia po zobaczeniu logów):
 
@@ -1097,7 +1281,7 @@ docker compose run --rm --entrypoint python synapse -m synapse.app.homeserver --
 docker compose up -d
 ```
 
-**7. Nginx (`matrix-proxy`) nie startuje** – zwykle brakuje certyfikatów w `/opt/matrix/certs`. Sprawdź
+**8. Nginx (`matrix-proxy`) nie startuje** – zwykle brakuje certyfikatów w `/opt/matrix/certs`. Sprawdź
 `ls certs` i powtórz krok 6. Po dodaniu bloków dla Tailscale (krok 9.2) brakujące pliki
 `<PELNA-NAZWA-TS>.crt` i `.key` też zatrzymają Nginx.
 

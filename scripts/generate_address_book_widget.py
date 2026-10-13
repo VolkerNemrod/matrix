@@ -103,6 +103,23 @@ class LldapReader:
         return data["data"]["users"]
 
 
+# Polska kolejnosc alfabetyczna (a, ą, b, c, ć ... ś ... ź, ż) -- domyslne sortowanie
+# Pythona idzie po kodach znakow i wrzuca litery z ogonkami za 'z'.
+PL_ALPHABET = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż"
+PL_ORDER = {c: i for i, c in enumerate(PL_ALPHABET)}
+
+
+def pl_key(s: str):
+    return [PL_ORDER.get(c, 100 + ord(c)) for c in s.lower()]
+
+
+def person_sort_key(p):
+    parts = p["name"].split()
+    last = parts[-1] if parts else p["name"]
+    first = " ".join(parts[:-1])
+    return (pl_key(last), pl_key(first))
+
+
 def build_tree(users):
     """Zwraca: { dzial: { lokalizacja: [ {name, login}, ... ], "_bez_lokalizacji": [...] }, "_bez_dzialu": [...] }"""
     tree = {}
@@ -116,7 +133,15 @@ def build_tree(users):
         group_names = {g["displayName"] for g in (u.get("groups") or [])}
         dept = next((d for d in DEPARTMENTS if d in group_names), None)
         loc = next((l for l in LOCATIONS if l in group_names), None)
-        person = {"name": name, "login": u["id"]}
+        # Ten sam zapis co displayname w Elemencie (provision_synapse_users.py):
+        # "Imie Nazwisko – Dzial, Lokalizacja"
+        if dept and loc:
+            suffix = f" – {dept}, {loc}"
+        elif dept:
+            suffix = f" – {dept}"
+        else:
+            suffix = ""
+        person = {"name": name, "login": u["id"], "suffix": suffix}
 
         if not dept:
             no_dept.append(person)
@@ -128,8 +153,8 @@ def build_tree(users):
     # sortowanie osob w kazdej grupie alfabetycznie po nazwisku
     for dept in tree.values():
         for loc in dept.values():
-            loc.sort(key=lambda p: p["name"].split()[-1] if p["name"].split() else p["name"])
-    no_dept.sort(key=lambda p: p["name"].split()[-1] if p["name"].split() else p["name"])
+            loc.sort(key=person_sort_key)
+    no_dept.sort(key=person_sort_key)
 
     return tree, no_dept
 
@@ -153,7 +178,7 @@ def render_html(tree: dict, no_dept: list) -> str:
             people = locs[loc]
             rows = "\n".join(
                 f'          <li class="person" data-search="{esc(p["name"].lower())} {esc(loc.lower())} {esc(dept.lower())} {esc(p["login"].lower())}">'
-                f'<span class="name">{esc(p["name"])}</span>'
+                f'<span class="name">{esc(p["name"])}<span class="suffix">{esc(p["suffix"])}</span></span>'
                 f'<span class="meta">@{esc(p["login"])}</span></li>'
                 for p in people
             )
@@ -211,7 +236,8 @@ def render_html(tree: dict, no_dept: list) -> str:
   ul.people {{ list-style:none; margin:0 0 6px; padding:0; }}
   li.person {{ display:flex; justify-content:space-between; gap:10px; padding:5px 4px; border-bottom:1px solid var(--line); }}
   li.person:last-child {{ border-bottom:none; }}
-  .name {{ font-weight:500; }}
+  .name {{ font-weight:500; user-select:text; }}
+  .suffix {{ color:var(--muted); font-weight:400; }}
   .meta {{ color:var(--muted); font-size:12px; white-space:nowrap; }}
   .hidden {{ display:none !important; }}
   #empty {{ display:none; padding:16px 6px; color:var(--muted); }}
@@ -264,7 +290,7 @@ def render_html(tree: dict, no_dept: list) -> str:
         for (const loc of locBlocks) {{
           const v = processRows(loc.querySelectorAll("li.person"));
           loc.classList.toggle("hidden", v === 0 && words.length > 0);
-          if (words.length > 0) loc.open = v > 0;
+          loc.open = words.length > 0 ? v > 0 : true;
           deptVisible += v;
         }}
       }} else {{
@@ -272,7 +298,7 @@ def render_html(tree: dict, no_dept: list) -> str:
       }}
 
       dept.classList.toggle("hidden", deptVisible === 0 && words.length > 0);
-      if (words.length > 0) dept.open = deptVisible > 0;
+      dept.open = words.length > 0 ? deptVisible > 0 : false;
       visibleTotal += deptVisible;
     }}
 

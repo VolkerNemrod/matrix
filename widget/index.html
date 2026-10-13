@@ -23,7 +23,8 @@
   ul.people { list-style:none; margin:0 0 6px; padding:0; }
   li.person { display:flex; justify-content:space-between; gap:10px; padding:5px 4px; border-bottom:1px solid var(--line); }
   li.person:last-child { border-bottom:none; }
-  .name { font-weight:500; }
+  .name { font-weight:500; user-select:text; }
+  .suffix { color:var(--muted); font-weight:400; }
   .meta { color:var(--muted); font-size:12px; white-space:nowrap; }
   .hidden { display:none !important; }
   #empty { display:none; padding:16px 6px; color:var(--muted); }
@@ -42,67 +43,67 @@
         <details class="loc" open>
           <summary>Warszawa <span class="count">(19)</span></summary>
           <ul class="people">
-          <li class="person" data-search="dariusz adamczyk warszawa księgowość d.adamczyk"><span class="name">Dariusz Adamczyk</span><span class="meta">@d.adamczyk</span></li>
-          <li class="person" data-search="paweł chmielewski warszawa księgowość p.chmielewski"><span class="name">Paweł Chmielewski</span><span class="meta">@p.chmielewski</span></li>
-          <li class="person" data-search="natalia król warszawa księgowość n.krol"><span class="name">Natalia Król</span><span class="meta">@n.krol</span></li>
-          <li class="person" data-search="dorota majewski warszawa księgowość d.majewski"><span class="name">Dorota Majewski</span><span class="meta">@d.majewski</span></li>
-          <li class="person" data-search="ireneusz malinowski warszawa księgowość i.malinowski"><span class="name">Ireneusz Malinowski</span><span class="meta">@i.malinowski</span></li>
-          <li class="person" data-search="ewa michalak warszawa księgowość e.michalak"><span class="name">Ewa Michalak</span><span class="meta">@e.michalak</span></li>
-          <li class="person" data-search="ewelina michalski warszawa księgowość e.michalski"><span class="name">Ewelina Michalski</span><span class="meta">@e.michalski</span></li>
-          <li class="person" data-search="marta pawłowski warszawa księgowość m.pawlowski"><span class="name">Marta Pawłowski</span><span class="meta">@m.pawlowski</span></li>
-          <li class="person" data-search="grażyna pietrzak warszawa księgowość g.pietrzak"><span class="name">Grażyna Pietrzak</span><span class="meta">@g.pietrzak</span></li>
-          <li class="person" data-search="danuta piotrowski warszawa księgowość d.piotrowski"><span class="name">Danuta Piotrowski</span><span class="meta">@d.piotrowski</span></li>
-          <li class="person" data-search="bożena rutkowski warszawa księgowość b.rutkowski"><span class="name">Bożena Rutkowski</span><span class="meta">@b.rutkowski</span></li>
-          <li class="person" data-search="marzena sikora warszawa księgowość m.sikora"><span class="name">Marzena Sikora</span><span class="meta">@m.sikora</span></li>
-          <li class="person" data-search="wiesław sikora warszawa księgowość w.sikora"><span class="name">Wiesław Sikora</span><span class="meta">@w.sikora</span></li>
-          <li class="person" data-search="michał stępień warszawa księgowość m.stepien"><span class="name">Michał Stępień</span><span class="meta">@m.stepien</span></li>
-          <li class="person" data-search="justyna walczak warszawa księgowość j.walczak"><span class="name">Justyna Walczak</span><span class="meta">@j.walczak</span></li>
-          <li class="person" data-search="damian woźniak warszawa księgowość d.wozniak"><span class="name">Damian Woźniak</span><span class="meta">@d.wozniak</span></li>
-          <li class="person" data-search="bożena wróbel warszawa księgowość b.wrobel"><span class="name">Bożena Wróbel</span><span class="meta">@b.wrobel</span></li>
-          <li class="person" data-search="alicja wójcik warszawa księgowość a.wojcik"><span class="name">Alicja Wójcik</span><span class="meta">@a.wojcik</span></li>
-          <li class="person" data-search="robert zalewski warszawa księgowość r.zalewski"><span class="name">Robert Zalewski</span><span class="meta">@r.zalewski</span></li>
+          <li class="person" data-search="dariusz adamczyk warszawa księgowość d.adamczyk"><span class="name">Dariusz Adamczyk<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@d.adamczyk</span></li>
+          <li class="person" data-search="paweł chmielewski warszawa księgowość p.chmielewski"><span class="name">Paweł Chmielewski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@p.chmielewski</span></li>
+          <li class="person" data-search="natalia król warszawa księgowość n.krol"><span class="name">Natalia Król<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@n.krol</span></li>
+          <li class="person" data-search="dorota majewski warszawa księgowość d.majewski"><span class="name">Dorota Majewski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@d.majewski</span></li>
+          <li class="person" data-search="ireneusz malinowski warszawa księgowość i.malinowski"><span class="name">Ireneusz Malinowski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@i.malinowski</span></li>
+          <li class="person" data-search="ewa michalak warszawa księgowość e.michalak"><span class="name">Ewa Michalak<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@e.michalak</span></li>
+          <li class="person" data-search="ewelina michalski warszawa księgowość e.michalski"><span class="name">Ewelina Michalski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@e.michalski</span></li>
+          <li class="person" data-search="marta pawłowski warszawa księgowość m.pawlowski"><span class="name">Marta Pawłowski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@m.pawlowski</span></li>
+          <li class="person" data-search="grażyna pietrzak warszawa księgowość g.pietrzak"><span class="name">Grażyna Pietrzak<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@g.pietrzak</span></li>
+          <li class="person" data-search="danuta piotrowski warszawa księgowość d.piotrowski"><span class="name">Danuta Piotrowski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@d.piotrowski</span></li>
+          <li class="person" data-search="bożena rutkowski warszawa księgowość b.rutkowski"><span class="name">Bożena Rutkowski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@b.rutkowski</span></li>
+          <li class="person" data-search="marzena sikora warszawa księgowość m.sikora"><span class="name">Marzena Sikora<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@m.sikora</span></li>
+          <li class="person" data-search="wiesław sikora warszawa księgowość w.sikora"><span class="name">Wiesław Sikora<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@w.sikora</span></li>
+          <li class="person" data-search="michał stępień warszawa księgowość m.stepien"><span class="name">Michał Stępień<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@m.stepien</span></li>
+          <li class="person" data-search="justyna walczak warszawa księgowość j.walczak"><span class="name">Justyna Walczak<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@j.walczak</span></li>
+          <li class="person" data-search="damian woźniak warszawa księgowość d.wozniak"><span class="name">Damian Woźniak<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@d.wozniak</span></li>
+          <li class="person" data-search="alicja wójcik warszawa księgowość a.wojcik"><span class="name">Alicja Wójcik<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@a.wojcik</span></li>
+          <li class="person" data-search="bożena wróbel warszawa księgowość b.wrobel"><span class="name">Bożena Wróbel<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@b.wrobel</span></li>
+          <li class="person" data-search="robert zalewski warszawa księgowość r.zalewski"><span class="name">Robert Zalewski<span class="suffix"> – Księgowość, Warszawa</span></span><span class="meta">@r.zalewski</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Kraków <span class="count">(9)</span></summary>
           <ul class="people">
-          <li class="person" data-search="maciej dudek kraków księgowość m.dudek"><span class="name">Maciej Dudek</span><span class="meta">@m.dudek</span></li>
-          <li class="person" data-search="zdzisław grabowski kraków księgowość z.grabowski"><span class="name">Zdzisław Grabowski</span><span class="meta">@z.grabowski</span></li>
-          <li class="person" data-search="józef jaworski kraków księgowość j.jaworski"><span class="name">Józef Jaworski</span><span class="meta">@j.jaworski</span></li>
-          <li class="person" data-search="alicja kowalczyk kraków księgowość a.kowalczyk"><span class="name">Alicja Kowalczyk</span><span class="meta">@a.kowalczyk</span></li>
-          <li class="person" data-search="patrycja kowalski kraków księgowość p.kowalski2"><span class="name">Patrycja Kowalski</span><span class="meta">@p.kowalski2</span></li>
-          <li class="person" data-search="barbara malinowski kraków księgowość b.malinowski"><span class="name">Barbara Malinowski</span><span class="meta">@b.malinowski</span></li>
-          <li class="person" data-search="justyna stępień kraków księgowość j.stepien"><span class="name">Justyna Stępień</span><span class="meta">@j.stepien</span></li>
-          <li class="person" data-search="jacek wróblewski kraków księgowość j.wroblewski"><span class="name">Jacek Wróblewski</span><span class="meta">@j.wroblewski</span></li>
-          <li class="person" data-search="marek zając kraków księgowość m.zajac"><span class="name">Marek Zając</span><span class="meta">@m.zajac</span></li>
+          <li class="person" data-search="maciej dudek kraków księgowość m.dudek"><span class="name">Maciej Dudek<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@m.dudek</span></li>
+          <li class="person" data-search="zdzisław grabowski kraków księgowość z.grabowski"><span class="name">Zdzisław Grabowski<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@z.grabowski</span></li>
+          <li class="person" data-search="józef jaworski kraków księgowość j.jaworski"><span class="name">Józef Jaworski<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@j.jaworski</span></li>
+          <li class="person" data-search="alicja kowalczyk kraków księgowość a.kowalczyk"><span class="name">Alicja Kowalczyk<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@a.kowalczyk</span></li>
+          <li class="person" data-search="patrycja kowalski kraków księgowość p.kowalski2"><span class="name">Patrycja Kowalski<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@p.kowalski2</span></li>
+          <li class="person" data-search="barbara malinowski kraków księgowość b.malinowski"><span class="name">Barbara Malinowski<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@b.malinowski</span></li>
+          <li class="person" data-search="justyna stępień kraków księgowość j.stepien"><span class="name">Justyna Stępień<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@j.stepien</span></li>
+          <li class="person" data-search="jacek wróblewski kraków księgowość j.wroblewski"><span class="name">Jacek Wróblewski<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@j.wroblewski</span></li>
+          <li class="person" data-search="marek zając kraków księgowość m.zajac"><span class="name">Marek Zając<span class="suffix"> – Księgowość, Kraków</span></span><span class="meta">@m.zajac</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Poznań <span class="count">(23)</span></summary>
           <ul class="people">
-          <li class="person" data-search="oliwia baran poznań księgowość o.baran"><span class="name">Oliwia Baran</span><span class="meta">@o.baran</span></li>
-          <li class="person" data-search="bożena górski poznań księgowość b.gorski"><span class="name">Bożena Górski</span><span class="meta">@b.gorski</span></li>
-          <li class="person" data-search="julia górski poznań księgowość j.gorski"><span class="name">Julia Górski</span><span class="meta">@j.gorski</span></li>
-          <li class="person" data-search="zofia jankowski poznań księgowość z.jankowski"><span class="name">Zofia Jankowski</span><span class="meta">@z.jankowski</span></li>
-          <li class="person" data-search="przemysław kowalski poznań księgowość p.kowalski"><span class="name">Przemysław Kowalski</span><span class="meta">@p.kowalski</span></li>
-          <li class="person" data-search="dominika król poznań księgowość d.krol2"><span class="name">Dominika Król</span><span class="meta">@d.krol2</span></li>
-          <li class="person" data-search="waldemar kwiatkowski poznań księgowość w.kwiatkowski"><span class="name">Waldemar Kwiatkowski</span><span class="meta">@w.kwiatkowski</span></li>
-          <li class="person" data-search="robert lewandowski poznań księgowość r.lewandowski"><span class="name">Robert Lewandowski</span><span class="meta">@r.lewandowski</span></li>
-          <li class="person" data-search="janina malinowski poznań księgowość j.malinowski"><span class="name">Janina Malinowski</span><span class="meta">@j.malinowski</span></li>
-          <li class="person" data-search="piotr marciniak poznań księgowość p.marciniak"><span class="name">Piotr Marciniak</span><span class="meta">@p.marciniak</span></li>
-          <li class="person" data-search="dawid mazur poznań księgowość d.mazur"><span class="name">Dawid Mazur</span><span class="meta">@d.mazur</span></li>
-          <li class="person" data-search="tomasz nowicki poznań księgowość t.nowicki"><span class="name">Tomasz Nowicki</span><span class="meta">@t.nowicki</span></li>
-          <li class="person" data-search="jacek olszewski poznań księgowość j.olszewski2"><span class="name">Jacek Olszewski</span><span class="meta">@j.olszewski2</span></li>
-          <li class="person" data-search="norbert pietrzak poznań księgowość n.pietrzak"><span class="name">Norbert Pietrzak</span><span class="meta">@n.pietrzak</span></li>
-          <li class="person" data-search="stanisława rutkowski poznań księgowość s.rutkowski"><span class="name">Stanisława Rutkowski</span><span class="meta">@s.rutkowski</span></li>
-          <li class="person" data-search="grzegorz walczak poznań księgowość g.walczak"><span class="name">Grzegorz Walczak</span><span class="meta">@g.walczak</span></li>
-          <li class="person" data-search="wiesław wieczorek poznań księgowość w.wieczorek"><span class="name">Wiesław Wieczorek</span><span class="meta">@w.wieczorek</span></li>
-          <li class="person" data-search="magdalena witkowski poznań księgowość m.witkowski"><span class="name">Magdalena Witkowski</span><span class="meta">@m.witkowski</span></li>
-          <li class="person" data-search="daniel wiśniewski poznań księgowość d.wisniewski"><span class="name">Daniel Wiśniewski</span><span class="meta">@d.wisniewski</span></li>
-          <li class="person" data-search="sebastian wróblewski poznań księgowość s.wroblewski"><span class="name">Sebastian Wróblewski</span><span class="meta">@s.wroblewski</span></li>
-          <li class="person" data-search="norbert wójcik poznań księgowość n.wojcik"><span class="name">Norbert Wójcik</span><span class="meta">@n.wojcik</span></li>
-          <li class="person" data-search="daniel zieliński poznań księgowość d.zielinski"><span class="name">Daniel Zieliński</span><span class="meta">@d.zielinski</span></li>
-          <li class="person" data-search="edyta zieliński poznań księgowość e.zielinski"><span class="name">Edyta Zieliński</span><span class="meta">@e.zielinski</span></li>
+          <li class="person" data-search="oliwia baran poznań księgowość o.baran"><span class="name">Oliwia Baran<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@o.baran</span></li>
+          <li class="person" data-search="bożena górski poznań księgowość b.gorski"><span class="name">Bożena Górski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@b.gorski</span></li>
+          <li class="person" data-search="julia górski poznań księgowość j.gorski"><span class="name">Julia Górski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@j.gorski</span></li>
+          <li class="person" data-search="zofia jankowski poznań księgowość z.jankowski"><span class="name">Zofia Jankowski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@z.jankowski</span></li>
+          <li class="person" data-search="przemysław kowalski poznań księgowość p.kowalski"><span class="name">Przemysław Kowalski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@p.kowalski</span></li>
+          <li class="person" data-search="dominika król poznań księgowość d.krol2"><span class="name">Dominika Król<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@d.krol2</span></li>
+          <li class="person" data-search="waldemar kwiatkowski poznań księgowość w.kwiatkowski"><span class="name">Waldemar Kwiatkowski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@w.kwiatkowski</span></li>
+          <li class="person" data-search="robert lewandowski poznań księgowość r.lewandowski"><span class="name">Robert Lewandowski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@r.lewandowski</span></li>
+          <li class="person" data-search="janina malinowski poznań księgowość j.malinowski"><span class="name">Janina Malinowski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@j.malinowski</span></li>
+          <li class="person" data-search="piotr marciniak poznań księgowość p.marciniak"><span class="name">Piotr Marciniak<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@p.marciniak</span></li>
+          <li class="person" data-search="dawid mazur poznań księgowość d.mazur"><span class="name">Dawid Mazur<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@d.mazur</span></li>
+          <li class="person" data-search="tomasz nowicki poznań księgowość t.nowicki"><span class="name">Tomasz Nowicki<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@t.nowicki</span></li>
+          <li class="person" data-search="jacek olszewski poznań księgowość j.olszewski2"><span class="name">Jacek Olszewski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@j.olszewski2</span></li>
+          <li class="person" data-search="norbert pietrzak poznań księgowość n.pietrzak"><span class="name">Norbert Pietrzak<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@n.pietrzak</span></li>
+          <li class="person" data-search="stanisława rutkowski poznań księgowość s.rutkowski"><span class="name">Stanisława Rutkowski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@s.rutkowski</span></li>
+          <li class="person" data-search="grzegorz walczak poznań księgowość g.walczak"><span class="name">Grzegorz Walczak<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@g.walczak</span></li>
+          <li class="person" data-search="wiesław wieczorek poznań księgowość w.wieczorek"><span class="name">Wiesław Wieczorek<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@w.wieczorek</span></li>
+          <li class="person" data-search="daniel wiśniewski poznań księgowość d.wisniewski"><span class="name">Daniel Wiśniewski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@d.wisniewski</span></li>
+          <li class="person" data-search="magdalena witkowski poznań księgowość m.witkowski"><span class="name">Magdalena Witkowski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@m.witkowski</span></li>
+          <li class="person" data-search="norbert wójcik poznań księgowość n.wojcik"><span class="name">Norbert Wójcik<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@n.wojcik</span></li>
+          <li class="person" data-search="sebastian wróblewski poznań księgowość s.wroblewski"><span class="name">Sebastian Wróblewski<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@s.wroblewski</span></li>
+          <li class="person" data-search="daniel zieliński poznań księgowość d.zielinski"><span class="name">Daniel Zieliński<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@d.zielinski</span></li>
+          <li class="person" data-search="edyta zieliński poznań księgowość e.zielinski"><span class="name">Edyta Zieliński<span class="suffix"> – Księgowość, Poznań</span></span><span class="meta">@e.zielinski</span></li>
           </ul>
         </details>
       </details>
@@ -111,60 +112,60 @@
         <details class="loc" open>
           <summary>Warszawa <span class="count">(13)</span></summary>
           <ul class="people">
-          <li class="person" data-search="tomasz jaworski warszawa wydział efs t.jaworski"><span class="name">Tomasz Jaworski</span><span class="meta">@t.jaworski</span></li>
-          <li class="person" data-search="patryk krawczyk warszawa wydział efs p.krawczyk"><span class="name">Patryk Krawczyk</span><span class="meta">@p.krawczyk</span></li>
-          <li class="person" data-search="stanisław król warszawa wydział efs s.krol"><span class="name">Stanisław Król</span><span class="meta">@s.krol</span></li>
-          <li class="person" data-search="zofia malinowski warszawa wydział efs z.malinowski"><span class="name">Zofia Malinowski</span><span class="meta">@z.malinowski</span></li>
-          <li class="person" data-search="dawid michalak warszawa wydział efs d.michalak"><span class="name">Dawid Michalak</span><span class="meta">@d.michalak</span></li>
-          <li class="person" data-search="marcin michalak warszawa wydział efs m.michalak"><span class="name">Marcin Michalak</span><span class="meta">@m.michalak</span></li>
-          <li class="person" data-search="patryk olszewski warszawa wydział efs p.olszewski"><span class="name">Patryk Olszewski</span><span class="meta">@p.olszewski</span></li>
-          <li class="person" data-search="edward pawłowski warszawa wydział efs e.pawlowski"><span class="name">Edward Pawłowski</span><span class="meta">@e.pawlowski</span></li>
-          <li class="person" data-search="marzena sadowski warszawa wydział efs m.sadowski"><span class="name">Marzena Sadowski</span><span class="meta">@m.sadowski</span></li>
-          <li class="person" data-search="jerzy szymański warszawa wydział efs j.szymanski2"><span class="name">Jerzy Szymański</span><span class="meta">@j.szymanski2</span></li>
-          <li class="person" data-search="patrycja tomaszewski warszawa wydział efs p.tomaszewski"><span class="name">Patrycja Tomaszewski</span><span class="meta">@p.tomaszewski</span></li>
-          <li class="person" data-search="aleksandra walczak warszawa wydział efs a.walczak"><span class="name">Aleksandra Walczak</span><span class="meta">@a.walczak</span></li>
-          <li class="person" data-search="izabela wójcik warszawa wydział efs i.wojcik"><span class="name">Izabela Wójcik</span><span class="meta">@i.wojcik</span></li>
+          <li class="person" data-search="tomasz jaworski warszawa wydział efs t.jaworski"><span class="name">Tomasz Jaworski<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@t.jaworski</span></li>
+          <li class="person" data-search="patryk krawczyk warszawa wydział efs p.krawczyk"><span class="name">Patryk Krawczyk<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@p.krawczyk</span></li>
+          <li class="person" data-search="stanisław król warszawa wydział efs s.krol"><span class="name">Stanisław Król<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@s.krol</span></li>
+          <li class="person" data-search="zofia malinowski warszawa wydział efs z.malinowski"><span class="name">Zofia Malinowski<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@z.malinowski</span></li>
+          <li class="person" data-search="dawid michalak warszawa wydział efs d.michalak"><span class="name">Dawid Michalak<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@d.michalak</span></li>
+          <li class="person" data-search="marcin michalak warszawa wydział efs m.michalak"><span class="name">Marcin Michalak<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@m.michalak</span></li>
+          <li class="person" data-search="patryk olszewski warszawa wydział efs p.olszewski"><span class="name">Patryk Olszewski<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@p.olszewski</span></li>
+          <li class="person" data-search="edward pawłowski warszawa wydział efs e.pawlowski"><span class="name">Edward Pawłowski<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@e.pawlowski</span></li>
+          <li class="person" data-search="marzena sadowski warszawa wydział efs m.sadowski"><span class="name">Marzena Sadowski<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@m.sadowski</span></li>
+          <li class="person" data-search="jerzy szymański warszawa wydział efs j.szymanski2"><span class="name">Jerzy Szymański<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@j.szymanski2</span></li>
+          <li class="person" data-search="patrycja tomaszewski warszawa wydział efs p.tomaszewski"><span class="name">Patrycja Tomaszewski<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@p.tomaszewski</span></li>
+          <li class="person" data-search="aleksandra walczak warszawa wydział efs a.walczak"><span class="name">Aleksandra Walczak<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@a.walczak</span></li>
+          <li class="person" data-search="izabela wójcik warszawa wydział efs i.wojcik"><span class="name">Izabela Wójcik<span class="suffix"> – Wydział EFS, Warszawa</span></span><span class="meta">@i.wojcik</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Kraków <span class="count">(12)</span></summary>
           <ul class="people">
-          <li class="person" data-search="danuta jaworski kraków wydział efs d.jaworski"><span class="name">Danuta Jaworski</span><span class="meta">@d.jaworski</span></li>
-          <li class="person" data-search="alicja krawczyk kraków wydział efs a.krawczyk"><span class="name">Alicja Krawczyk</span><span class="meta">@a.krawczyk</span></li>
-          <li class="person" data-search="violetta król kraków wydział efs v.krol"><span class="name">Violetta Król</span><span class="meta">@v.krol</span></li>
-          <li class="person" data-search="przemysław malinowski kraków wydział efs p.malinowski"><span class="name">Przemysław Malinowski</span><span class="meta">@p.malinowski</span></li>
-          <li class="person" data-search="beata marciniak kraków wydział efs b.marciniak2"><span class="name">Beata Marciniak</span><span class="meta">@b.marciniak2</span></li>
-          <li class="person" data-search="joanna michalak kraków wydział efs j.michalak"><span class="name">Joanna Michalak</span><span class="meta">@j.michalak</span></li>
-          <li class="person" data-search="przemysław nowak kraków wydział efs p.nowak"><span class="name">Przemysław Nowak</span><span class="meta">@p.nowak</span></li>
-          <li class="person" data-search="filip nowakowski kraków wydział efs f.nowakowski"><span class="name">Filip Nowakowski</span><span class="meta">@f.nowakowski</span></li>
-          <li class="person" data-search="kazimierz nowakowski kraków wydział efs k.nowakowski"><span class="name">Kazimierz Nowakowski</span><span class="meta">@k.nowakowski</span></li>
-          <li class="person" data-search="violetta olszewski kraków wydział efs v.olszewski"><span class="name">Violetta Olszewski</span><span class="meta">@v.olszewski</span></li>
-          <li class="person" data-search="wioletta sadowski kraków wydział efs w.sadowski"><span class="name">Wioletta Sadowski</span><span class="meta">@w.sadowski</span></li>
-          <li class="person" data-search="zbigniew sikora kraków wydział efs z.sikora"><span class="name">Zbigniew Sikora</span><span class="meta">@z.sikora</span></li>
+          <li class="person" data-search="danuta jaworski kraków wydział efs d.jaworski"><span class="name">Danuta Jaworski<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@d.jaworski</span></li>
+          <li class="person" data-search="alicja krawczyk kraków wydział efs a.krawczyk"><span class="name">Alicja Krawczyk<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@a.krawczyk</span></li>
+          <li class="person" data-search="violetta król kraków wydział efs v.krol"><span class="name">Violetta Król<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@v.krol</span></li>
+          <li class="person" data-search="przemysław malinowski kraków wydział efs p.malinowski"><span class="name">Przemysław Malinowski<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@p.malinowski</span></li>
+          <li class="person" data-search="beata marciniak kraków wydział efs b.marciniak2"><span class="name">Beata Marciniak<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@b.marciniak2</span></li>
+          <li class="person" data-search="joanna michalak kraków wydział efs j.michalak"><span class="name">Joanna Michalak<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@j.michalak</span></li>
+          <li class="person" data-search="przemysław nowak kraków wydział efs p.nowak"><span class="name">Przemysław Nowak<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@p.nowak</span></li>
+          <li class="person" data-search="filip nowakowski kraków wydział efs f.nowakowski"><span class="name">Filip Nowakowski<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@f.nowakowski</span></li>
+          <li class="person" data-search="kazimierz nowakowski kraków wydział efs k.nowakowski"><span class="name">Kazimierz Nowakowski<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@k.nowakowski</span></li>
+          <li class="person" data-search="violetta olszewski kraków wydział efs v.olszewski"><span class="name">Violetta Olszewski<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@v.olszewski</span></li>
+          <li class="person" data-search="wioletta sadowski kraków wydział efs w.sadowski"><span class="name">Wioletta Sadowski<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@w.sadowski</span></li>
+          <li class="person" data-search="zbigniew sikora kraków wydział efs z.sikora"><span class="name">Zbigniew Sikora<span class="suffix"> – Wydział EFS, Kraków</span></span><span class="meta">@z.sikora</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Poznań <span class="count">(19)</span></summary>
           <ul class="people">
-          <li class="person" data-search="kazimierz adamczyk poznań wydział efs k.adamczyk"><span class="name">Kazimierz Adamczyk</span><span class="meta">@k.adamczyk</span></li>
-          <li class="person" data-search="daniel chmielewski poznań wydział efs d.chmielewski"><span class="name">Daniel Chmielewski</span><span class="meta">@d.chmielewski</span></li>
-          <li class="person" data-search="jan chmielewski poznań wydział efs j.chmielewski"><span class="name">Jan Chmielewski</span><span class="meta">@j.chmielewski</span></li>
-          <li class="person" data-search="jadwiga chmielewski poznań wydział efs j.chmielewski2"><span class="name">Jadwiga Chmielewski</span><span class="meta">@j.chmielewski2</span></li>
-          <li class="person" data-search="kazimierz chmielewski poznań wydział efs k.chmielewski"><span class="name">Kazimierz Chmielewski</span><span class="meta">@k.chmielewski</span></li>
-          <li class="person" data-search="ryszard jankowski poznań wydział efs r.jankowski"><span class="name">Ryszard Jankowski</span><span class="meta">@r.jankowski</span></li>
-          <li class="person" data-search="zbigniew kowalczyk poznań wydział efs z.kowalczyk"><span class="name">Zbigniew Kowalczyk</span><span class="meta">@z.kowalczyk</span></li>
-          <li class="person" data-search="maria krawczyk poznań wydział efs m.krawczyk"><span class="name">Maria Krawczyk</span><span class="meta">@m.krawczyk</span></li>
-          <li class="person" data-search="ewa majewski poznań wydział efs e.majewski"><span class="name">Ewa Majewski</span><span class="meta">@e.majewski</span></li>
-          <li class="person" data-search="bartosz marciniak poznań wydział efs b.marciniak"><span class="name">Bartosz Marciniak</span><span class="meta">@b.marciniak</span></li>
-          <li class="person" data-search="marek mazur poznań wydział efs m.mazur"><span class="name">Marek Mazur</span><span class="meta">@m.mazur</span></li>
-          <li class="person" data-search="natalia michalak poznań wydział efs n.michalak"><span class="name">Natalia Michalak</span><span class="meta">@n.michalak</span></li>
-          <li class="person" data-search="jan nowicki poznań wydział efs j.nowicki"><span class="name">Jan Nowicki</span><span class="meta">@j.nowicki</span></li>
-          <li class="person" data-search="mariusz olszewski poznań wydział efs m.olszewski"><span class="name">Mariusz Olszewski</span><span class="meta">@m.olszewski</span></li>
-          <li class="person" data-search="zbigniew piotrowski poznań wydział efs z.piotrowski"><span class="name">Zbigniew Piotrowski</span><span class="meta">@z.piotrowski</span></li>
-          <li class="person" data-search="joanna sadowski poznań wydział efs j.sadowski"><span class="name">Joanna Sadowski</span><span class="meta">@j.sadowski</span></li>
-          <li class="person" data-search="oliwia szymański poznań wydział efs o.szymanski"><span class="name">Oliwia Szymański</span><span class="meta">@o.szymanski</span></li>
-          <li class="person" data-search="daniel wieczorek poznań wydział efs d.wieczorek"><span class="name">Daniel Wieczorek</span><span class="meta">@d.wieczorek</span></li>
-          <li class="person" data-search="roman wróblewski poznań wydział efs r.wroblewski"><span class="name">Roman Wróblewski</span><span class="meta">@r.wroblewski</span></li>
+          <li class="person" data-search="kazimierz adamczyk poznań wydział efs k.adamczyk"><span class="name">Kazimierz Adamczyk<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@k.adamczyk</span></li>
+          <li class="person" data-search="daniel chmielewski poznań wydział efs d.chmielewski"><span class="name">Daniel Chmielewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@d.chmielewski</span></li>
+          <li class="person" data-search="jadwiga chmielewski poznań wydział efs j.chmielewski2"><span class="name">Jadwiga Chmielewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@j.chmielewski2</span></li>
+          <li class="person" data-search="jan chmielewski poznań wydział efs j.chmielewski"><span class="name">Jan Chmielewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@j.chmielewski</span></li>
+          <li class="person" data-search="kazimierz chmielewski poznań wydział efs k.chmielewski"><span class="name">Kazimierz Chmielewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@k.chmielewski</span></li>
+          <li class="person" data-search="ryszard jankowski poznań wydział efs r.jankowski"><span class="name">Ryszard Jankowski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@r.jankowski</span></li>
+          <li class="person" data-search="zbigniew kowalczyk poznań wydział efs z.kowalczyk"><span class="name">Zbigniew Kowalczyk<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@z.kowalczyk</span></li>
+          <li class="person" data-search="maria krawczyk poznań wydział efs m.krawczyk"><span class="name">Maria Krawczyk<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@m.krawczyk</span></li>
+          <li class="person" data-search="ewa majewski poznań wydział efs e.majewski"><span class="name">Ewa Majewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@e.majewski</span></li>
+          <li class="person" data-search="bartosz marciniak poznań wydział efs b.marciniak"><span class="name">Bartosz Marciniak<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@b.marciniak</span></li>
+          <li class="person" data-search="marek mazur poznań wydział efs m.mazur"><span class="name">Marek Mazur<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@m.mazur</span></li>
+          <li class="person" data-search="natalia michalak poznań wydział efs n.michalak"><span class="name">Natalia Michalak<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@n.michalak</span></li>
+          <li class="person" data-search="jan nowicki poznań wydział efs j.nowicki"><span class="name">Jan Nowicki<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@j.nowicki</span></li>
+          <li class="person" data-search="mariusz olszewski poznań wydział efs m.olszewski"><span class="name">Mariusz Olszewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@m.olszewski</span></li>
+          <li class="person" data-search="zbigniew piotrowski poznań wydział efs z.piotrowski"><span class="name">Zbigniew Piotrowski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@z.piotrowski</span></li>
+          <li class="person" data-search="joanna sadowski poznań wydział efs j.sadowski"><span class="name">Joanna Sadowski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@j.sadowski</span></li>
+          <li class="person" data-search="oliwia szymański poznań wydział efs o.szymanski"><span class="name">Oliwia Szymański<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@o.szymanski</span></li>
+          <li class="person" data-search="daniel wieczorek poznań wydział efs d.wieczorek"><span class="name">Daniel Wieczorek<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@d.wieczorek</span></li>
+          <li class="person" data-search="roman wróblewski poznań wydział efs r.wroblewski"><span class="name">Roman Wróblewski<span class="suffix"> – Wydział EFS, Poznań</span></span><span class="meta">@r.wroblewski</span></li>
           </ul>
         </details>
       </details>
@@ -173,52 +174,52 @@
         <details class="loc" open>
           <summary>Warszawa <span class="count">(19)</span></summary>
           <ul class="people">
-          <li class="person" data-search="krystyna adamczyk warszawa dyrekcja k.adamczyk2"><span class="name">Krystyna Adamczyk</span><span class="meta">@k.adamczyk2</span></li>
-          <li class="person" data-search="mateusz chmielewski warszawa dyrekcja m.chmielewski"><span class="name">Mateusz Chmielewski</span><span class="meta">@m.chmielewski</span></li>
-          <li class="person" data-search="alicja jabłoński warszawa dyrekcja a.jablonski"><span class="name">Alicja Jabłoński</span><span class="meta">@a.jablonski</span></li>
-          <li class="person" data-search="jolanta jankowski warszawa dyrekcja j.jankowski"><span class="name">Jolanta Jankowski</span><span class="meta">@j.jankowski</span></li>
-          <li class="person" data-search="przemysław kowalczyk warszawa dyrekcja p.kowalczyk"><span class="name">Przemysław Kowalczyk</span><span class="meta">@p.kowalczyk</span></li>
-          <li class="person" data-search="alicja krawczyk warszawa dyrekcja a.krawczyk2"><span class="name">Alicja Krawczyk</span><span class="meta">@a.krawczyk2</span></li>
-          <li class="person" data-search="edyta król warszawa dyrekcja e.krol"><span class="name">Edyta Król</span><span class="meta">@e.krol</span></li>
-          <li class="person" data-search="irena kwiatkowski warszawa dyrekcja i.kwiatkowski"><span class="name">Irena Kwiatkowski</span><span class="meta">@i.kwiatkowski</span></li>
-          <li class="person" data-search="daniel mazur warszawa dyrekcja d.mazur2"><span class="name">Daniel Mazur</span><span class="meta">@d.mazur2</span></li>
-          <li class="person" data-search="justyna mazur warszawa dyrekcja j.mazur"><span class="name">Justyna Mazur</span><span class="meta">@j.mazur</span></li>
-          <li class="person" data-search="agnieszka nowicki warszawa dyrekcja a.nowicki"><span class="name">Agnieszka Nowicki</span><span class="meta">@a.nowicki</span></li>
-          <li class="person" data-search="klaudia piotrowski warszawa dyrekcja k.piotrowski"><span class="name">Klaudia Piotrowski</span><span class="meta">@k.piotrowski</span></li>
-          <li class="person" data-search="sylwia rutkowski warszawa dyrekcja s.rutkowski2"><span class="name">Sylwia Rutkowski</span><span class="meta">@s.rutkowski2</span></li>
-          <li class="person" data-search="edyta szewczyk warszawa dyrekcja e.szewczyk"><span class="name">Edyta Szewczyk</span><span class="meta">@e.szewczyk</span></li>
-          <li class="person" data-search="krystyna tomaszewski warszawa dyrekcja k.tomaszewski"><span class="name">Krystyna Tomaszewski</span><span class="meta">@k.tomaszewski</span></li>
-          <li class="person" data-search="waldemar walczak warszawa dyrekcja w.walczak"><span class="name">Waldemar Walczak</span><span class="meta">@w.walczak</span></li>
-          <li class="person" data-search="iwona wieczorek warszawa dyrekcja i.wieczorek"><span class="name">Iwona Wieczorek</span><span class="meta">@i.wieczorek</span></li>
-          <li class="person" data-search="maria witkowski warszawa dyrekcja m.witkowski2"><span class="name">Maria Witkowski</span><span class="meta">@m.witkowski2</span></li>
-          <li class="person" data-search="tadeusz zalewski warszawa dyrekcja t.zalewski"><span class="name">Tadeusz Zalewski</span><span class="meta">@t.zalewski</span></li>
+          <li class="person" data-search="krystyna adamczyk warszawa dyrekcja k.adamczyk2"><span class="name">Krystyna Adamczyk<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@k.adamczyk2</span></li>
+          <li class="person" data-search="mateusz chmielewski warszawa dyrekcja m.chmielewski"><span class="name">Mateusz Chmielewski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@m.chmielewski</span></li>
+          <li class="person" data-search="alicja jabłoński warszawa dyrekcja a.jablonski"><span class="name">Alicja Jabłoński<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@a.jablonski</span></li>
+          <li class="person" data-search="jolanta jankowski warszawa dyrekcja j.jankowski"><span class="name">Jolanta Jankowski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@j.jankowski</span></li>
+          <li class="person" data-search="przemysław kowalczyk warszawa dyrekcja p.kowalczyk"><span class="name">Przemysław Kowalczyk<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@p.kowalczyk</span></li>
+          <li class="person" data-search="alicja krawczyk warszawa dyrekcja a.krawczyk2"><span class="name">Alicja Krawczyk<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@a.krawczyk2</span></li>
+          <li class="person" data-search="edyta król warszawa dyrekcja e.krol"><span class="name">Edyta Król<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@e.krol</span></li>
+          <li class="person" data-search="irena kwiatkowski warszawa dyrekcja i.kwiatkowski"><span class="name">Irena Kwiatkowski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@i.kwiatkowski</span></li>
+          <li class="person" data-search="daniel mazur warszawa dyrekcja d.mazur2"><span class="name">Daniel Mazur<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@d.mazur2</span></li>
+          <li class="person" data-search="justyna mazur warszawa dyrekcja j.mazur"><span class="name">Justyna Mazur<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@j.mazur</span></li>
+          <li class="person" data-search="agnieszka nowicki warszawa dyrekcja a.nowicki"><span class="name">Agnieszka Nowicki<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@a.nowicki</span></li>
+          <li class="person" data-search="klaudia piotrowski warszawa dyrekcja k.piotrowski"><span class="name">Klaudia Piotrowski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@k.piotrowski</span></li>
+          <li class="person" data-search="sylwia rutkowski warszawa dyrekcja s.rutkowski2"><span class="name">Sylwia Rutkowski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@s.rutkowski2</span></li>
+          <li class="person" data-search="edyta szewczyk warszawa dyrekcja e.szewczyk"><span class="name">Edyta Szewczyk<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@e.szewczyk</span></li>
+          <li class="person" data-search="krystyna tomaszewski warszawa dyrekcja k.tomaszewski"><span class="name">Krystyna Tomaszewski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@k.tomaszewski</span></li>
+          <li class="person" data-search="waldemar walczak warszawa dyrekcja w.walczak"><span class="name">Waldemar Walczak<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@w.walczak</span></li>
+          <li class="person" data-search="iwona wieczorek warszawa dyrekcja i.wieczorek"><span class="name">Iwona Wieczorek<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@i.wieczorek</span></li>
+          <li class="person" data-search="maria witkowski warszawa dyrekcja m.witkowski2"><span class="name">Maria Witkowski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@m.witkowski2</span></li>
+          <li class="person" data-search="tadeusz zalewski warszawa dyrekcja t.zalewski"><span class="name">Tadeusz Zalewski<span class="suffix"> – Dyrekcja, Warszawa</span></span><span class="meta">@t.zalewski</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Kraków <span class="count">(8)</span></summary>
           <ul class="people">
-          <li class="person" data-search="barbara adamczyk kraków dyrekcja b.adamczyk2"><span class="name">Barbara Adamczyk</span><span class="meta">@b.adamczyk2</span></li>
-          <li class="person" data-search="izabela krawczyk kraków dyrekcja i.krawczyk"><span class="name">Izabela Krawczyk</span><span class="meta">@i.krawczyk</span></li>
-          <li class="person" data-search="sławomir sadowski kraków dyrekcja s.sadowski"><span class="name">Sławomir Sadowski</span><span class="meta">@s.sadowski</span></li>
-          <li class="person" data-search="iwona walczak kraków dyrekcja i.walczak"><span class="name">Iwona Walczak</span><span class="meta">@i.walczak</span></li>
-          <li class="person" data-search="maciej wieczorek kraków dyrekcja m.wieczorek"><span class="name">Maciej Wieczorek</span><span class="meta">@m.wieczorek</span></li>
-          <li class="person" data-search="marta woźniak kraków dyrekcja m.wozniak"><span class="name">Marta Woźniak</span><span class="meta">@m.wozniak</span></li>
-          <li class="person" data-search="artur wójcik kraków dyrekcja a.wojcik2"><span class="name">Artur Wójcik</span><span class="meta">@a.wojcik2</span></li>
-          <li class="person" data-search="leszek zieliński kraków dyrekcja l.zielinski"><span class="name">Leszek Zieliński</span><span class="meta">@l.zielinski</span></li>
+          <li class="person" data-search="barbara adamczyk kraków dyrekcja b.adamczyk2"><span class="name">Barbara Adamczyk<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@b.adamczyk2</span></li>
+          <li class="person" data-search="izabela krawczyk kraków dyrekcja i.krawczyk"><span class="name">Izabela Krawczyk<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@i.krawczyk</span></li>
+          <li class="person" data-search="sławomir sadowski kraków dyrekcja s.sadowski"><span class="name">Sławomir Sadowski<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@s.sadowski</span></li>
+          <li class="person" data-search="iwona walczak kraków dyrekcja i.walczak"><span class="name">Iwona Walczak<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@i.walczak</span></li>
+          <li class="person" data-search="maciej wieczorek kraków dyrekcja m.wieczorek"><span class="name">Maciej Wieczorek<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@m.wieczorek</span></li>
+          <li class="person" data-search="marta woźniak kraków dyrekcja m.wozniak"><span class="name">Marta Woźniak<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@m.wozniak</span></li>
+          <li class="person" data-search="artur wójcik kraków dyrekcja a.wojcik2"><span class="name">Artur Wójcik<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@a.wojcik2</span></li>
+          <li class="person" data-search="leszek zieliński kraków dyrekcja l.zielinski"><span class="name">Leszek Zieliński<span class="suffix"> – Dyrekcja, Kraków</span></span><span class="meta">@l.zielinski</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Poznań <span class="count">(9)</span></summary>
           <ul class="people">
-          <li class="person" data-search="beata chmielewski poznań dyrekcja b.chmielewski"><span class="name">Beata Chmielewski</span><span class="meta">@b.chmielewski</span></li>
-          <li class="person" data-search="magdalena górski poznań dyrekcja m.gorski"><span class="name">Magdalena Górski</span><span class="meta">@m.gorski</span></li>
-          <li class="person" data-search="barbara kowalczyk poznań dyrekcja b.kowalczyk"><span class="name">Barbara Kowalczyk</span><span class="meta">@b.kowalczyk</span></li>
-          <li class="person" data-search="aleksandra lewandowski poznań dyrekcja a.lewandowski"><span class="name">Aleksandra Lewandowski</span><span class="meta">@a.lewandowski</span></li>
-          <li class="person" data-search="sebastian nowicki poznań dyrekcja s.nowicki"><span class="name">Sebastian Nowicki</span><span class="meta">@s.nowicki</span></li>
-          <li class="person" data-search="filip stępień poznań dyrekcja f.stepien"><span class="name">Filip Stępień</span><span class="meta">@f.stepien</span></li>
-          <li class="person" data-search="izabela szewczyk poznań dyrekcja i.szewczyk"><span class="name">Izabela Szewczyk</span><span class="meta">@i.szewczyk</span></li>
-          <li class="person" data-search="ewelina tomaszewski poznań dyrekcja e.tomaszewski"><span class="name">Ewelina Tomaszewski</span><span class="meta">@e.tomaszewski</span></li>
-          <li class="person" data-search="jadwiga zalewski poznań dyrekcja j.zalewski"><span class="name">Jadwiga Zalewski</span><span class="meta">@j.zalewski</span></li>
+          <li class="person" data-search="beata chmielewski poznań dyrekcja b.chmielewski"><span class="name">Beata Chmielewski<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@b.chmielewski</span></li>
+          <li class="person" data-search="magdalena górski poznań dyrekcja m.gorski"><span class="name">Magdalena Górski<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@m.gorski</span></li>
+          <li class="person" data-search="barbara kowalczyk poznań dyrekcja b.kowalczyk"><span class="name">Barbara Kowalczyk<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@b.kowalczyk</span></li>
+          <li class="person" data-search="aleksandra lewandowski poznań dyrekcja a.lewandowski"><span class="name">Aleksandra Lewandowski<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@a.lewandowski</span></li>
+          <li class="person" data-search="sebastian nowicki poznań dyrekcja s.nowicki"><span class="name">Sebastian Nowicki<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@s.nowicki</span></li>
+          <li class="person" data-search="filip stępień poznań dyrekcja f.stepien"><span class="name">Filip Stępień<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@f.stepien</span></li>
+          <li class="person" data-search="izabela szewczyk poznań dyrekcja i.szewczyk"><span class="name">Izabela Szewczyk<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@i.szewczyk</span></li>
+          <li class="person" data-search="ewelina tomaszewski poznań dyrekcja e.tomaszewski"><span class="name">Ewelina Tomaszewski<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@e.tomaszewski</span></li>
+          <li class="person" data-search="jadwiga zalewski poznań dyrekcja j.zalewski"><span class="name">Jadwiga Zalewski<span class="suffix"> – Dyrekcja, Poznań</span></span><span class="meta">@j.zalewski</span></li>
           </ul>
         </details>
       </details>
@@ -227,49 +228,49 @@
         <details class="loc" open>
           <summary>Warszawa <span class="count">(6)</span></summary>
           <ul class="people">
-          <li class="person" data-search="michał dąbrowski warszawa it m.dabrowski"><span class="name">Michał Dąbrowski</span><span class="meta">@m.dabrowski</span></li>
-          <li class="person" data-search="wiesław grabowski warszawa it w.grabowski"><span class="name">Wiesław Grabowski</span><span class="meta">@w.grabowski</span></li>
-          <li class="person" data-search="jacek kozłowski warszawa it j.kozlowski"><span class="name">Jacek Kozłowski</span><span class="meta">@j.kozlowski</span></li>
-          <li class="person" data-search="wojciech stępień warszawa it w.stepien"><span class="name">Wojciech Stępień</span><span class="meta">@w.stepien</span></li>
-          <li class="person" data-search="elżbieta szymański warszawa it e.szymanski"><span class="name">Elżbieta Szymański</span><span class="meta">@e.szymanski</span></li>
-          <li class="person" data-search="halina walczak warszawa it h.walczak"><span class="name">Halina Walczak</span><span class="meta">@h.walczak</span></li>
+          <li class="person" data-search="michał dąbrowski warszawa it m.dabrowski"><span class="name">Michał Dąbrowski<span class="suffix"> – IT, Warszawa</span></span><span class="meta">@m.dabrowski</span></li>
+          <li class="person" data-search="wiesław grabowski warszawa it w.grabowski"><span class="name">Wiesław Grabowski<span class="suffix"> – IT, Warszawa</span></span><span class="meta">@w.grabowski</span></li>
+          <li class="person" data-search="jacek kozłowski warszawa it j.kozlowski"><span class="name">Jacek Kozłowski<span class="suffix"> – IT, Warszawa</span></span><span class="meta">@j.kozlowski</span></li>
+          <li class="person" data-search="wojciech stępień warszawa it w.stepien"><span class="name">Wojciech Stępień<span class="suffix"> – IT, Warszawa</span></span><span class="meta">@w.stepien</span></li>
+          <li class="person" data-search="elżbieta szymański warszawa it e.szymanski"><span class="name">Elżbieta Szymański<span class="suffix"> – IT, Warszawa</span></span><span class="meta">@e.szymanski</span></li>
+          <li class="person" data-search="halina walczak warszawa it h.walczak"><span class="name">Halina Walczak<span class="suffix"> – IT, Warszawa</span></span><span class="meta">@h.walczak</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Kraków <span class="count">(17)</span></summary>
           <ul class="people">
-          <li class="person" data-search="barbara adamczyk kraków it b.adamczyk"><span class="name">Barbara Adamczyk</span><span class="meta">@b.adamczyk</span></li>
-          <li class="person" data-search="filip chmielewski kraków it f.chmielewski"><span class="name">Filip Chmielewski</span><span class="meta">@f.chmielewski</span></li>
-          <li class="person" data-search="leszek chmielewski kraków it l.chmielewski"><span class="name">Leszek Chmielewski</span><span class="meta">@l.chmielewski</span></li>
-          <li class="person" data-search="ryszard dąbrowski kraków it r.dabrowski"><span class="name">Ryszard Dąbrowski</span><span class="meta">@r.dabrowski</span></li>
-          <li class="person" data-search="mateusz kowalczyk kraków it m.kowalczyk"><span class="name">Mateusz Kowalczyk</span><span class="meta">@m.kowalczyk</span></li>
-          <li class="person" data-search="joanna krawczyk kraków it j.krawczyk"><span class="name">Joanna Krawczyk</span><span class="meta">@j.krawczyk</span></li>
-          <li class="person" data-search="konrad lewandowski kraków it k.lewandowski"><span class="name">Konrad Lewandowski</span><span class="meta">@k.lewandowski</span></li>
-          <li class="person" data-search="ireneusz mazur kraków it i.mazur"><span class="name">Ireneusz Mazur</span><span class="meta">@i.mazur</span></li>
-          <li class="person" data-search="michał mazur kraków it m.mazur2"><span class="name">Michał Mazur</span><span class="meta">@m.mazur2</span></li>
-          <li class="person" data-search="norbert mazur kraków it n.mazur"><span class="name">Norbert Mazur</span><span class="meta">@n.mazur</span></li>
-          <li class="person" data-search="tomasz michalski kraków it t.michalski"><span class="name">Tomasz Michalski</span><span class="meta">@t.michalski</span></li>
-          <li class="person" data-search="violetta pawłowski kraków it v.pawlowski"><span class="name">Violetta Pawłowski</span><span class="meta">@v.pawlowski</span></li>
-          <li class="person" data-search="roman piotrowski kraków it r.piotrowski"><span class="name">Roman Piotrowski</span><span class="meta">@r.piotrowski</span></li>
-          <li class="person" data-search="zdzisław rutkowski kraków it z.rutkowski"><span class="name">Zdzisław Rutkowski</span><span class="meta">@z.rutkowski</span></li>
-          <li class="person" data-search="jacek sadowski kraków it j.sadowski2"><span class="name">Jacek Sadowski</span><span class="meta">@j.sadowski2</span></li>
-          <li class="person" data-search="maciej sikora kraków it m.sikora2"><span class="name">Maciej Sikora</span><span class="meta">@m.sikora2</span></li>
-          <li class="person" data-search="zofia wróblewski kraków it z.wroblewski"><span class="name">Zofia Wróblewski</span><span class="meta">@z.wroblewski</span></li>
+          <li class="person" data-search="barbara adamczyk kraków it b.adamczyk"><span class="name">Barbara Adamczyk<span class="suffix"> – IT, Kraków</span></span><span class="meta">@b.adamczyk</span></li>
+          <li class="person" data-search="filip chmielewski kraków it f.chmielewski"><span class="name">Filip Chmielewski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@f.chmielewski</span></li>
+          <li class="person" data-search="leszek chmielewski kraków it l.chmielewski"><span class="name">Leszek Chmielewski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@l.chmielewski</span></li>
+          <li class="person" data-search="ryszard dąbrowski kraków it r.dabrowski"><span class="name">Ryszard Dąbrowski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@r.dabrowski</span></li>
+          <li class="person" data-search="mateusz kowalczyk kraków it m.kowalczyk"><span class="name">Mateusz Kowalczyk<span class="suffix"> – IT, Kraków</span></span><span class="meta">@m.kowalczyk</span></li>
+          <li class="person" data-search="joanna krawczyk kraków it j.krawczyk"><span class="name">Joanna Krawczyk<span class="suffix"> – IT, Kraków</span></span><span class="meta">@j.krawczyk</span></li>
+          <li class="person" data-search="konrad lewandowski kraków it k.lewandowski"><span class="name">Konrad Lewandowski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@k.lewandowski</span></li>
+          <li class="person" data-search="ireneusz mazur kraków it i.mazur"><span class="name">Ireneusz Mazur<span class="suffix"> – IT, Kraków</span></span><span class="meta">@i.mazur</span></li>
+          <li class="person" data-search="michał mazur kraków it m.mazur2"><span class="name">Michał Mazur<span class="suffix"> – IT, Kraków</span></span><span class="meta">@m.mazur2</span></li>
+          <li class="person" data-search="norbert mazur kraków it n.mazur"><span class="name">Norbert Mazur<span class="suffix"> – IT, Kraków</span></span><span class="meta">@n.mazur</span></li>
+          <li class="person" data-search="tomasz michalski kraków it t.michalski"><span class="name">Tomasz Michalski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@t.michalski</span></li>
+          <li class="person" data-search="violetta pawłowski kraków it v.pawlowski"><span class="name">Violetta Pawłowski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@v.pawlowski</span></li>
+          <li class="person" data-search="roman piotrowski kraków it r.piotrowski"><span class="name">Roman Piotrowski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@r.piotrowski</span></li>
+          <li class="person" data-search="zdzisław rutkowski kraków it z.rutkowski"><span class="name">Zdzisław Rutkowski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@z.rutkowski</span></li>
+          <li class="person" data-search="jacek sadowski kraków it j.sadowski2"><span class="name">Jacek Sadowski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@j.sadowski2</span></li>
+          <li class="person" data-search="maciej sikora kraków it m.sikora2"><span class="name">Maciej Sikora<span class="suffix"> – IT, Kraków</span></span><span class="meta">@m.sikora2</span></li>
+          <li class="person" data-search="zofia wróblewski kraków it z.wroblewski"><span class="name">Zofia Wróblewski<span class="suffix"> – IT, Kraków</span></span><span class="meta">@z.wroblewski</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Poznań <span class="count">(10)</span></summary>
           <ul class="people">
-          <li class="person" data-search="daniel dąbrowski poznań it d.dabrowski"><span class="name">Daniel Dąbrowski</span><span class="meta">@d.dabrowski</span></li>
-          <li class="person" data-search="izabela dąbrowski poznań it i.dabrowski"><span class="name">Izabela Dąbrowski</span><span class="meta">@i.dabrowski</span></li>
-          <li class="person" data-search="marzena kamiński poznań it m.kaminski"><span class="name">Marzena Kamiński</span><span class="meta">@m.kaminski</span></li>
-          <li class="person" data-search="katarzyna michalski poznań it k.michalski"><span class="name">Katarzyna Michalski</span><span class="meta">@k.michalski</span></li>
-          <li class="person" data-search="beata nowak poznań it b.nowak"><span class="name">Beata Nowak</span><span class="meta">@b.nowak</span></li>
-          <li class="person" data-search="leszek pietrzak poznań it l.pietrzak"><span class="name">Leszek Pietrzak</span><span class="meta">@l.pietrzak</span></li>
-          <li class="person" data-search="małgorzata pietrzak poznań it m.pietrzak"><span class="name">Małgorzata Pietrzak</span><span class="meta">@m.pietrzak</span></li>
-          <li class="person" data-search="krystyna szymański poznań it k.szymanski"><span class="name">Krystyna Szymański</span><span class="meta">@k.szymanski</span></li>
-          <li class="person" data-search="wiesław szymański poznań it w.szymanski"><span class="name">Wiesław Szymański</span><span class="meta">@w.szymanski</span></li>
-          <li class="person" data-search="grzegorz zając poznań it g.zajac"><span class="name">Grzegorz Zając</span><span class="meta">@g.zajac</span></li>
+          <li class="person" data-search="daniel dąbrowski poznań it d.dabrowski"><span class="name">Daniel Dąbrowski<span class="suffix"> – IT, Poznań</span></span><span class="meta">@d.dabrowski</span></li>
+          <li class="person" data-search="izabela dąbrowski poznań it i.dabrowski"><span class="name">Izabela Dąbrowski<span class="suffix"> – IT, Poznań</span></span><span class="meta">@i.dabrowski</span></li>
+          <li class="person" data-search="marzena kamiński poznań it m.kaminski"><span class="name">Marzena Kamiński<span class="suffix"> – IT, Poznań</span></span><span class="meta">@m.kaminski</span></li>
+          <li class="person" data-search="katarzyna michalski poznań it k.michalski"><span class="name">Katarzyna Michalski<span class="suffix"> – IT, Poznań</span></span><span class="meta">@k.michalski</span></li>
+          <li class="person" data-search="beata nowak poznań it b.nowak"><span class="name">Beata Nowak<span class="suffix"> – IT, Poznań</span></span><span class="meta">@b.nowak</span></li>
+          <li class="person" data-search="leszek pietrzak poznań it l.pietrzak"><span class="name">Leszek Pietrzak<span class="suffix"> – IT, Poznań</span></span><span class="meta">@l.pietrzak</span></li>
+          <li class="person" data-search="małgorzata pietrzak poznań it m.pietrzak"><span class="name">Małgorzata Pietrzak<span class="suffix"> – IT, Poznań</span></span><span class="meta">@m.pietrzak</span></li>
+          <li class="person" data-search="krystyna szymański poznań it k.szymanski"><span class="name">Krystyna Szymański<span class="suffix"> – IT, Poznań</span></span><span class="meta">@k.szymanski</span></li>
+          <li class="person" data-search="wiesław szymański poznań it w.szymanski"><span class="name">Wiesław Szymański<span class="suffix"> – IT, Poznań</span></span><span class="meta">@w.szymanski</span></li>
+          <li class="person" data-search="grzegorz zając poznań it g.zajac"><span class="name">Grzegorz Zając<span class="suffix"> – IT, Poznań</span></span><span class="meta">@g.zajac</span></li>
           </ul>
         </details>
       </details>
@@ -278,52 +279,52 @@
         <details class="loc" open>
           <summary>Warszawa <span class="count">(14)</span></summary>
           <ul class="people">
-          <li class="person" data-search="ryszard baran warszawa sprzedaż r.baran"><span class="name">Ryszard Baran</span><span class="meta">@r.baran</span></li>
-          <li class="person" data-search="krystyna jabłoński warszawa sprzedaż k.jablonski"><span class="name">Krystyna Jabłoński</span><span class="meta">@k.jablonski</span></li>
-          <li class="person" data-search="ryszard jaworski warszawa sprzedaż r.jaworski"><span class="name">Ryszard Jaworski</span><span class="meta">@r.jaworski</span></li>
-          <li class="person" data-search="dominika król warszawa sprzedaż d.krol"><span class="name">Dominika Król</span><span class="meta">@d.krol</span></li>
-          <li class="person" data-search="maciej lewandowski warszawa sprzedaż m.lewandowski"><span class="name">Maciej Lewandowski</span><span class="meta">@m.lewandowski</span></li>
-          <li class="person" data-search="stanisława lewandowski warszawa sprzedaż s.lewandowski"><span class="name">Stanisława Lewandowski</span><span class="meta">@s.lewandowski</span></li>
-          <li class="person" data-search="damian nowak warszawa sprzedaż d.nowak"><span class="name">Damian Nowak</span><span class="meta">@d.nowak</span></li>
-          <li class="person" data-search="justyna nowak warszawa sprzedaż j.nowak"><span class="name">Justyna Nowak</span><span class="meta">@j.nowak</span></li>
-          <li class="person" data-search="joanna nowak warszawa sprzedaż j.nowak2"><span class="name">Joanna Nowak</span><span class="meta">@j.nowak2</span></li>
-          <li class="person" data-search="janina olszewski warszawa sprzedaż j.olszewski"><span class="name">Janina Olszewski</span><span class="meta">@j.olszewski</span></li>
-          <li class="person" data-search="helena piotrowski warszawa sprzedaż h.piotrowski"><span class="name">Helena Piotrowski</span><span class="meta">@h.piotrowski</span></li>
-          <li class="person" data-search="teresa stępień warszawa sprzedaż t.stepien"><span class="name">Teresa Stępień</span><span class="meta">@t.stepien</span></li>
-          <li class="person" data-search="sebastian tomaszewski warszawa sprzedaż s.tomaszewski"><span class="name">Sebastian Tomaszewski</span><span class="meta">@s.tomaszewski</span></li>
-          <li class="person" data-search="filip wieczorek warszawa sprzedaż f.wieczorek"><span class="name">Filip Wieczorek</span><span class="meta">@f.wieczorek</span></li>
+          <li class="person" data-search="ryszard baran warszawa sprzedaż r.baran"><span class="name">Ryszard Baran<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@r.baran</span></li>
+          <li class="person" data-search="krystyna jabłoński warszawa sprzedaż k.jablonski"><span class="name">Krystyna Jabłoński<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@k.jablonski</span></li>
+          <li class="person" data-search="ryszard jaworski warszawa sprzedaż r.jaworski"><span class="name">Ryszard Jaworski<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@r.jaworski</span></li>
+          <li class="person" data-search="dominika król warszawa sprzedaż d.krol"><span class="name">Dominika Król<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@d.krol</span></li>
+          <li class="person" data-search="maciej lewandowski warszawa sprzedaż m.lewandowski"><span class="name">Maciej Lewandowski<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@m.lewandowski</span></li>
+          <li class="person" data-search="stanisława lewandowski warszawa sprzedaż s.lewandowski"><span class="name">Stanisława Lewandowski<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@s.lewandowski</span></li>
+          <li class="person" data-search="damian nowak warszawa sprzedaż d.nowak"><span class="name">Damian Nowak<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@d.nowak</span></li>
+          <li class="person" data-search="joanna nowak warszawa sprzedaż j.nowak2"><span class="name">Joanna Nowak<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@j.nowak2</span></li>
+          <li class="person" data-search="justyna nowak warszawa sprzedaż j.nowak"><span class="name">Justyna Nowak<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@j.nowak</span></li>
+          <li class="person" data-search="janina olszewski warszawa sprzedaż j.olszewski"><span class="name">Janina Olszewski<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@j.olszewski</span></li>
+          <li class="person" data-search="helena piotrowski warszawa sprzedaż h.piotrowski"><span class="name">Helena Piotrowski<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@h.piotrowski</span></li>
+          <li class="person" data-search="teresa stępień warszawa sprzedaż t.stepien"><span class="name">Teresa Stępień<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@t.stepien</span></li>
+          <li class="person" data-search="sebastian tomaszewski warszawa sprzedaż s.tomaszewski"><span class="name">Sebastian Tomaszewski<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@s.tomaszewski</span></li>
+          <li class="person" data-search="filip wieczorek warszawa sprzedaż f.wieczorek"><span class="name">Filip Wieczorek<span class="suffix"> – Sprzedaż, Warszawa</span></span><span class="meta">@f.wieczorek</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Kraków <span class="count">(12)</span></summary>
           <ul class="people">
-          <li class="person" data-search="adam adamczyk kraków sprzedaż a.adamczyk"><span class="name">Adam Adamczyk</span><span class="meta">@a.adamczyk</span></li>
-          <li class="person" data-search="patryk cieślak kraków sprzedaż p.cieslak"><span class="name">Patryk Cieślak</span><span class="meta">@p.cieslak</span></li>
-          <li class="person" data-search="józef kamiński kraków sprzedaż j.kaminski"><span class="name">Józef Kamiński</span><span class="meta">@j.kaminski</span></li>
-          <li class="person" data-search="przemysław kozłowski kraków sprzedaż p.kozlowski"><span class="name">Przemysław Kozłowski</span><span class="meta">@p.kozlowski</span></li>
-          <li class="person" data-search="aleksandra król kraków sprzedaż a.krol"><span class="name">Aleksandra Król</span><span class="meta">@a.krol</span></li>
-          <li class="person" data-search="przemysław majewski kraków sprzedaż p.majewski"><span class="name">Przemysław Majewski</span><span class="meta">@p.majewski</span></li>
-          <li class="person" data-search="beata mazur kraków sprzedaż b.mazur"><span class="name">Beata Mazur</span><span class="meta">@b.mazur</span></li>
-          <li class="person" data-search="halina michalak kraków sprzedaż h.michalak"><span class="name">Halina Michalak</span><span class="meta">@h.michalak</span></li>
-          <li class="person" data-search="daniel sadowski kraków sprzedaż d.sadowski"><span class="name">Daniel Sadowski</span><span class="meta">@d.sadowski</span></li>
-          <li class="person" data-search="iwona sikora kraków sprzedaż i.sikora"><span class="name">Iwona Sikora</span><span class="meta">@i.sikora</span></li>
-          <li class="person" data-search="waldemar wróbel kraków sprzedaż w.wrobel"><span class="name">Waldemar Wróbel</span><span class="meta">@w.wrobel</span></li>
-          <li class="person" data-search="zofia wróbel kraków sprzedaż z.wrobel"><span class="name">Zofia Wróbel</span><span class="meta">@z.wrobel</span></li>
+          <li class="person" data-search="adam adamczyk kraków sprzedaż a.adamczyk"><span class="name">Adam Adamczyk<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@a.adamczyk</span></li>
+          <li class="person" data-search="patryk cieślak kraków sprzedaż p.cieslak"><span class="name">Patryk Cieślak<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@p.cieslak</span></li>
+          <li class="person" data-search="józef kamiński kraków sprzedaż j.kaminski"><span class="name">Józef Kamiński<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@j.kaminski</span></li>
+          <li class="person" data-search="przemysław kozłowski kraków sprzedaż p.kozlowski"><span class="name">Przemysław Kozłowski<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@p.kozlowski</span></li>
+          <li class="person" data-search="aleksandra król kraków sprzedaż a.krol"><span class="name">Aleksandra Król<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@a.krol</span></li>
+          <li class="person" data-search="przemysław majewski kraków sprzedaż p.majewski"><span class="name">Przemysław Majewski<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@p.majewski</span></li>
+          <li class="person" data-search="beata mazur kraków sprzedaż b.mazur"><span class="name">Beata Mazur<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@b.mazur</span></li>
+          <li class="person" data-search="halina michalak kraków sprzedaż h.michalak"><span class="name">Halina Michalak<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@h.michalak</span></li>
+          <li class="person" data-search="daniel sadowski kraków sprzedaż d.sadowski"><span class="name">Daniel Sadowski<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@d.sadowski</span></li>
+          <li class="person" data-search="iwona sikora kraków sprzedaż i.sikora"><span class="name">Iwona Sikora<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@i.sikora</span></li>
+          <li class="person" data-search="waldemar wróbel kraków sprzedaż w.wrobel"><span class="name">Waldemar Wróbel<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@w.wrobel</span></li>
+          <li class="person" data-search="zofia wróbel kraków sprzedaż z.wrobel"><span class="name">Zofia Wróbel<span class="suffix"> – Sprzedaż, Kraków</span></span><span class="meta">@z.wrobel</span></li>
           </ul>
         </details>
         <details class="loc" open>
           <summary>Poznań <span class="count">(10)</span></summary>
           <ul class="people">
-          <li class="person" data-search="tomasz dudek poznań sprzedaż t.dudek"><span class="name">Tomasz Dudek</span><span class="meta">@t.dudek</span></li>
-          <li class="person" data-search="edyta dąbrowski poznań sprzedaż e.dabrowski"><span class="name">Edyta Dąbrowski</span><span class="meta">@e.dabrowski</span></li>
-          <li class="person" data-search="wanda kozłowski poznań sprzedaż w.kozlowski"><span class="name">Wanda Kozłowski</span><span class="meta">@w.kozlowski</span></li>
-          <li class="person" data-search="wojciech krawczyk poznań sprzedaż w.krawczyk"><span class="name">Wojciech Krawczyk</span><span class="meta">@w.krawczyk</span></li>
-          <li class="person" data-search="alicja majewski poznań sprzedaż a.majewski"><span class="name">Alicja Majewski</span><span class="meta">@a.majewski</span></li>
-          <li class="person" data-search="grzegorz mazur poznań sprzedaż g.mazur"><span class="name">Grzegorz Mazur</span><span class="meta">@g.mazur</span></li>
-          <li class="person" data-search="jerzy nowakowski poznań sprzedaż j.nowakowski"><span class="name">Jerzy Nowakowski</span><span class="meta">@j.nowakowski</span></li>
-          <li class="person" data-search="beata sadowski poznań sprzedaż b.sadowski"><span class="name">Beata Sadowski</span><span class="meta">@b.sadowski</span></li>
-          <li class="person" data-search="jadwiga szymański poznań sprzedaż j.szymanski"><span class="name">Jadwiga Szymański</span><span class="meta">@j.szymanski</span></li>
-          <li class="person" data-search="agnieszka wróblewski poznań sprzedaż a.wroblewski"><span class="name">Agnieszka Wróblewski</span><span class="meta">@a.wroblewski</span></li>
+          <li class="person" data-search="edyta dąbrowski poznań sprzedaż e.dabrowski"><span class="name">Edyta Dąbrowski<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@e.dabrowski</span></li>
+          <li class="person" data-search="tomasz dudek poznań sprzedaż t.dudek"><span class="name">Tomasz Dudek<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@t.dudek</span></li>
+          <li class="person" data-search="wanda kozłowski poznań sprzedaż w.kozlowski"><span class="name">Wanda Kozłowski<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@w.kozlowski</span></li>
+          <li class="person" data-search="wojciech krawczyk poznań sprzedaż w.krawczyk"><span class="name">Wojciech Krawczyk<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@w.krawczyk</span></li>
+          <li class="person" data-search="alicja majewski poznań sprzedaż a.majewski"><span class="name">Alicja Majewski<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@a.majewski</span></li>
+          <li class="person" data-search="grzegorz mazur poznań sprzedaż g.mazur"><span class="name">Grzegorz Mazur<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@g.mazur</span></li>
+          <li class="person" data-search="jerzy nowakowski poznań sprzedaż j.nowakowski"><span class="name">Jerzy Nowakowski<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@j.nowakowski</span></li>
+          <li class="person" data-search="beata sadowski poznań sprzedaż b.sadowski"><span class="name">Beata Sadowski<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@b.sadowski</span></li>
+          <li class="person" data-search="jadwiga szymański poznań sprzedaż j.szymanski"><span class="name">Jadwiga Szymański<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@j.szymanski</span></li>
+          <li class="person" data-search="agnieszka wróblewski poznań sprzedaż a.wroblewski"><span class="name">Agnieszka Wróblewski<span class="suffix"> – Sprzedaż, Poznań</span></span><span class="meta">@a.wroblewski</span></li>
           </ul>
         </details>
       </details>
@@ -374,7 +375,7 @@
         for (const loc of locBlocks) {
           const v = processRows(loc.querySelectorAll("li.person"));
           loc.classList.toggle("hidden", v === 0 && words.length > 0);
-          if (words.length > 0) loc.open = v > 0;
+          loc.open = words.length > 0 ? v > 0 : true;
           deptVisible += v;
         }
       } else {
@@ -382,7 +383,7 @@
       }
 
       dept.classList.toggle("hidden", deptVisible === 0 && words.length > 0);
-      if (words.length > 0) dept.open = deptVisible > 0;
+      dept.open = words.length > 0 ? deptVisible > 0 : false;
       visibleTotal += deptVisible;
     }
 
