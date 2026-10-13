@@ -58,6 +58,7 @@ sequenceDiagram
 7. [Uruchomienie usług](#krok-7--uruchomienie-usług)
 8. [Konta w LLDAP](#krok-8--konta-w-lldap)
 9. [Klienci: Windows i Android](#krok-9--klienci)
+    - [Komputer w innej lokalizacji (u kolegi)](#93-komputer-w-innej-lokalizacji-u-kolegi)
 10. [Testy](#krok-10--testy)
     - [Drugie konto w Elemencie bez zamykania pierwszego](#drugie-konto-w-elemencie-bez-zamykania-pierwszego-przydatne-w-testach)
 11. [Książka adresowa dla całej firmy (zmiana planu)](#książka-adresowa-dla-całej-firmy-zmiana-planu)
@@ -458,6 +459,68 @@ stary adres.
   nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>`,
 - odnawianie certyfikatu z Tailscale (ważny ok. 90 dni) – trzeba powtórzyć `tailscale cert` i zrestartować
   proxy, najlepiej w cronie.
+
+### 9.3 Komputer w innej lokalizacji (u kolegi)
+
+> ⚠️ **Status: opisane, ale NIESPRAWDZONE w praktyce.** To jest plan krok po kroku na test „co widzi osoba
+> w zupełnie innej sieci, u siebie w domu/biurze” – symulacja drugiej lokalizacji firmy. Dopisz tu wynik,
+> gdy kolega faktycznie to przetestuje.
+
+**Dlaczego to inny przypadek niż Krok 9.1 (Windows w tej samej sieci):** tam komputer łączył się po
+`matrix.local`, co wymagało ręcznego wpisu w pliku `hosts` i zainstalowania **własnego** Root CA (`rootCA.pem`)
+jako zaufanego urzędu – to ma sens na firmowym komputerze, ale instalowanie prywatnego CA na komputerze
+osoby z zewnątrz to niepotrzebne namieszanie w zaufaniu cudzego systemu. Zamiast tego używamy **tej samej
+drogi co telefon w kroku 9.2** – adresu `<PELNA-NAZWA-TS>` z certyfikatem wydanym przez Tailscale (publicznie
+zaufanym, przez Let's Encrypt) – **kolega NIE instaluje żadnego certyfikatu ani CA**, dzięki czemu ryzyko
+i kłopot po jego stronie są minimalne.
+
+**Co kolega musi zrobić u siebie, krok po kroku:**
+
+1. **Założyć konto w Tailscale** (tailscale.com, może być darmowe konto osobiste – np. logowanie przez
+   Google/Microsoft), jeśli jeszcze nie ma.
+2. **Dostać zaproszenie do sieci (tailnetu)** – to robi administrator (Ty), nie kolega:
+   - Panel Tailscale (login.tailscale.com) → **Access controls** albo wprost przy maszynie VM na liście
+     **Machines** → opcja **Share** → podajesz e-mail kolegi. Kolega dostaje e-mail z linkiem, klika
+     **Accept** – to udostępnia mu **tylko tę jedną maszynę** (VM), bez dołączania do reszty Twojej sieci.
+   - **Niesprawdzone:** czy udostępniona w ten sposób maszyna działa identycznie jak pełne członkostwo
+     w tailnecie (np. czy adres `100.x.x.x` VM wygląda tak samo po stronie kolegi), czy ruch jest
+     rzeczywiście jednokierunkowy (kolega widzi VM, ale czy VM/inni mogliby zobaczyć jego komputer).
+     Jeśli **Share** nie zadziała jak trzeba, alternatywa to zaproszenie kolegi jako pełnego członka
+     Twojego tailnetu (ten sam ekran, zakładka **Users** → **Invite**).
+3. **Zainstalować Tailscale** na swoim komputerze (tailscale.com/download) i zalogować się kontem
+   z punktu 1 – zaakceptuje zaproszenie automatycznie.
+4. **Sprawdzić połączenie** – w terminalu/PowerShellu kolegi:
+   ```powershell
+   tailscale ping <PELNA-NAZWA-TS>
+   ```
+   Powinno pokazać odpowiedzi (czas w ms), a nie `no response`. Jeśli nie działa – sprawdź w panelu
+   Tailscale, czy maszyna kolegi faktycznie jest połączona (status **Connected**).
+5. **Test w przeglądarce** (przed Elementem, tak jak w kroku 9.2.6): otwórz
+   `https://<PELNA-NAZWA-TS>/_matrix/client/versions` – ma pokazać JSON, **bez żadnego ostrzeżenia
+   o certyfikacie** (to jest ten test, który potwierdza, że certyfikat jest publicznie zaufany i kolega
+   nie musi niczego instalować).
+6. **Zainstalować Element Desktop** (element.io/download).
+7. **Przy logowaniu** kliknij **Edytuj** przy serwerze domowym i wpisz `https://<PELNA-NAZWA-TS>`
+   (NIE `matrix.local` – tego kolega nie rozwiąże, bo nie ma takiego wpisu w swoim pliku `hosts`).
+8. **Zalogować się** loginem i hasłem z LLDAP. **Zalecane: użyj jednego z testowych kont z Etapu B0**
+   (patrz [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy-zmiana-planu), ok. 200
+   fikcyjnych kont, wspólne hasło testowe) zamiast prawdziwego konta pracownika – to dane niezwiązane
+   z żadną realną tożsamością, bezpieczniejsze do testu z kimś spoza zaufanego środowiska.
+
+**Co przetestować po zalogowaniu:**
+
+- **Wiadomości:** pokój `Firma-Ogolny` albo nowy DM z kolegi do Ciebie – podstawowy test, czy w ogóle
+  wszystko działa przez prawdziwą sieć (nie LAN).
+- **Rozmowa audio/wideo 1:1** – to jest kluczowy test tego scenariusza (symulacja 2. lokalizacji firmy).
+  **Niesprawdzone, do zweryfikowania:**
+  - czy połączenie A/V w ogóle przechodzi między dwiema różnymi sieciami przez Coturn (u nas testowane
+    tylko w jednej sieci lokalnej),
+  - jeśli u kolegi jest zawężony firewall/ACL (np. sieć firmowa, router korporacyjny) – Coturn
+    potrzebuje portu **3478** oraz zakresu **49160–49200** na adresie Tailscale serwera (`TS_IP`), poza
+    standardowym **443** dla samego Elementa. Jeśli połączenie głosowe/wideo nie działa, to pierwsze
+    podejrzane miejsce.
+- Kolejność zalecana: najpierw zwykłe wiadomości, dopiero potem A/V – łatwiej odróżnić, czy problem jest
+  w samym połączeniu Tailscale, czy specyficznie w Coturn/WebRTC.
 
 ---
 
