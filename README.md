@@ -64,10 +64,11 @@ sequenceDiagram
 11. [Książka adresowa dla całej firmy (zmiana planu)](#książka-adresowa-dla-całej-firmy-zmiana-planu)
 12. [💡 Pomysły do sprawdzenia: książka adresowa (niepotwierdzone)](#-pomysły-do-sprawdzenia-książka-adresowa-niepotwierdzone)
 13. [💡 Inne pomysły (niepotwierdzone)](#-inne-pomysły-niepotwierdzone)
-14. [Przydatne komendy](#przydatne-komendy)
-15. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
-16. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-17. [Znane ograniczenia](#znane-ograniczenia-poc)
+14. [🤖 Skrypty automatyzujące](#-skrypty-automatyzujące)
+15. [Przydatne komendy](#przydatne-komendy)
+16. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
+17. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+18. [Znane ograniczenia](#znane-ograniczenia-poc)
 
 <p align="center">
   <img src="docs/img/roadmap.svg" alt="Mapa kroków instalacji 1–10" width="100%">
@@ -930,6 +931,83 @@ przepuszczone przez proxy (patrz Etap B+C wyżej), więc ten element jest gotowy
 **Niewiadome:** czy obraz Docker tego projektu jest aktywnie utrzymywany pod aktualną wersję Synapse,
 jak dokładnie skonfigurować dla niego nginx (osobna ścieżka/subdomena), czy wymaga dodatkowej
 konfiguracji CORS po stronie Synapse.
+
+---
+
+## 🤖 Skrypty automatyzujące
+
+Przegląd wszystkich skryptów Python w `scripts/` – co robią, kiedy ich użyć, jak uruchomić. Wszystkie
+czytają adres serwera i hasła automatycznie z `.env` (nic nie trzeba wpisywać na sztywno ani commitować).
+
+**Wspólne środowisko** (raz, przy pierwszym użyciu któregokolwiek ze skryptów):
+
+🪟 **PC**, PowerShell:
+
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowiska i instalowania zależności.
+
+| Skrypt | Co robi | Kiedy użyć |
+|---|---|---|
+| `seed_test_employees.py` | Tworzy testowe konta w LLDAP (działy + lokalizacje, wspólne hasło testowe) | Potrzebujesz testowej masy pracowników do testów na realnej skali |
+| `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział, Lokalizacja` | Żeby cała firma była od razu widoczna w katalogu Synapse |
+| `generate_address_book_widget.py` | Generuje statyczną „ściągę” (`widget/index.html`) – drzewo Dział → Lokalizacja → Osoby, BEZ klikalnych linków | Szybki wizualny podgląd struktury firmy w widgecie |
+
+### `seed_test_employees.py` i `provision_synapse_users.py`
+
+Pełny opis, wymagania wstępne i wynik testów – w sekcji
+[Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy-zmiana-planu), podsekcje
+**Etap B0** i **Etap B + C**. Nie duplikujemy tego tutaj.
+
+### `generate_address_book_widget.py` – ściąga struktury firmy w widgecie
+
+Generuje `widget/index.html` – statyczną stronę z drzewem **Dział → Lokalizacja → Osoby**, czytanym
+bezpośrednio z LLDAP (GraphQL, ten sam mechanizm co dwa skrypty wyżej). Zastępuje starą, ręcznie
+wpisywaną listę `PEOPLE` z poprzedniej wersji widgetu.
+
+**Celowo bez żadnych linków/akcji:** każda osoba to zwykły tekst (imię, nazwisko, login) – kliknięcie
+niczego nie otwiera. Osoba, która znajdzie tu kogoś, sama wpisuje jego imię w wyszukiwarce Elementa
+(**+ → Rozpocznij czat**, lewy panel – czyli wbudowany katalog z Etapu A). To świadoma decyzja:
+poprzednie podejście z klikalnymi linkami `matrix.to` miało udokumentowane problemy (pośrednik
+wymagający internetu, patrz „Znane ograniczenia”) – ten widget ich unika, bo nic nie trzeba klikać.
+
+Dział i lokalizacja są zwijane/rozwijane (`<details>`); wyszukiwarka w widgecie filtruje i automatycznie
+rozwija pasujące sekcje, ale też niczego nie otwiera – to czysto wizualny filtr.
+
+**Uruchomienie:**
+
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+python generate_address_book_widget.py
+```
+
+Nadpisuje `widget/index.html` lokalnie. Bezpieczna operacja – nie dotyka żadnych kont ani serwera,
+tylko czyta z LLDAP.
+
+**Wysłanie na VM** – plik jest śledzony w repo (nie w `.gitignore`), więc:
+
+```powershell
+git add widget/index.html
+git commit -m "Aktualizacja sciagi widgetu"
+git push
+```
+
+a na VM: `git pull` (jeśli tak wdrażasz) albo:
+
+```powershell
+scp "<KATALOG_PROJEKTU>\widget\index.html" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/widget/index.html
+```
+
+Żaden restart kontenera nie jest potrzebny – nginx serwuje plik na żywo; w Elemencie wystarczy odświeżyć
+widget w pokoju.
+
+**Status:** ⚠️ niesprawdzone w praktyce na pełnej puli ~204 osób (napisane 2026-10-13, czeka na pierwsze
+uruchomienie i ocenę jak wygląda drzewo w realnym Elemencie).
 
 ---
 
