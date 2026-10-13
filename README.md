@@ -1015,8 +1015,9 @@ scp "<KATALOG_PROJEKTU>\widget\index.html" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/widg
 Żaden restart kontenera nie jest potrzebny – nginx serwuje plik na żywo; w Elemencie wystarczy odświeżyć
 widget w pokoju.
 
-**Status:** ⚠️ plik wygenerowano lokalnie na ~204 osobach (2026-10-13), potem poprawiono skrypt (polskie sortowanie, dopiski z działem i lokalizacją, reset wyszukiwarki) – trzeba wygenerować go ponownie; widget nie został jeszcze
-obejrzany w realnym Elemencie.
+**Status:** ✅ plik wygenerowany lokalnie na ~204 osobach i wyświetlany w realnym Elemencie (pokój „Struktura
+organizacyjna”, 2026-10-14). Skrypt poprawiono po pierwszym przebiegu (polskie sortowanie, dopiski z działem
+i lokalizacją, reset wyszukiwarki) – po każdej zmianie w skrypcie wygeneruj plik ponownie.
 
 <details>
 <summary>🏭 <b>Produkcja:</b> widget-ściąga i skrypt, który go generuje</summary>
@@ -1131,15 +1132,15 @@ oba pokoje są na liście, czy w „Strukturze organizacyjnej” widget zajmuje 
 ma, czy zwykły użytkownik nie może pisać i czy osoba z `MAIN_ROOM_WRITERS` może. Gdyby Element ograniczył
 wysokość widgetu poniżej 100%, można go rozwinąć przyciskiem „powiększ” w jego nagłówku.
 
-**Status:** napisane 2026-10-13, przerobione na dwa pokoje 2026-10-14.
+**Status:** napisane 2026-10-13, przerobione na dwa pokoje i sprawdzone w praktyce 2026-10-14.
 
-- ✅ Sprawdzone: skrypt loguje się, tworzy pokoje, ustawia uprawnienia, a widget zapisany przez skrypt wyświetlił się
-  w Elemencie na koncie administratora (u góry pokoju, przy wysokości 35%). Ponowne uruchomienie jest idempotentne
-  (`--dry-run` pokazuje „już poprawne” / „już ustawiony”).
-- ⚠️ Niesprawdzone: wygląd widgetu przy 100% wysokości; dołączenie ~204 kont do obu pokoi (przebieg uruchomiony
-  2026-10-14, wyniku nie potwierdzono); zachowanie na drugim koncie (czy zwykły użytkownik nie może pisać, czy
-  osoba z `MAIN_ROOM_WRITERS` może, czy reakcje emoji działają); czy Element przy pierwszym otwarciu zapyta
-  każdego użytkownika o zgodę na widget dodany przez inną osobę.
+- ✅ Sprawdzone (2026-10-14): skrypt loguje się, tworzy oba pokoje, ustawia uprawnienia i dołącza ~204 konta;
+  widget zapisany przez skrypt wyświetla się w „Strukturze organizacyjnej” niemal na całe okno (Element lekko
+  ogranicza wysokość 100%, w praktyce wystarcza); na drugim koncie zwykły użytkownik nie może pisać, a osoba
+  z `MAIN_ROOM_WRITERS` może. Ponowne uruchomienie jest idempotentne (`--dry-run` pokazuje „już poprawne” /
+  „już ustawiony”), a ręcznie usunięty widget wraca po `--only struktura --skip-join`.
+- ⚠️ Niesprawdzone: czy reakcje emoji działają u zwykłych użytkowników; czy Element przy pierwszym otwarciu
+  zapyta każdego użytkownika o zgodę na widget dodany przez inną osobę.
 
 Formaty zdarzeń stanu (`im.vector.modular.widgets`, `io.element.widgets.layout`) są napisane na podstawie tego, jak
 działa Element. Jeśli widget kiedyś przestanie się wyświetlać, dodaj go raz ręcznie (`/addwidget <WIDGET_URL>`),
