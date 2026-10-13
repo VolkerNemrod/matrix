@@ -15,9 +15,6 @@ synapse/*
 nginx/conf.d/*
 !nginx/conf.d/matrix.conf.example
 
-# === Notatki robocze z danymi środowiska (adresy IP, nazwy, użytkownicy) ===
-Szczegółowa_Instrukcja.md
-
 # === Dane uruchomieniowe ===
 *.log
 *.pid
