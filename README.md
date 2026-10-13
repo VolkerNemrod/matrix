@@ -59,12 +59,14 @@ sequenceDiagram
 8. [Konta w LLDAP](#krok-8--konta-w-lldap)
 9. [Klienci: Windows i Android](#krok-9--klienci)
 10. [Testy](#krok-10--testy)
+    - [Drugie konto w Elemencie bez zamykania pierwszego](#drugie-konto-w-elemencie-bez-zamykania-pierwszego-przydatne-w-testach)
 11. [Książka adresowa dla całej firmy (zmiana planu)](#książka-adresowa-dla-całej-firmy-zmiana-planu)
 12. [💡 Pomysły do sprawdzenia: książka adresowa (niepotwierdzone)](#-pomysły-do-sprawdzenia-książka-adresowa-niepotwierdzone)
-13. [Przydatne komendy](#przydatne-komendy)
-14. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
-15. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-16. [Znane ograniczenia](#znane-ograniczenia-poc)
+13. [💡 Inne pomysły (niepotwierdzone)](#-inne-pomysły-niepotwierdzone)
+14. [Przydatne komendy](#przydatne-komendy)
+15. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
+16. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+17. [Znane ograniczenia](#znane-ograniczenia-poc)
 
 <p align="center">
   <img src="docs/img/roadmap.svg" alt="Mapa kroków instalacji 1–10" width="100%">
@@ -838,6 +840,33 @@ wybór "jeden z trzech" na starcie, tylko wspólny warunek wstępny dla każdego
 3. Skoro Wariant 1 + Etap B działają dobrze, Warianty 2 (widget) i 3 (Spaces) poniżej **nie są obecnie
    potrzebne** – zostają jako zapisane pomysły na później, gdyby jednak zabrakło im czegoś (np. realnej
    struktury drzewa zamiast wyszukiwania tekstowego).
+
+---
+
+## 💡 Inne pomysły (niepotwierdzone)
+
+> Tak samo jak sekcja o książce adresowej wyżej – to miejsce na pomysły, nie na instrukcje. Nic poniżej
+> nie zostało sprawdzone w praktyce.
+
+### Synapse Admin – GUI do zarządzania serwerem (pomysł, niesprawdzony)
+
+Obecnie zarządzanie Synapse (konta, pokoje, uprawnienia) odbywa się przez surowe wywołania Admin API
+(`curl`/skrypty Python, patrz Etap B wyżej) albo bezpośrednio w bazie. Istnieje popularny,
+open-source'owy projekt **Synapse Admin**
+([Awesome-Technologies/synapse-admin](https://github.com/Awesome-Technologies/synapse-admin)) – webowe
+GUI (nie jest częścią samego Synapse, osobny projekt społecznościowy), które łączy się z serwerem przez
+to samo Admin API i pozwala z przeglądarki: przeglądać/edytować/dezaktywować konta, resetować hasła,
+nadawać uprawnienia admina, zarządzać pokojami, podejrzeć statystyki serwera.
+
+**Jak by to pasowało do obecnego setupu:** to kolejny kontener Docker
+(`awesometechnologies/synapse-admin`) + kolejny blok `location` w nginx serwujący jego pliki statyczne –
+koncepcyjnie podobne do tego, co już jest zrobione z widgetem. Logowanie do niego odbywałoby się kontem
+administratora Synapse (tym samym mechanizmem co w Etapie B, np. `s.lewandowski`). Admin API jest już
+przepuszczone przez proxy (patrz Etap B+C wyżej), więc ten element jest gotowy.
+
+**Niewiadome:** czy obraz Docker tego projektu jest aktywnie utrzymywany pod aktualną wersję Synapse,
+jak dokładnie skonfigurować dla niego nginx (osobna ścieżka/subdomena), czy wymaga dodatkowej
+konfiguracji CORS po stronie Synapse.
 
 ---
 
