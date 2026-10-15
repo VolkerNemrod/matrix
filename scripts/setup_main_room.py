@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """
-setup_main_room.py -- pokoje glowne dla calej firmy (oba tylko do odczytu): zaklada je
+UWAGA (2026-10-14): POKOJE I WIDGET WYCOFANE. Decyzja uzytkownika: ksiazka adresowa = space 'Firma'
++ podprzestrzenie-dzialy (scripts/setup_spaces.py); widget okazal sie slepym zaulkiem, a pokoje
+'Firma-Ogloszenia' i 'Struktura organizacyjna' zostaly usuniete (w razie potrzeby admin zaklada
+pokoj recznie w Elemencie). NIE URUCHAMIAJ tego pliku jako skryptu -- zalozylby usuniete pokoje
+od nowa. Plik ZOSTAJE wylacznie jako biblioteka: setup_spaces.py importuje z niego klase Synapse,
+cfg(), ensure_name_topic() i stale. TODO: wydzielic te elementy do wspolnego modulu
+(np. matrix_common.py) i dopiero wtedy usunac ten plik.
+
+setup_main_room.py -- (HISTORIA) pokoje glowne dla calej firmy (oba tylko do odczytu): zaklada je
 (jesli trzeba), dolacza do nich wszystkich uzytkownikow Synapse i ustawia w jednym z nich
 widget-sciage (widget/index.html) na cale okno pokoju.
 

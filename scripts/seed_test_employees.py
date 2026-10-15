@@ -29,9 +29,18 @@ ETAP 2 (plik wygenerowany przez ten skrypt, uruchamiany NA VM):
   tam (docker compose exec) -- instrukcja wypisuje sie na koncu.
 
 Wymaga: pip install requests
-Uzycie: python seed_test_employees.py
+Uzycie:
+  python seed_test_employees.py                        # tworzy brakujace grupy i konta
+  python seed_test_employees.py --reassign --dry-run   # POKAZ, kogo przepieto by do nowych grup
+  python seed_test_employees.py --reassign             # przepnij ISTNIEJACE konta (bez kasowania, bez hasel)
+
+STRUKTURA (decyzja 2026-10-15): BRAK grup lokalizacji. Kazde konto ma DOKLADNIE JEDNA grupe-dzial:
+Ksiegowosc, Wydzial EFS, Dyrekcja, IT, Sprzedaz (siedziba w Toruniu) albo Bydgoszcz Poradnictwo /
+Wloclawek Poradnictwo (te dwa to zwykle dzialy, na tym samym poziomie co Ksiegowosc).
+Drzewo spaces (Firma -> wszystkie dzialy plasko) buduje setup_spaces.py.
 """
 
+import argparse
 import os
 import random
 import sys
@@ -62,10 +71,14 @@ EMAIL_DOMAIN = "matrix.local"
 LIMIT = None            # np. 3 na start -> sprawdz czy dziala -> potem None = wszyscy
 TOTAL_TARGET = 200   # docelowa liczba kont przy LIMIT = None
 
-DEPARTMENTS = ["Księgowość", "Wydział EFS", "Dyrekcja", "IT", "Sprzedaż"]
-LOCATIONS = ["Warszawa", "Kraków", "Poznań"]
-# ^ to sa placeholdery uzyte wczesniej w dokumentacji/grafikach -- podmien na
-#   prawdziwe nazwy dzialow i lokalizacji firmy, jesli maja byc inne.
+# Kazde konto ma jedna grupe-dzial. Poradnictwo z Bydgoszczy i Wloclawka to zwykle dzialy.
+DEPARTMENTS = ["Księgowość", "Wydział EFS", "Dyrekcja", "IT", "Sprzedaż",
+               "Bydgoszcz Poradnictwo", "Włocławek Poradnictwo"]
+# Rozklad kont miedzy dzialy (Torun = 5 pierwszych ~70%, po ~15% na kazde Poradnictwo).
+# To zalozenie TESTOWE, nie dane firmy.
+DEPARTMENT_WEIGHTS = [14, 14, 14, 14, 14, 15, 15]
+# Stare grupy lokalizacji z poprzednich seedow -- --reassign wyjmuje z nich konta (grup nie kasuje).
+LEGACY_LOCATIONS = ["Warszawa", "Kraków", "Poznań", "Toruń"]
 
 # Plik wynikowy ze skryptem do uruchomienia NA VM (ustawia hasla).
 PASSWORD_SCRIPT_PATH = Path(__file__).resolve().parent / "set_test_passwords.sh"
@@ -128,6 +141,7 @@ def strip_pl(s: str) -> str:
 def generate_employees(n: int):
     """Losuje n unikalnych pracownikow (login w formacie i.nazwisko, jak j.kowalski)."""
     random.seed(42)  # powtarzalnosc miedzy uruchomieniami (ten sam zestaw dla tego samego n)
+    assign_rng = random.Random(7)  # OSOBNY generator: przydzial do lokalizacji/dzialu (nie rusza loginow)
     pool = FIRST_NAMES_M + FIRST_NAMES_F
     employees = []
     seen_logins = set()
@@ -136,6 +150,12 @@ def generate_employees(n: int):
         attempts += 1
         first = random.choice(pool)
         last = random.choice(LAST_NAMES)
+        # UWAGA: dwa ponizsze losowania sa celowo zachowane (wynik wyrzucany). Dzieki nim strumien
+        # losowy (seed 42) daje TE SAME loginy co przy pierwszym seedzie, wiec --reassign trafia
+        # w istniejace konta. NIE usuwac i NIE zmieniac kolejnosci.
+        random.randrange(5)   # dawniej choice(DEPARTMENTS), 5 elementow
+        random.randrange(3)   # dawniej choice(LOCATIONS), 3 elementy
+        department = assign_rng.choices(DEPARTMENTS, weights=DEPARTMENT_WEIGHTS)[0]
         base_login = f"{strip_pl(first[0]).lower()}.{strip_pl(last).lower()}"
         login = base_login
         suffix = 1
@@ -149,15 +169,15 @@ def generate_employees(n: int):
             "last_name": last,
             "display_name": f"{first} {last}",
             "email": f"{login}@{EMAIL_DOMAIN}",
-            "department": random.choice(DEPARTMENTS),
-            "location": random.choice(LOCATIONS),
+            "department": department,
         })
     return employees
 
 
 class LldapAdmin:
-    def __init__(self, base_url: str, username: str, password: str):
+    def __init__(self, base_url: str, username: str, password: str, dry_run: bool = False):
         self.base_url = base_url.rstrip("/")
+        self.dry_run = dry_run
         self.session = requests.Session()
         token = self._login(username, password)
         self.session.headers["Authorization"] = f"Bearer {token}"
@@ -190,6 +210,10 @@ class LldapAdmin:
     def ensure_group(self, name: str, existing: dict) -> int:
         if name in existing:
             return existing[name]
+        if self.dry_run:
+            print(f"  [dry-run] utworzylbym grupe {name}")
+            existing[name] = -1
+            return -1
         q = "mutation($name: String!) { createGroup(name: $name) { id } }"
         data = self.graphql(q, {"name": name})
         gid = data["createGroup"]["id"]
@@ -206,6 +230,8 @@ class LldapAdmin:
             return False
 
     def create_user(self, emp: dict):
+        if self.dry_run:
+            return
         q = """
         mutation($user: CreateUserInput!) {
           createUser(user: $user) { id }
@@ -223,12 +249,46 @@ class LldapAdmin:
         self.graphql(q, variables)
 
     def add_user_to_group(self, user_id: str, group_id: int):
+        if self.dry_run:
+            return
         q = """
         mutation($userId: String!, $groupId: Int!) {
           addUserToGroup(userId: $userId, groupId: $groupId) { ok }
         }
         """
         self.graphql(q, {"userId": user_id, "groupId": group_id})
+
+    def user_groups(self, user_id: str) -> list:
+        q = "query($id: String!) { user(userId: $id) { groups { id displayName } } }"
+        return self.graphql(q, {"id": user_id})["user"]["groups"]
+
+    def remove_user_from_group(self, user_id: str, group_id: int):
+        if self.dry_run:
+            return
+        q = """
+        mutation($userId: String!, $groupId: Int!) {
+          removeUserFromGroup(userId: $userId, groupId: $groupId) { ok }
+        }
+        """
+        self.graphql(q, {"userId": user_id, "groupId": group_id})
+
+
+def reassign_user(admin: "LldapAdmin", emp: dict, group_ids: dict) -> bool:
+    """Przepina ISTNIEJACE konto do grupy-dzialu wynikajacej z emp.
+    Rusza tylko grupy 'zarzadzane' (DEPARTMENTS, LEGACY_LOCATIONS) -- inne zostawia.
+    Zwraca True, jesli cos sie zmienilo (albo by sie zmienilo w --dry-run)."""
+    managed = set(DEPARTMENTS) | set(LEGACY_LOCATIONS)
+    wanted = {emp["department"]}
+    current = {g["displayName"]: g["id"] for g in admin.user_groups(emp["login"])}
+    to_remove = [n for n in current if n in managed and n not in wanted]
+    to_add = [n for n in wanted if n not in current]
+    for name in to_remove:
+        print(f"    - wyjmuje z grupy {name}")
+        admin.remove_user_from_group(emp["login"], current[name])
+    for name in to_add:
+        print(f"    + dodaje do grupy {name}")
+        admin.add_user_to_group(emp["login"], group_ids[name])
+    return bool(to_remove or to_add)
 
 
 def write_password_script(logins: list[str]):
@@ -290,6 +350,14 @@ def resolve_lldap_url() -> str:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Testowa struktura firmy w LLDAP.")
+    parser.add_argument("--reassign", action="store_true",
+                        help="przepnij ISTNIEJACE konta do grup z aktualnej konfiguracji (bez kasowania kont)")
+    parser.add_argument("--dry-run", action="store_true", help="nic nie zapisuj, tylko pokaz co by sie stalo")
+    args = parser.parse_args()
+    if args.dry_run:
+        print("*** TRYB PROBNY (--dry-run): nic nie zostanie zapisane ***\n")
+
     lldap_url = resolve_lldap_url()
     print(f"Adres LLDAP: {lldap_url}\n")
 
@@ -305,7 +373,7 @@ def main():
     print(f"Wygenerowano {len(employees)} fikcyjnych pracownikow (LIMIT={LIMIT}).\n")
 
     try:
-        admin = LldapAdmin(lldap_url, ADMIN_USERNAME, admin_password)
+        admin = LldapAdmin(lldap_url, ADMIN_USERNAME, admin_password, dry_run=args.dry_run)
     except requests.RequestException as e:
         print(f"BLAD polaczenia/logowania do LLDAP ({lldap_url}): {e}")
         sys.exit(1)
@@ -314,24 +382,29 @@ def main():
     existing_groups = admin.list_groups()
     print(f"Istniejace grupy w LLDAP: {list(existing_groups.keys())}\n")
 
-    print("Tworze/sprawdzam grupy dzialow i lokalizacji...")
+    print("Tworze/sprawdzam grupy dzialow...")
     for dept in DEPARTMENTS:
         admin.ensure_group(dept, existing_groups)
-    for loc in LOCATIONS:
-        admin.ensure_group(loc, existing_groups)
     print()
 
     created, skipped = [], []
+    reassigned, unchanged = [], []
     all_logins = []
 
     for i, emp in enumerate(employees, 1):
         login = emp["login"]
         all_logins.append(login)
-        print(f"[{i}/{len(employees)}] {emp['display_name']} ({login}) "
-              f"- {emp['department']}, {emp['location']}")
+        print(f"[{i}/{len(employees)}] {emp['display_name']} ({login}) - {emp['department']}")
 
         if admin.user_exists(login):
-            print("    juz istnieje - pomijam tworzenie konta (haslo i tak zostanie ustawione ponownie)")
+            if args.reassign:
+                if reassign_user(admin, emp, existing_groups):
+                    reassigned.append(login)
+                else:
+                    print("    grupy juz poprawne")
+                    unchanged.append(login)
+            else:
+                print("    juz istnieje - pomijam tworzenie konta (haslo i tak zostanie ustawione ponownie)")
             skipped.append(login)
         else:
             try:
@@ -341,10 +414,29 @@ def main():
                 all_logins.remove(login)
                 continue
             admin.add_user_to_group(login, existing_groups[emp["department"]])
-            admin.add_user_to_group(login, existing_groups[emp["location"]])
             created.append(login)
 
-    write_password_script(all_logins)
+    if args.reassign:
+        # Istniejace konta maja juz hasla -- skrypt hasel tylko dla nowo utworzonych.
+        if created and not args.dry_run:
+            write_password_script(created)
+        print("\n=== PODSUMOWANIE (--reassign) ===" + (" [dry-run]" if args.dry_run else ""))
+        print(f"Przepiete konta:         {len(reassigned)}")
+        print(f"Bez zmian:               {len(unchanged)}")
+        print(f"Nowo utworzone:          {len(created)}")
+        by_dep = {}
+        for e in employees:
+            by_dep[e["department"]] = by_dep.get(e["department"], 0) + 1
+        print("Rozklad dzialow:         " + ", ".join(f"{k}: {v}" for k, v in by_dep.items()))
+        legacy = [g for g in LEGACY_LOCATIONS if g in existing_groups]
+        if legacy:
+            print(f"Stare grupy zostaja w LLDAP (puste po przepieciu, usun recznie w panelu): {', '.join(legacy)}")
+        if created:
+            print("Nowe konta wymagaja ustawienia hasel -- uzyj wygenerowanego set_test_passwords.sh na VM.")
+        return
+
+    if not args.dry_run:
+        write_password_script(all_logins)
 
     print("\n=== PODSUMOWANIE ===")
     print(f"Utworzone konta:           {len(created)}")

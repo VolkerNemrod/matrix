@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">Architektura Matrix PoC</title>
-  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i widżet książki adresowej.</desc>
+  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa pięć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP i Coturn.</desc>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
@@ -47,10 +47,6 @@
     <text x="605" y="184" text-anchor="middle" font-size="13" fill="#9bd6b3">Nginx + SSL</text>
     <text x="605" y="203" text-anchor="middle" font-size="13" fill="#9bd6b3">port 443</text>
 
-    <rect x="520" y="260" width="170" height="80" rx="10" fill="#16382a" stroke="#3fa56b"/>
-    <text x="605" y="292" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-widget</text>
-    <text x="605" y="314" text-anchor="middle" font-size="13" fill="#9bd6b3">widżet (wstrzymany)</text>
-
     <rect x="760" y="170" width="180" height="110" rx="10" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
     <text x="850" y="208" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">matrix-synapse</text>
     <text x="850" y="232" text-anchor="middle" font-size="13" fill="#9bd6b3">serwer Matrix</text>
@@ -79,8 +75,6 @@
     <path d="M290 440 L760 440" stroke="#6cb6ff" stroke-dasharray="8 6" marker-end="url(#arrB)"/>
     <!-- proxy -> synapse -->
     <path d="M690 175 L760 200" stroke="#7dffb3" marker-end="url(#arr)"/>
-    <!-- proxy -> widget -->
-    <path d="M605 220 L605 260" stroke="#7dffb3" marker-end="url(#arr)"/>
     <!-- synapse -> postgres -->
     <path d="M940 195 L990 172" stroke="#7dffb3" marker-end="url(#arr)"/>
     <!-- synapse -> lldap -->

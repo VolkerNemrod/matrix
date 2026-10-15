@@ -2,7 +2,8 @@
 """
 provision_synapse_users.py -- Etap B (+ C): zaklada/aktualizuje konta w Synapse
 na podstawie uzytkownikow juz istniejacych w LLDAP (patrz scripts/seed_test_employees.py,
-Etap B0), z nazwa wyswietlana w formacie "Imie Nazwisko - Dzial, Lokalizacja".
+Etap B0), z nazwa wyswietlana w formacie "Imie Nazwisko – Dzial" (od 2026-10-15 bez lokalizacji:
+Bydgoszcz Poradnictwo i Wloclawek Poradnictwo to zwykle dzialy).
 
 CEL: bez tego skryptu konto w Synapse (i wpis w katalogu user_directory, z ktorego
 korzysta wyszukiwarka w Elemencie) powstaje dopiero przy PIERWSZYM LOGOWANIU danej
@@ -52,10 +53,10 @@ HOMESERVER_DOMAIN = "matrix.local"  # czesc MXID po dwukropku, np. @login:matrix
 # Ilu userow z LLDAP przetworzyc w TYM uruchomieniu. USTAW MALA WARTOSC NA TEST.
 LIMIT = None     # np. 3 na start -> sprawdz czy dziala -> potem None = wszyscy
 
-# Te same listy co w seed_test_employees.py -- musza sie zgadzac, zeby skrypt
-# wiedzial, ktora grupa usera to dzial, a ktora lokalizacja.
-DEPARTMENTS = ["Księgowość", "Wydział EFS", "Dyrekcja", "IT", "Sprzedaż"]
-LOCATIONS = ["Warszawa", "Kraków", "Poznań"]
+# Ta sama lista co w seed_test_employees.py i setup_spaces.py -- musi sie zgadzac, zeby skrypt
+# wiedzial, ktora grupa usera to dzial. Lokalizacji juz nie ma (wariant B, 2026-10-15).
+DEPARTMENTS = ["Księgowość", "Wydział EFS", "Dyrekcja", "IT", "Sprzedaż",
+               "Bydgoszcz Poradnictwo", "Włocławek Poradnictwo"]
 
 # ============================================================
 
@@ -189,13 +190,10 @@ def build_displayname(user: dict) -> str:
 
     group_names = {g["displayName"] for g in (user.get("groups") or [])}
     dept = next((d for d in DEPARTMENTS if d in group_names), None)
-    loc = next((l for l in LOCATIONS if l in group_names), None)
 
-    if dept and loc:
-        return f"{base} – {dept}, {loc}"
     if dept:
         return f"{base} – {dept}"
-    # brak dzialu/lokalizacji (np. konta zalozone recznie przed Etapem B0) -- samo imie i nazwisko
+    # brak dzialu (np. konta zalozone recznie przed Etapem B0) -- samo imie i nazwisko
     return base
 
 
