@@ -47,6 +47,32 @@ server {
 }
 
 # ---------------------------------------------------------------------------
+# Synapse Admin (panel WWW). Port 8080 jest publikowany przez Docker WYŁĄCZNIE na
+# 127.0.0.1 VM (docker-compose.yml), więc panel jest dostępny tylko z samej VM lub
+# przez tunel SSH: ssh -L 8080:127.0.0.1:8080 UZYTKOWNIK@IP_VM -> http://localhost:8080
+# Zwykły HTTP jest tu celowy (ruch idzie loopbackiem/tunelem). Panel i API na tym
+# samym originie, dlatego nie ma problemu z CORS ani z certyfikatem.
+# W polu serwera w panelu wpisz: http://localhost:8080
+# ---------------------------------------------------------------------------
+server {
+    listen 8080;
+    server_name _;
+
+    location ~ ^(/_matrix|/_synapse/admin) {
+        proxy_pass http://synapse:8008;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 600s;
+    }
+
+    location / {
+        proxy_pass http://synapse-admin:80;
+        proxy_set_header Host $host;
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Dostęp z telefonu przez nazwę MagicDNS z Tailscale (certyfikat Let's Encrypt
 # z `tailscale cert`, bez instalowania rootCA na telefonie).
 # Pliki .crt/.key wygeneruj w katalogu certs/ poleceniem:

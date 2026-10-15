@@ -1,6 +1,6 @@
 name: matrix-poc
 
-# PoC komunikatora Matrix – 5 usług. Sekrety w pliku .env (wzór: .env.example).
+# PoC komunikatora Matrix – 6 usług. Sekrety w pliku .env (wzór: .env.example).
 
 services:
   # 1. Reverse proxy – terminacja SSL (matrix.local)
@@ -11,11 +11,14 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      # Panel Synapse Admin: tylko loopback VM (dostep z PC przez tunel SSH, patrz README)
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certs:/etc/nginx/certs:ro
     depends_on:
       - synapse
+      - synapse-admin
 
   # 2. Synapse – serwer Matrix (własny obraz z modułem LDAP)
   synapse:
@@ -87,6 +90,13 @@ services:
       LLDAP_LDAP_USER_PASS: ${LLDAP_ADMIN_PASSWORD}
     volumes:
       - lldap_data:/data
+
+  # 6. Synapse Admin - webowy panel administracyjny. BEZ publikowanych portow:
+  #    dostepny tylko przez proxy (blok nginx na 127.0.0.1:8080). Tag przypiety.
+  synapse-admin:
+    image: awesometechnologies/synapse-admin:0.11.4
+    container_name: matrix-synapse-admin
+    restart: unless-stopped
 
 volumes:
   pgdata:

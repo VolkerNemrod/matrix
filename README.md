@@ -11,6 +11,8 @@ Proof of Concept zamkniętego komunikatora firmowego opartego na Matrix:
 - **Coturn** – STUN/TURN dla rozmów audio/wideo 1:1 (WebRTC),
 - **Nginx** – reverse proxy z SSL,
 - **PostgreSQL** – baza Synapse,
+- **Synapse Admin** – webowy panel administracyjny (konta, pokoje, przestrzenie), dostępny tylko z VM / przez tunel SSH
+  (patrz [Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem)),
 - **Matrix Spaces** – struktura firmy w Elemencie: przestrzeń „Firma” (wszyscy pracownicy) i podprzestrzenie-działy
   (budowane skryptem z grup LLDAP; patrz [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy)),
 - **Tailscale** – prywatna sieć, która symuluje izolowaną sieć firmową między lokalizacjami.
@@ -84,12 +86,12 @@ sequenceDiagram
 ## Zawartość repozytorium
 
 ```
-docker-compose.yml                  5 usług: proxy, synapse, postgres, coturn, lldap
+docker-compose.yml                  6 usług: proxy, synapse, postgres, coturn, lldap, synapse-admin
 .env.example                        wzór sekretów i ustawień (skopiuj do .env i ustaw własne wartości)
 docker/synapse/Dockerfile           Synapse + moduł matrix-synapse-ldap3
 synapse/homeserver.yaml.example     wzór konfiguracji Synapse (federacja wyłączona, Postgres, LDAP, Coturn)
 synapse/matrix.local.log.config     konfiguracja logowania Synapse
-nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL
+nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL (+ blok panelu Synapse Admin na porcie 8080)
 pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.local
 scripts/seed_test_employees.py      Etap B0: testowe konta i grupy-działy w LLDAP (też --reassign)
 scripts/provision_synapse_users.py  Etap B+C: zakładanie kont w Synapse z nazwą „Imię Nazwisko – Dział”
@@ -329,9 +331,9 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Pierwszy raz trwa kilka minut (pobieranie obrazów, budowa Synapse). **Cel:** 5 kontenerów ze statusem
+Pierwszy raz trwa kilka minut (pobieranie obrazów, budowa Synapse). **Cel:** 6 kontenerów ze statusem
 `running`/`Up` (Postgres może mieć `healthy`): `matrix-proxy`, `matrix-synapse`, `matrix-postgres`,
-`matrix-coturn`, `matrix-lldap`.
+`matrix-coturn`, `matrix-lldap`, `matrix-synapse-admin`.
 
 Jak któryś się restartuje lub ma status `exited`:
 
@@ -987,6 +989,10 @@ Skutek: federacja pozostaje wyłączona (`federation_domain_whitelist: []`), a r
 Synapse nie ma wbudowanego panelu administracyjnego. Zarządzanie odbywa się przez **Admin API** (HTTP),
 bezpośrednio w **bazie PostgreSQL** i przez **dokumentację/logi**. Poniżej wszystko, co potrzebne na co dzień.
 
+Do pracy z przeglądarki (konta, pokoje, przestrzenie) jest dodatkowo panel
+[Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem) (Etap F) – działa na tym samym Admin API,
+więc skrypty i wywołania z PowerShella nadal działają równolegle.
+
 > Oznaczenia: ✅ = użyte w naszych skryptach albo sprawdzone u nas; ⚠️ = przykład z dokumentacji Synapse,
 > niesprawdzony na tym PoC. Przy ⚠️ najpierw spróbuj na koncie testowym.
 
@@ -1038,7 +1044,7 @@ Wszystkie przykłady zakładają zmienne `$base` i `$h` z poprzedniego bloku.
 | **Lista użytkowników** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v2/users?limit=50&name=kowal"` | ⚠️ |
 | **Dezaktywować konto** (np. odejście pracownika) | `POST /_synapse/admin/v1/deactivate/@login:matrix.local`; osobno usuń/zablokuj konto w LLDAP, bo inaczej logowanie przez LDAP założy je znowu | ⚠️ |
 | **Lista pokoi i przestrzeni** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v1/rooms?limit=100&search_term=Firma"` – w wyniku `room_id`, `name`, `canonical_alias`, `joined_members` | ⚠️ |
-| **Usunąć pokój** (wszyscy lokalni użytkownicy zostaną usunięci, dane skasowane) | patrz niżej | ⚠️ |
+| **Usunąć pokój** (wszyscy lokalni użytkownicy zostaną usunięci, dane skasowane) | patrz niżej albo panel Synapse Admin (✅ usunięcie z `purge` przez panel – test F4 pkt 6; ⚠️ wywołanie z PowerShella) | ✅/⚠️ |
 | **Wyczyścić licznik prób logowania** (po HTTP 429 / `M_LIMIT_EXCEEDED`) | 🐧 **VM** `docker compose restart synapse` | ✅ |
 | **Podejrzeć katalog użytkowników** | zapytanie SQL z Etapu A | ✅ |
 
@@ -1098,7 +1104,7 @@ git pull                                 # nowy docker-compose.yml bez usługi w
 nano nginx/conf.d/matrix.conf            # usuń OBA bloki  location /widget/ { ... }  (lokalny plik, nie z gita)
 docker compose exec proxy nginx -t       # musi pokazać: syntax is ok / test is successful
 docker compose up -d --remove-orphans    # tworzy proxy od nowa i usuwa kontener matrix-widget
-docker compose ps                        # cel: 5 kontenerów
+docker compose ps                        # cel: wszystkie usługi z docker-compose.yml (6 z panelem Synapse Admin)
 rm -rf widget                            # katalog z danymi osobowymi (jeśli został)
 ```
 
@@ -1106,17 +1112,129 @@ Jeśli nie używasz gita: w `docker-compose.yml` usuń usługę `widget:` oraz l
 `proxy`. Sprawdzenie: `https://matrix.local/widget/` ma zwracać `404`. ⚠️ Kroki są logiczne i zgodne z naszym
 `docker-compose.yml`, ale na VM nie były jeszcze wykonane.
 
-### 💡 Pomysł: Synapse Admin – GUI do zarządzania serwerem *(niesprawdzony)*
+### Synapse Admin – panel WWW do administrowania serwerem
 
-Istnieje popularny, open-source'owy projekt **Synapse Admin**
-([Awesome-Technologies/synapse-admin](https://github.com/Awesome-Technologies/synapse-admin)) – webowe GUI
-(osobny projekt społecznościowy), które łączy się z serwerem przez to samo Admin API i pozwala z przeglądarki:
-przeglądać/edytować/dezaktywować konta, zarządzać pokojami, nadawać uprawnienia admina i oglądać statystyki.
-Pasowałoby to do obecnego setupu jako kolejny kontener Docker (`awesometechnologies/synapse-admin`) plus blok
-`location` w nginx; Admin API jest już przepuszczone przez proxy.
+**Status (Etap F):** ✅ wdrożony na VM 2026-10-15 (kontener działa, izolacja do loopbacku potwierdzona);
+✅ wszystkie 9 testów funkcjonalnych panelu (checklista F4 poniżej) przeszły.
 
-**Niewiadome:** czy obraz jest utrzymywany pod aktualną wersję Synapse, jak skonfigurować dla niego nginx
-(osobna ścieżka/subdomena) i czy wymaga dodatkowej konfiguracji CORS po stronie Synapse.
+[Synapse Admin](https://github.com/Awesome-Technologies/synapse-admin) (Awesome-Technologies, osobny projekt
+społecznościowy) to webowe GUI, które łączy się z serwerem przez to samo Admin API (`/_synapse/admin`) i pozwala
+z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarządzać pokojami i przestrzeniami
+(w tym usuwać z `purge`), media i limity. Wymaga Synapse ≥ 1.52.0 (u nas ✅ 1.162.0).
+
+**Jak jest wpięty (decyzje projektowe):**
+
+- Usługa `synapse-admin` w `docker-compose.yml`: obraz `awesometechnologies/synapse-admin` z **przypiętym tagiem**
+  (`0.11.4`, nie `latest`), **bez publikowanych portów**. ⚠️ Czy `0.11.4` to najnowsze wydanie – niesprawdzone
+  (tag istnieje, wersję wybrano z pewnego źródła z 2026-03); przypięty tag zmieniasz świadomie, nie przy `up -d`.
+- Nginx dostał osobny blok `server { listen 8080; }` (w `matrix.conf.example`): `/` → panel, a
+  `/_matrix` i `/_synapse/admin` → Synapse. Panel i API są pod **tym samym adresem**, więc nie ma problemu z CORS ani
+  z certyfikatem (certyfikat serwera ma tylko `matrix.local`). Zwykły HTTP jest tu celowy – ruch idzie po loopbacku
+  i tunelu SSH.
+- Port 8080 jest publikowany przez Docker **wyłącznie na `127.0.0.1` VM** (`127.0.0.1:8080:8080` w usłudze `proxy`).
+  Dostęp „tylko z VM” zapewnia więc sam bind na loopback, a nie reguła `allow/deny` po adresie IP (która w Dockerze
+  bywa zawodna: połączenia przez loopback lub tunel mogą być widziane jako adres bramy mostu Dockera).
+- Panel **nie** jest w blokach 80/443 ani w bloku Tailscale.
+
+**Adres VM w konfiguracji:** w plikach konfiguracyjnych panelu **nie ma żadnego adresu VM**. W dokumentacji pojawia się
+tylko jako placeholder `<IP_VM>` w komendzie tunelu. Przy przepięciu serwerów do innej sieci zmieniasz więc tylko
+to, co i tak zależy od adresu: wpis w `hosts` na PC (`<IP_VM>   matrix.local`) i polecenie tunelu SSH.
+
+#### Wdrożenie na istniejącej VM
+
+🐧 **VM**, w `/opt/matrix` – kopie zapasowe (rollback) i sprawdzenie, że port 8080 jest wolny:
+
+```bash
+cp docker-compose.yml docker-compose.yml.bak
+cp nginx/conf.d/matrix.conf nginx/conf.d/matrix.conf.bak
+ss -tlnp | grep 8080          # nic nie powinno być wypisane
+```
+
+🪟 **PC** – wyślij dwa zmienione pliki (VM dostaje pliki przez `scp`, nie przez `git pull`; `matrix.conf` jest w
+`.gitignore`, więc to **Twój** lokalny plik, wyrównany z tym z VM, nie wzór z repozytorium):
+
+```powershell
+scp "<KATALOG_PROJEKTU>\docker-compose.yml" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/
+scp "<KATALOG_PROJEKTU>\nginx\conf.d\matrix.conf" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/nginx/conf.d/
+```
+
+🐧 **VM** – porównaj z kopią (powinny być tylko oczekiwane zmiany: port 8080, `depends_on`, usługa panelu, blok
+`listen 8080`), potem **jedno** uruchomienie:
+
+```bash
+diff docker-compose.yml.bak docker-compose.yml
+diff nginx/conf.d/matrix.conf.bak nginx/conf.d/matrix.conf
+docker compose up -d
+docker compose ps                                   # cel: 6 kontenerów Up
+docker compose logs --tail=50 proxy synapse-admin   # bez błędów
+```
+
+> `nginx -t` uruchomiony **przed** startem zgłosi `host not found in upstream "synapse-admin"` (kontener jeszcze nie
+> istnieje) – testuj dopiero po `up`. Dlatego `proxy` ma w `docker-compose.yml` `depends_on: synapse-admin`
+> (ta sama lekcja co przy widgecie, Rozwiązywanie problemów pkt 7).
+
+✅ **Sprawdzone 2026-10-15:** `diff` względem kopii pokazał wyłącznie oczekiwane zmiany; `docker compose up -d` OK,
+6 kontenerów `Up` (coturn, lldap, postgres, proxy, synapse, synapse-admin), logi `proxy` i `synapse-admin` bez
+błędów; `ss -tlnp | grep 8080` pokazuje wyłącznie `127.0.0.1:8080`.
+
+#### Użycie
+
+🪟 **PC** – tunel SSH (okno z tunelem zostaw otwarte):
+
+```powershell
+ssh -L 8080:127.0.0.1:8080 <UZYTKOWNIK>@<IP_VM>
+```
+
+Przeglądarka na PC: `http://localhost:8080`. W polu serwera wpisz **`http://localhost:8080`**, zaloguj się kontem
+administratora (w PoC `s.lewandowski`, hasło z LLDAP). Konto bez flagi `admin` nie wejdzie do panelu.
+
+> ⚠️ Logowanie administratora wlicza się do limitu prób Synapse (HTTP 429 – Rozwiązywanie problemów pkt 5), więc nie
+> loguj się w panelu i skryptach pod rząd wiele razy.
+
+#### Zasady pracy z panelem (LLDAP + Spaces)
+
+1. **Konta zakłada i hasła zmienia LLDAP, nie panel.** Konto założone w panelu to lokalne konto Synapse z hasłem poza
+   LDAP; reset hasła użytkownikowi z LDAP nic nie daje (logowanie i tak idzie przez LLDAP).
+2. **Nazwy wyświetlane** edytowane ręcznie w panelu nadpisze następne uruchomienie `provision_synapse_users.py`.
+3. **Przestrzenie** usunięte w panelu odtworzy `setup_spaces.py` (po aliasie) – więc usunięcie „na stałe” wymaga też
+   zmiany drzewa w skrypcie.
+4. **Odejście pracownika:** dezaktywacja konta w panelu **oraz** usunięcie/zablokowanie w LLDAP (inaczej logowanie
+   przez LDAP założy konto znowu).
+5. **Operacje destrukcyjne** (usunięcie pokoju z `purge`, dezaktywacja) najpierw na koncie/pokoju **testowym**.
+6. `/_synapse/admin` w bloku 443 pozostaje osiągalne z LAN jak dotąd (chronione tokenem; potrzebne skryptom z PC).
+   Panel tego nie zmienia – ewentualne ograniczenie to osobna decyzja (produkcja).
+
+#### Checklista testów panelu (F4)
+
+| # | Test | Status |
+|---|---|---|
+| 1 | Tunel SSH, `http://localhost:8080` ładuje panel | ✅ |
+| 2 | Logowanie `s.lewandowski` (pole serwera `http://localhost:8080`) | ✅ |
+| 3 | Lista użytkowników (ok. 204), wyszukiwanie, szczegóły konta, urządzenia | ✅ |
+| 4 | Lista pokoi: „Firma” + 7 działów (+ 2 stare pokoje po widgecie, jeśli jeszcze są), członkowie | ✅ |
+| 5 | Konto bez flagi `admin` (np. `a.nowak`) nie wejdzie do panelu | ✅ |
+| 6 | Zapis na koncie/pokoju **testowym**: dezaktywacja konta, usunięcie pokoju z `purge` (zamyka też niesprawdzony punkt w tabeli „Typowe operacje” wyżej) | ✅ |
+| 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py --dry-run` i `setup_spaces.py --dry-run` (nie pod rząd – HTTP 429) | ✅ |
+| 8 | Bez tunelu: `Test-NetConnection <IP_VM> -Port 8080` z PC → `TcpTestSucceeded : False` | ✅ |
+| 9 | Zapora na VM (`ufw`): port 8080 nie jest otwarty | ✅ |
+
+**Rollback:** przywróć `docker-compose.yml.bak` i `nginx/conf.d/matrix.conf.bak` na VM, potem
+`docker compose up -d --remove-orphans` (usuwa kontener panelu; dane Synapse i LLDAP nie są ruszane).
+
+<details>
+<summary>🏭 <b>Produkcja:</b> Synapse Admin</summary>
+
+- **Dostęp.** Albo nadal tylko loopback + tunel SSH/VPN (najprostsze), albo panel pod własną nazwą (np.
+  `admin.<domena>`) z prawdziwym certyfikatem i ograniczeniem po adresie IP / VPN. Nie wystawiaj panelu publicznie.
+- **Osobne konto administratora** (`register_new_matrix_user -a`, wymaga `registration_shared_secret`) zamiast konta
+  testowego `s.lewandowski`; hasło poza kodem.
+- **Aktualizacje.** Tag obrazu jest przypięty – ustal, kto i jak często go podnosi, oraz sprawdzaj zgodność panelu
+  z wersją Synapse.
+- **Kopia zapasowa** (baza, wolumen LLDAP, `synapse/`, media) **przed** operacjami destrukcyjnymi.
+- **Admin API w bloku 443.** Rozważ ograniczenie `/_synapse/admin` (po IP albo skrypty uruchamiane na serwerze przez
+  localhost); panel działa na osobnym porcie i go nie potrzebuje.
+
+</details>
 
 ---
 
@@ -1207,7 +1325,9 @@ do końca.
 11. **Kopie zapasowe** (baza, wolumen LLDAP, `synapse/`, media) – opisane, ale nieprzetestowane (patrz
     [Administrowanie Synapse](#administrowanie-synapse)).
 12. **Spaces:** zdecyduj między własnym skryptem (cykliczne uruchamianie) a licencją ESS Pro (AIM) – ramka 🏭 w Etapie E.
-13. Przejrzyj wszystkie zwijane ramki **🏭 Produkcja** w tym dokumencie (szukaj po 🏭).
+13. **Synapse Admin (panel):** zostaw port 8080 tylko na loopbacku VM (nie otwieraj go w zaporze), użyj osobnego konta
+    administratora zamiast testowego i ustal procedurę aktualizacji przypiętego obrazu (ramka 🏭 przy panelu).
+14. Przejrzyj wszystkie zwijane ramki **🏭 Produkcja** w tym dokumencie (szukaj po 🏭).
 
 ---
 
@@ -1288,6 +1408,11 @@ docker compose up -d
 (4 konta testowe nie mają: `j.kowalski`, `a.nowak`, `t.perlik`, `p.wisniewski`); potem
 `provision_synapse_users.py` i `setup_spaces.py`.
 
+**12. Panel Synapse Admin nie otwiera się pod `http://localhost:8080`** – sprawdź po kolei: czy okno z tunelem SSH jest
+otwarte, czy na VM `docker compose ps` pokazuje `matrix-proxy` i `matrix-synapse-admin` jako `Up`, czy
+`ss -tlnp | grep 8080` pokazuje `127.0.0.1:8080`, oraz `docker compose logs --tail=50 proxy synapse-admin`.
+Po błędzie `host not found in upstream "synapse-admin"` uruchom `docker compose up -d` (kontener panelu musi istnieć).
+
 ---
 
 ## Znane ograniczenia PoC
@@ -1301,3 +1426,5 @@ docker compose up -d
   pierwszym logowaniu.
 - Certyfikat serwera jest ważny 825 dni, Root CA 10 lat; certyfikat z Tailscale ok. 90 dni.
 - Federacja jest wyłączona (`federation_domain_whitelist: []`) – serwer nie łączy się z innymi serwerami Matrix.
+- Panel Synapse Admin jest dostępny tylko z VM albo przez tunel SSH z PC (świadoma decyzja – brak wygodnego adresu dla
+  innych administratorów). Konta i hasła nadal prowadzi LLDAP, nie panel (patrz zasady przy panelu).

@@ -24,6 +24,8 @@ media_store/
 # === Wygenerowane przez skrypty testowe (Etap B0) ===
 scripts/set_test_passwords.sh
 scripts/venv/
+__pycache__/
+*.pyc
 
 # Wzór zmiennych środowiskowych MA być w repozytorium
 !.env.example
