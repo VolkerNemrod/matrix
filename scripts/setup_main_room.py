@@ -49,7 +49,8 @@ im.vector.modular.widgets) i porownaj z tym, co zapisuje skrypt.
 WYMAGANIA WSTEPNE:
   - Konta w Synapse istnieja (provision_synapse_users.py) i dziala konto administratora
     Synapse (README, Etap B + C), a nginx przepuszcza /_synapse/admin.
-  - W .env (wzor: .env.example): WIDGET_URL (adres, ktory MUSI dzialac na KAZDYM kliencie --
+  - W .env (wzor: .env.example): SYNAPSE_ADMIN_PASSWORD (haslo konta administratora Synapse),
+    WIDGET_URL (adres, ktory MUSI dzialac na KAZDYM kliencie --
     patrz README) oraz opcjonalnie MAIN_ROOM_NAME, MAIN_ROOM_ALIAS, MAIN_ROOM_TOPIC
     (pokoj ogloszen), ORG_ROOM_NAME, ORG_ROOM_ALIAS, ORG_ROOM_TOPIC (pokoj ze struktura),
     MAIN_ROOM_READONLY (true/false), MAIN_ROOM_WRITERS (loginy po przecinku).
@@ -82,8 +83,9 @@ MATRIX_BASE_URL = "https://matrix.local"
 ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 
 # Konto administratora Synapse -- to samo co w provision_synapse_users.py (PoC).
+# Haslo NIE jest w kodzie: czytane z .env (SYNAPSE_ADMIN_PASSWORD) -- patrz ADMIN_PASSWORD nizej,
+# za funkcja cfg(). Pozostale skrypty importuja ADMIN_PASSWORD stad.
 ADMIN_LOGIN = "s.lewandowski"
-ADMIN_PASSWORD = "TestHaslo123!"
 HOMESERVER_DOMAIN = "matrix.local"
 
 # Pokoje -- WARTOSCI DOMYSLNE; nadpisywane z .env (MAIN_ROOM_* dla ogloszen, ORG_ROOM_* dla struktury).
@@ -146,6 +148,12 @@ def cfg(key: str, default: str = "") -> str:
     return os.environ.get(key) or load_dotenv_value(key) or default
 
 
+# Haslo administratora Synapse: z .env albo zmiennej srodowiskowej SYNAPSE_ADMIN_PASSWORD.
+# Brak/placeholder wykrywa Synapse.login() i konczy czytelnym bledem (import nie wywala skryptow,
+# ktore nie loguja, np. setup_directory.py --write-extra-template).
+ADMIN_PASSWORD = cfg("SYNAPSE_ADMIN_PASSWORD")
+
+
 def q(s: str) -> str:
     """Kodowanie fragmentu sciezki URL (room_id i alias maja ! # : )."""
     return quote(s, safe="")
@@ -175,6 +183,11 @@ class Synapse:
         self.admin_mxid = ""
 
     def login(self, username: str, password: str):
+        if not password or password.startswith("CHANGE_ME"):
+            raise RuntimeError(
+                "Brak hasla administratora Synapse -- ustaw SYNAPSE_ADMIN_PASSWORD w .env "
+                "(wzor: .env.example) albo w zmiennej srodowiskowej."
+            )
         for attempt in range(6):
             r = self.session.post(
                 f"{self.base_url}/_matrix/client/v3/login",

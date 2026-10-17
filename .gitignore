@@ -23,6 +23,8 @@ media_store/
 
 # === Wygenerowane przez skrypty testowe (Etap B0) ===
 scripts/set_test_passwords.sh
+# dane osobowe (telefony, pokoje) dla książki adresowej (Etap G)
+scripts/directory_extra.csv
 scripts/venv/
 __pycache__/
 *.pyc

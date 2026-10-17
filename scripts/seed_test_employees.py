@@ -64,7 +64,8 @@ ADMIN_USERNAME = "admin"
 # Wczytywane automatycznie z pliku .env w katalogu projektu (LLDAP_ADMIN_PASSWORD),
 # albo ze zmiennej srodowiskowej o tej samej nazwie, jesli wolisz ja ustawic recznie.
 
-TEST_PASSWORD = "TestHaslo123!"   # WSPOLNE haslo testowe -- TYLKO do PoC, nigdy na produkcji
+# WSPOLNE haslo testowe kont (TYLKO PoC, nigdy na produkcji) NIE jest w kodzie ani w wygenerowanym
+# set_test_passwords.sh: skrypt na VM czyta je z TEST_PASSWORD w .env NA VM (patrz .env.example).
 EMAIL_DOMAIN = "matrix.local"
 
 # Ile kont utworzyc w TYM uruchomieniu. USTAW MALA WARTOSC NA PIERWSZY TEST.
@@ -315,9 +316,13 @@ if [ -z "${{LLDAP_ADMIN_PASSWORD:-}}" ]; then
   echo "BLAD: LLDAP_ADMIN_PASSWORD nie jest ustawione w .env"
   exit 1
 fi
+if [ -z "${{TEST_PASSWORD:-}}" ] || [[ "$TEST_PASSWORD" == CHANGE_ME* ]]; then
+  echo "BLAD: TEST_PASSWORD nie jest ustawione w .env (wspolne haslo kont testowych, tylko PoC)"
+  exit 1
+fi
 
 USERS=({users_block})
-PASSWORD="{TEST_PASSWORD}"
+PASSWORD="$TEST_PASSWORD"
 
 echo "Ustawiam haslo testowe dla ${{#USERS[@]}} kont..."
 for u in "${{USERS[@]}}"; do
@@ -330,7 +335,7 @@ for u in "${{USERS[@]}}"; do
     --password "$PASSWORD" \\
     --bypass-password-policy
 done
-echo "Gotowe. Sprobuj zalogowac sie do Elementa jednym z tych kont haslem: $PASSWORD"
+echo "Gotowe. Sprobuj zalogowac sie do Elementa jednym z tych kont haslem z TEST_PASSWORD (.env na VM)."
 """
     PASSWORD_SCRIPT_PATH.write_text(script, encoding="utf-8", newline="\n")
 

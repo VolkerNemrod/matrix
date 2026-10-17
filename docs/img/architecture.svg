@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">Architektura Matrix PoC</title>
-  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa pięć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP i Coturn.</desc>
+  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin (panel dostępny tylko z VM / przez tunel SSH). W Synapse działają przestrzenie Spaces i pokój książki adresowej.</desc>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
@@ -47,10 +47,17 @@
     <text x="605" y="184" text-anchor="middle" font-size="13" fill="#9bd6b3">Nginx + SSL</text>
     <text x="605" y="203" text-anchor="middle" font-size="13" fill="#9bd6b3">port 443</text>
 
-    <rect x="760" y="170" width="180" height="110" rx="10" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
+    <rect x="760" y="170" width="180" height="130" rx="10" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
     <text x="850" y="208" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">matrix-synapse</text>
     <text x="850" y="232" text-anchor="middle" font-size="13" fill="#9bd6b3">serwer Matrix</text>
     <text x="850" y="252" text-anchor="middle" font-size="13" fill="#9bd6b3">federacja wyłączona</text>
+    <text x="850" y="274" text-anchor="middle" font-size="12" fill="#9bd6b3">Spaces · książka adresowa</text>
+
+    <rect x="520" y="290" width="170" height="100" rx="10" fill="#16382a" stroke="#3fa56b" stroke-dasharray="5 4"/>
+    <text x="605" y="320" text-anchor="middle" font-size="14" font-weight="700" fill="#e8fff1">matrix-synapse-admin</text>
+    <text x="605" y="342" text-anchor="middle" font-size="13" fill="#9bd6b3">panel WWW (Etap F)</text>
+    <text x="605" y="361" text-anchor="middle" font-size="12" fill="#9bd6b3">tylko 127.0.0.1:8080</text>
+    <text x="605" y="378" text-anchor="middle" font-size="12" fill="#9bd6b3">dostęp: tunel SSH</text>
 
     <rect x="990" y="130" width="170" height="80" rx="10" fill="#16382a" stroke="#3fa56b"/>
     <text x="1075" y="162" text-anchor="middle" font-size="16" font-weight="700" fill="#e8fff1">matrix-postgres</text>
@@ -80,13 +87,16 @@
     <!-- synapse -> lldap -->
     <path d="M940 255 L990 290" stroke="#7dffb3" marker-end="url(#arr)"/>
     <!-- synapse <-> coturn -->
-    <path d="M850 280 L850 400" stroke="#6cb6ff" stroke-dasharray="8 6" marker-start="url(#arrB)" marker-end="url(#arrB)"/>
+    <path d="M850 300 L850 400" stroke="#6cb6ff" stroke-dasharray="8 6" marker-start="url(#arrB)" marker-end="url(#arrB)"/>
+    <!-- proxy -> synapse-admin (port 8080, tylko loopback VM) -->
+    <path d="M605 220 L605 290" stroke="#7dffb3" marker-end="url(#arr)"/>
   </g>
 
   <!-- etykiety strzałek -->
   <text x="410" y="165" text-anchor="middle" font-size="13" font-weight="600" fill="#7dffb3">HTTPS</text>
   <text x="410" y="430" text-anchor="middle" font-size="13" font-weight="600" fill="#9fd0ff">WebRTC A/V</text>
-  <text x="862" y="346" font-size="12" fill="#9fd0ff">wspólny sekret TURN</text>
+  <text x="862" y="356" font-size="12" fill="#9fd0ff">wspólny sekret TURN</text>
+  <text x="617" y="260" font-size="12" fill="#7dffb3">:8080</text>
 
   <!-- legenda -->
   <g font-size="13" fill="#9bd6b3">

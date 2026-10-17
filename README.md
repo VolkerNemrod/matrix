@@ -15,6 +15,8 @@ Proof of Concept zamkniętego komunikatora firmowego opartego na Matrix:
   (patrz [Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem)),
 - **Matrix Spaces** – struktura firmy w Elemencie: przestrzeń „Firma” (wszyscy pracownicy) i podprzestrzenie-działy
   (budowane skryptem z grup LLDAP; patrz [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy)),
+- **Pokój „Książka adresowa”** – lista pracowników z działami jako wiadomości w pokoju tylko do odczytu, podpiętym pod
+  przestrzeń „Firma” (⚠️ w budowie, nieprzetestowane; patrz [Etap G](#etap-g--książka-adresowa-jako-pokój-z-wiadomościami)),
 - **Tailscale** – prywatna sieć, która symuluje izolowaną sieć firmową między lokalizacjami.
 
 Instrukcja jest napisana tak, żeby dało się ją odtworzyć od zera – krok po kroku, z komendami do wklejenia.
@@ -34,7 +36,7 @@ w projekcie użyto `matrix.local` i Nginx).
 ## Architektura
 
 <p align="center">
-  <img src="docs/img/architecture.svg" alt="Schemat architektury: klienci Element, Tailscale, VM z kontenerami Nginx, Synapse, PostgreSQL, LLDAP i Coturn" width="100%">
+  <img src="docs/img/architecture.svg" alt="Schemat architektury: klienci Element, Tailscale, VM z kontenerami Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin" width="100%">
 </p>
 
 Jak wygląda logowanie (uproszczony schemat):
@@ -69,7 +71,7 @@ sequenceDiagram
     - [Komputer w innej lokalizacji (u kolegi)](#93-komputer-w-innej-lokalizacji-u-kolegi)
 10. [Testy](#krok-10--testy)
     - [Drugie konto w Elemencie bez zamykania pierwszego](#drugie-konto-w-elemencie-bez-zamykania-pierwszego-przydatne-w-testach)
-11. [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy) (Etapy A, B0, B+C, E – Spaces, D)
+11. [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy) (Etapy A, B0, B+C, E – Spaces, G – pokój z wiadomościami, D)
 12. [Administrowanie Synapse](#administrowanie-synapse)
 13. [🤖 Skrypty automatyzujące](#-skrypty-automatyzujące)
 14. [Przydatne komendy](#przydatne-komendy)
@@ -96,7 +98,10 @@ pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.loca
 scripts/seed_test_employees.py      Etap B0: testowe konta i grupy-działy w LLDAP (też --reassign)
 scripts/provision_synapse_users.py  Etap B+C: zakładanie kont w Synapse z nazwą „Imię Nazwisko – Dział”
 scripts/setup_spaces.py             Etap E: drzewo Spaces (Firma + działy) z grup LLDAP, tylko do odczytu
-scripts/setup_main_room.py          biblioteka wspólna (klasa Synapse itd.) używana przez setup_spaces.py;
+scripts/setup_directory.py          Etap G: książka adresowa jako wiadomości w pokoju tylko do odczytu (⚠️ nieprzetestowany)
+scripts/test_directory_message.py   eksperyment z układem wiadomości (zwijane <details> vs nagłówki; --measure = rozmiar)
+scripts/directory_extra.csv         (tworzony lokalnie, w repo go nie ma) stanowisko/telefon/pokój/piętro dla książki adresowej
+scripts/setup_main_room.py          biblioteka wspólna (klasa Synapse itd.) używana przez setup_spaces.py i setup_directory.py;
                                     NIE uruchamiać jako skryptu (pokoje wycofane)
 scripts/requirements.txt            zależności Pythona dla skryptów (requests)
 Matrix.md                           pierwotny plan testów
@@ -274,6 +279,15 @@ LLDAP_KEY_SEED=...
 > | Hasło admina LLDAP | `LLDAP_ADMIN_PASSWORD` | `modules[].config.bind_password` | Synapse → LDAP (logowanie) |
 >
 > Tylko w `.env`: `LLDAP_JWT_SECRET`, `LLDAP_KEY_SEED`, `TS_IP`.
+
+**Hasła używane przez skrypty (od 2026-10-17, ⚠️ zmiana nieprzetestowana):** skrypty z `scripts/` nie mają haseł
+w kodzie. Dopisz do `.env`:
+
+- na **PC** (skąd uruchamiasz skrypty): `SYNAPSE_ADMIN_PASSWORD` – hasło konta administratora Synapse (w PoC
+  `s.lewandowski`, czyli jego hasło z LLDAP),
+- na **VM**: `TEST_PASSWORD` – wspólne hasło kont testowych z Etapu B0; czyta je `set_test_passwords.sh`.
+
+Brak wartości albo placeholder `CHANGE_ME...` kończy skrypt czytelnym komunikatem. Wzór: `.env.example`.
 
 Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień trzy wartości `CHANGE_ME_...`.
 
@@ -465,7 +479,7 @@ stary adres.
 
 - weryfikacja nowego urządzenia w Elemencie (klucz odzyskiwania lub emotikony z drugiej sesji),
 - rozmowy audio/wideo z telefonu – `turn_uris` w `homeserver.yaml` wskazują `matrix.local`, którego telefon
-  nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>`,
+  nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>` (szkic: [docs/szkic-coturn-webrtc.md](docs/szkic-coturn-webrtc.md)),
 - odnawianie certyfikatu z Tailscale (ważny ok. 90 dni) – trzeba powtórzyć `tailscale cert` i zrestartować
   proxy, najlepiej w cronie.
 
@@ -591,6 +605,11 @@ instancję – inna nazwa profilu (`--profile testowy3`). ✅ (użyte w testach 
 
 ### Rozwiązanie końcowe (ustalone 2026-10-14)
 
+> ⚠️ **Zmiana 2026-10-16:** do opisanych niżej dwóch elementów dochodzi **trzeci** – pokój z wiadomościami
+> „Książka adresowa” (skrypt `setup_directory.py`, patrz [Etap G](#etap-g--książka-adresowa-jako-pokój-z-wiadomościami)),
+> który zastępuje porzucony widget. Spaces zostają jako struktura działów. Zdania poniżej o „braku własnych pokoi”
+> dotyczą stanu sprzed tej zmiany; po przetestowaniu Etapu G trzeba je ujednolicić.
+
 <p align="center">
   <img src="docs/img/wariant3-spaces-drzewo.svg" alt="Przestrzeń Firma z podprzestrzeniami-działami widoczna jako drzewo w pasku bocznym Elementa" width="100%">
 </p>
@@ -639,6 +658,7 @@ Firma                          ← WSZYSCY (ok. 204 konta); lista osób do przeg
 | **B** | Automatyczne zakładanie kont w **Synapse** na podstawie LLDAP (skrypt) | ✅ |
 | **C** | Dział w nazwie wyświetlanej (`Imię Nazwisko – Dział`) | ⚠️ format zmieniony 2026-10-14 (bez lokalizacji); ponowny przebieg skryptu niepotwierdzony |
 | **E** | Drzewo Spaces: „Firma” + 7 działów, tylko do odczytu | ✅ utworzone; widok admina i pracownika sprawdzony na zrzutach z Elementa; ⚠️ pozostałe testy w sekcji Etap E |
+| **G** | Pokój „Książka adresowa” z wiadomościami (jedna na dział, osoby jako pigułki Elementa) | ⚠️ skrypt napisany 2026-10-16, nieuruchomiony na pełnych danych |
 | **D** | Wdrożenie klientów na stanowiskach (Element Desktop z domyślnym serwerem) | ⚠️ do sprawdzenia przy produkcji |
 
 ### Etap A – wyszukiwanie wszystkich użytkowników ✅
@@ -749,10 +769,10 @@ cd /opt/matrix
 bash scripts/set_test_passwords.sh
 ```
 
-Ten skrypt czyta `LLDAP_ADMIN_PASSWORD` wprost z `.env` na VM i dla każdego konta woła
-`docker compose exec lldap /app/lldap_set_password`. Po zakończeniu spróbuj zalogować się do
-Elementa jednym z testowych kont (login z listy, hasło = `TEST_PASSWORD` z góry skryptu
-`seed_test_employees.py`, domyślnie `TestHaslo123!`).
+Ten skrypt czyta `LLDAP_ADMIN_PASSWORD` i `TEST_PASSWORD` wprost z `.env` na VM (⚠️ od 2026-10-17 `TEST_PASSWORD`
+nie jest już w kodzie ani w wygenerowanym skrypcie – dopisz je do `.env` na VM przed uruchomieniem; dotychczasowa
+wartość to `TestHaslo123!`) i dla każdego konta woła `docker compose exec lldap /app/lldap_set_password`.
+Po zakończeniu spróbuj zalogować się do Elementa jednym z testowych kont (login z listy, hasło = `TEST_PASSWORD`).
 
 **Sprawdzone 2026-10-11:** pełny cykl (konta + grupy z PC → hasła na VM) zweryfikowany końcowym
 logowaniem do Elementa – zadziałało za pierwszym poprawnym uruchomieniem.
@@ -835,7 +855,7 @@ python provision_synapse_users.py
 ```
 
 Skrypt: (1) czyta wszystkich użytkowników z LLDAP razem z ich grupami (dział) przez GraphQL, (2) loguje się do
-Synapse jako administrator (`s.lewandowski`, to samo hasło testowe co reszta kont z Etapu B0) przez zwykłe
+Synapse jako administrator (`s.lewandowski`, hasło z `SYNAPSE_ADMIN_PASSWORD` w `.env` – w PoC to to samo hasło testowe co reszta kont z Etapu B0) przez zwykłe
 `/login`, (3) dla każdego usera woła `PUT /_synapse/admin/v2/users/@login:matrix.local` z `displayname`
 (bez pola `password` – nie jest wymagane, bo logowanie i tak idzie przez LDAP). Jak w Etapie B0: **`LIMIT`** na
 górze pliku – zacznij od małej wartości, sprawdź, dopiero potem `LIMIT = None`.
@@ -944,7 +964,7 @@ Admin API (`POST /_synapse/admin/v1/join/<pokój>` osobno dla każdego konta) �
   (`@login:matrix.local`) i Synapse nie pozwala go zmienić po fakcie. Docelową domenę wybierz **przed** założeniem
   kont produkcyjnych. `matrix.local` odpada (`.local` jest zarezerwowane dla mDNS, na PoC wymaga wpisu w `hosts`
   i ręcznie zainstalowanego rootCA); na produkcji prawdziwa domena i certyfikat zaufany bez ręcznej instalacji.
-- **Konto administratora.** W PoC: konto testowe `s.lewandowski`, hasło wpisane w skrypcie i flaga `admin` ustawiona
+- **Konto administratora.** W PoC: konto testowe `s.lewandowski`, hasło w `.env` (`SYNAPSE_ADMIN_PASSWORD`) i flaga `admin` ustawiona
   `UPDATE`-em w bazie. Na produkcji: osobne konto serwisowe (nie osoba z działu), założone przez
   `register_new_matrix_user -a` (wymaga `registration_shared_secret`), z hasłem lub tokenem poza kodem
   (`.env` albo menedżer sekretów).
@@ -961,6 +981,101 @@ Admin API (`POST /_synapse/admin/v1/join/<pokój>` osobno dla każdego konta) �
   sposób importu kont partnerów (np. CSV) i to, czy ich pracownicy mają widzieć całą „Firma”, nie jest zdecydowane.
 - **Nowi pracownicy.** `auto_join_rooms` w `homeserver.yaml` nie dotyczy przestrzeni i jest niesprawdzone dla kont
   z Admin API/LDAP – dołączanie do „Firma” robi skrypt.
+
+</details>
+
+### Etap G – książka adresowa jako pokój z wiadomościami
+
+> ⚠️ **Status: skrypt napisany (2026-10-16), ale NIEPRZETESTOWANY na pełnych danych.** Nie ma jeszcze wyniku
+> `--dry-run` ani próby na pokoju testowym. Opis poniżej pochodzi z kodu i komentarza w `setup_directory.py`;
+> po testach uzupełnij go o wyniki (rozmiary wiadomości, wygląd na telefonie i w Element Desktop).
+
+**Po co:** widget (patrz „odrzucone” wyżej) nie wyszedł, a samo wyszukiwanie w katalogu wymaga znajomości
+nazwiska albo działu. Pokój z wiadomościami daje listę ludzi pogrupowaną po działach, do przeglądania bez wyszukiwania,
+z opcjonalnymi danymi kontaktowymi.
+
+**Jak wygląda wynik:** pokój `#ksiazka-adresowa:matrix.local` (alias domyślny `ksiazka-adresowa`), tylko do odczytu
+(piszą administrator i osoby z `SPACES_WRITERS`), podpięty pod przestrzeń „Firma”. W pokoju jest jedna wiadomość
+wstępna i po jednej wiadomości na dział. Dział rozwija się kliknięciem (znacznik `<details>`), osoby są „pigułkami”
+Elementa, a obok nazwiska stoją opcjonalnie: stanowisko, telefon, pokój, piętro.
+
+**Skąd dane:**
+
+- kto, jaki dział, jaka lokalizacja – konta Synapse i ich nazwa wyświetlana (`Imię Nazwisko – Dział[, Lokalizacja]`,
+  ustawia ją `provision_synapse_users.py` z LLDAP),
+- stanowisko / telefon / pokój / piętro – plik `scripts/directory_extra.csv` (edytowany w Excelu; kolumny:
+  `login`, `imie_nazwisko`, `dzial`, `stanowisko`, `telefon`, `pokoj`, `pietro`; separator `;`, UTF-8 z BOM).
+  Szablon z wszystkimi loginami tworzy `--write-extra-template`; nie nadpisuje wpisanych wartości, dopisuje tylko
+  nowe osoby. W repozytorium pliku nie ma (dane osobowe).
+
+**Co robi** (każdy krok idempotentny – można puszczać wielokrotnie, np. po dodaniu pracownika):
+
+1. Loguje się do Synapse jako administrator i pobiera wszystkie aktywne konta lokalne.
+2. Buduje wiadomości: wstęp + po jednej na dział (zbyt duży dział jest dzielony na części).
+3. Znajduje pokój po aliasie albo go tworzy; ustawia nazwę, temat i uprawnienia „tylko do odczytu”; podpina pod
+   „Firma” (`m.space.child` / `m.space.parent`).
+4. Dołącza do pokoju wszystkich z listy **przed** wysłaniem wiadomości (inaczej pigułki mogłyby pokazać sam
+   identyfikator zamiast nazwy).
+5. Wysyła nowe wiadomości, **edytuje** te, których treść się zmieniła, nie rusza niezmienionych i usuwa wiadomości
+   działów, których już nie ma. Stan (id wiadomości i skrót treści) trzyma w pokoju, w zdarzeniu stanu
+   `local.matrix.directory` – dzięki temu skrypt działa z dowolnego komputera i konta, bez plików lokalnych.
+6. Przypina wiadomości (chyba że `--no-pin`).
+
+| Opcja | Co robi |
+|---|---|
+| `--dry-run` | pokazuje, co by zrobił, i rozmiary wiadomości; bez zapisu |
+| `--write-extra-template` | tworzy/uzupełnia `directory_extra.csv` |
+| `--extra-file ŚCIEŻKA` | inny plik CSV niż domyślny |
+| `--fake-extra` | sztuczne dane (stanowisko, telefon…) do oglądania układu; wiadomość dostaje dopisek „dane demonstracyjne”; **wymaga `--alias`** (poza `--dry-run`) |
+| `--alias NAZWA` | inny alias pokoju (do prób; pokój próbny **nie** jest podpinany pod „Firma”) |
+| `--limit N` | tylko N osób (próbka rozrzucona po działach); **wymaga `--alias`** (poza `--dry-run`), żeby nie zmienić właściwego pokoju |
+| `--exclude login1,login2` | pomija wskazane loginy (stałe pomijanie: `DIRECTORY_EXCLUDE` w `.env`) |
+| `--skip-join` / `--rejoin` | bez dołączania osób do pokoju / dołączanie także tych, którzy sami wyszli (jak w `setup_spaces.py`) |
+| `--rebuild` | usuwa stare wiadomości i wysyła wszystko od nowa w porządku alfabetycznym |
+| `--no-pin` | nie przypina wiadomości |
+
+Ustawienia w `.env` (opcjonalne): `DIRECTORY_ROOM_ALIAS`, `DIRECTORY_ROOM_NAME`, `DIRECTORY_ROOM_TOPIC`,
+`DIRECTORY_EXCLUDE`, `SPACES_WRITERS`.
+
+**Kolejność pierwszego użycia** (⚠️ nie przećwiczona; nie puszczaj skryptów logujących administratora wiele razy
+pod rząd – HTTP 429, patrz [Rozwiązywanie problemów](#rozwiązywanie-problemów), punkt 5):
+
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+venv\Scripts\activate
+python setup_directory.py --write-extra-template      # szablon CSV
+python setup_directory.py --dry-run                   # rozmiary wiadomości, podział na działy
+python setup_directory.py --fake-extra --alias test-ksiazka-pelna --limit 20   # próba na pokoju próbnym
+# obejrzyj pokój próbny kontem zwykłego pracownika (Element Desktop z --profile, patrz Krok 10) ORAZ na telefonie
+python setup_directory.py                             # dopiero potem właściwy przebieg
+```
+
+**Znane ograniczenia i otwarte pytania:**
+
+- ⚠️ Zwijane działy (`<details>`) działają w Element Desktop, **nie działają na telefonie** – to sprzeczne z
+  wymaganiem „prosto”. Do rozstrzygnięcia: zaakceptować albo przejść na wariant bez zwijania (nagłówki);
+  eksperyment służy do tego `test_directory_message.py`.
+- Wyszukiwanie w treści pokoju nie działa (stwierdzone w teście); osoby szuka się przez „Rozpocznij rozmowę”
+  (patrz Etap A).
+- ⚠️ Pigułka osoby otwiera jej profil. Czy z profilu da się wygodnie zacząć rozmowę 1:1 bez dodatkowych zgód
+  (wymaganie z początku sekcji) – niesprawdzone.
+- Nowy dział ląduje na **dole** osi czasu (nie alfabetycznie); kolejność naprawia `--rebuild`.
+- Limit zdarzenia Matrix to ok. 64 KB, a edycja zawiera treść dwa razy – dlatego jedna wiadomość ma maks. ok. 28 KB
+  i większy dział jest dzielony na części.
+- Dane kontaktowe (telefon, pokój, piętro) są widoczne dla wszystkich członków pokoju.
+
+<details>
+<summary>🏭 <b>Produkcja:</b> książka adresowa w pokoju</summary>
+
+- **Źródło danych: AD zamiast CSV.** W wersji produkcyjnej stanowisko, telefon, pokój i piętro mogą pochodzić
+  z Active Directory (atrybuty `title`, `telephoneNumber`, `physicalDeliveryOfficeName`) – odczyt z AD zastąpi
+  plik `directory_extra.csv`. Na PoC LLDAP symuluje AD i tych atrybutów nie ma, stąd CSV.
+- **Aktualizacja.** Skrypt działa na żądanie. Po zmianach w AD/LLDAP uruchamiaj go po `provision_synapse_users.py`
+  i `setup_spaces.py`, najlepiej cyklicznie (cron na serwerze).
+- **Nowy dział.** Pojawi się na dole listy; do uporządkowania kolejności potrzebny jest `--rebuild`.
+- **Dane osobowe w pokoju.** Telefony i lokalizacje są widoczne dla każdego członka pokoju (i zostają w historii
+  zdarzeń Synapse po edycji) – zdecyduj, które pola publikować.
+- **Hasła i konto administratora** – jak w pozostałych skryptach (ramka 🏭 przy Etapie E).
 
 </details>
 
@@ -1125,8 +1240,8 @@ z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarz
 **Jak jest wpięty (decyzje projektowe):**
 
 - Usługa `synapse-admin` w `docker-compose.yml`: obraz `awesometechnologies/synapse-admin` z **przypiętym tagiem**
-  (`0.11.4`, nie `latest`), **bez publikowanych portów**. ⚠️ Czy `0.11.4` to najnowsze wydanie – niesprawdzone
-  (tag istnieje, wersję wybrano z pewnego źródła z 2026-03); przypięty tag zmieniasz świadomie, nie przy `up -d`.
+  (`0.11.4`, nie `latest`), **bez publikowanych portów**. ✅ Sprawdzone 2026-10-17: `0.11.4` jest oznaczone jako najnowsze wydanie („Latest”) na stronie wydań projektu i jest
+  najwyższym numerowanym tagiem w zewnętrznym zestawieniu tagów obrazu z Docker Huba; przypięty tag zmieniasz świadomie, nie przy `up -d`.
 - Nginx dostał osobny blok `server { listen 8080; }` (w `matrix.conf.example`): `/` → panel, a
   `/_matrix` i `/_synapse/admin` → Synapse. Panel i API są pod **tym samym adresem**, więc nie ma problemu z CORS ani
   z certyfikatem (certyfikat serwera ma tylko `matrix.local`). Zwykły HTTP jest tu celowy – ruch idzie po loopbacku
@@ -1241,7 +1356,8 @@ administratora (w PoC `s.lewandowski`, hasło z LLDAP). Konto bez flagi `admin` 
 ## 🤖 Skrypty automatyzujące
 
 Przegląd skryptów Python w `scripts/` – co robią, kiedy ich użyć, jak uruchomić. Wszystkie czytają adres serwera
-i hasła automatycznie z `.env` (nic nie trzeba wpisywać na sztywno ani commitować).
+i hasła automatycznie z `.env` (nic nie trzeba wpisywać na sztywno ani commitować; hasło administratora Synapse to
+`SYNAPSE_ADMIN_PASSWORD`, patrz krok 5.1).
 
 **Wspólne środowisko** (raz, przy pierwszym użyciu któregokolwiek ze skryptów):
 
@@ -1261,7 +1377,9 @@ Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowi
 | `seed_test_employees.py` | Tworzy testowe konta w LLDAP (7 grup-działów, wspólne hasło testowe); `--reassign` przepina istniejące konta do aktualnych grup | Potrzebujesz testowej masy pracowników do testów na realnej skali |
 | `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział` | Żeby cała firma była od razu widoczna w katalogu Synapse; po zmianie działów w LLDAP |
 | `setup_spaces.py` | Buduje drzewo Spaces (Firma + 7 działów) z grup LLDAP, tylko do odczytu, dołącza członków | Po provisioningu kont i po każdej zmianie przynależności do działów |
-| `setup_main_room.py` | **Biblioteka wspólna** (klasa `Synapse`, `cfg()`, stałe) importowana przez `setup_spaces.py` | **Nie uruchamiaj** – pokoje i widget wycofane; TODO: wydzielić bibliotekę do osobnego modułu |
+| `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ⚠️ Po przetestowaniu: po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py` i `setup_spaces.py`) |
+| `test_directory_message.py` | Eksperyment układu wiadomości (zwijane `<details>` vs nagłówki), `--measure` sprawdza rozmiar | Tylko do prób układu; nie jest częścią normalnego przepływu |
+| `setup_main_room.py` | **Biblioteka wspólna** (klasa `Synapse`, `cfg()`, stałe) importowana przez `setup_spaces.py` i `setup_directory.py` | **Nie uruchamiaj** – pokoje i widget wycofane; TODO: wydzielić bibliotekę do osobnego modułu |
 
 Pełny opis, wymagania wstępne i wyniki testów:
 
@@ -1320,8 +1438,9 @@ do końca.
    w każdy identyfikator użytkownika i nie da się go zmienić (szczegóły: ramka 🏭 przy Etapie E).
 9. **Konto administratora Synapse:** osobne konto serwisowe zamiast testowego, hasło poza kodem skryptów;
    `/_synapse/admin` ograniczone po IP.
-10. **Słabe hasła PoC** w skryptach i danych testowych (hasło administratora w skryptach, wspólne hasło testowe
-    kont z Etapu B0) – zmień przed udostępnieniem środowiska komukolwiek.
+10. **Słabe hasła PoC** w danych testowych i w historii gita (hasło administratora – od 2026-10-17 w `.env`, ale stara wartość jest w commitach; wspólne hasło testowe
+    kont z Etapu B0) – zmień przed udostępnieniem środowiska komukolwiek. Checklista:
+    [docs/rotacja-hasel-poc.md](docs/rotacja-hasel-poc.md) (⚠️ nieprzećwiczona).
 11. **Kopie zapasowe** (baza, wolumen LLDAP, `synapse/`, media) – opisane, ale nieprzetestowane (patrz
     [Administrowanie Synapse](#administrowanie-synapse)).
 12. **Spaces:** zdecyduj między własnym skryptem (cykliczne uruchamianie) a licencją ESS Pro (AIM) – ramka 🏭 w Etapie E.
@@ -1421,6 +1540,8 @@ Po błędzie `host not found in upstream "synapse-admin"` uruchom `docker compos
   (wyszukiwarka, lista osób w „Firma”). Pokazanie wszystkich działów jako drzewa bez dołączania do nich nie jest
   możliwe w sposób, który pokazywałby też ludzi (próba z `knock` – patrz Etap E).
 - Przestrzenie nie synchronizują się same – zmiany w LLDAP wymagają ponownego uruchomienia skryptów.
+- Pokój „Książka adresowa” (Etap G) jest nieprzetestowany; zwijane działy nie działają na telefonie, a wyszukiwanie
+  w treści pokoju nie działa (szczegóły w Etapie G).
 - Kto sam wyjdzie z przestrzeni, nie wróci automatycznie (świadoma decyzja skryptu, `--rejoin` to zmienia).
 - Konto trafia do katalogu wyszukiwania dopiero po założeniu w Synapse (`provision_synapse_users.py`) albo
   pierwszym logowaniu.

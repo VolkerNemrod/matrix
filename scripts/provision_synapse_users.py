@@ -43,10 +43,9 @@ MATRIX_BASE_URL = "https://matrix.local"
 ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 
 # Konto testowe podniesione do roli administratora Synapse (patrz README, Etap B,
-# krok 0 -- jednorazowy UPDATE w bazie na VM). Hasla uzywa tego samego co reszta
-# kont testowych z Etapu B0.
+# krok 0 -- jednorazowy UPDATE w bazie na VM). Haslo NIE jest w kodzie: SYNAPSE_ADMIN_PASSWORD
+# z .env (albo zmiennej srodowiskowej) -- patrz ADMIN_PASSWORD nizej, za load_dotenv_value().
 ADMIN_LOGIN = "s.lewandowski"
-ADMIN_PASSWORD = "TestHaslo123!"
 
 HOMESERVER_DOMAIN = "matrix.local"  # czesc MXID po dwukropku, np. @login:matrix.local
 
@@ -74,6 +73,10 @@ def load_dotenv_value(key: str) -> str:
         if k.strip() == key:
             return v.strip()
     return ""
+
+
+# Haslo administratora Synapse (SYNAPSE_ADMIN_PASSWORD w .env); brak/placeholder wykrywa SynapseAdmin._login().
+ADMIN_PASSWORD = os.environ.get("SYNAPSE_ADMIN_PASSWORD") or load_dotenv_value("SYNAPSE_ADMIN_PASSWORD")
 
 
 def resolve_lldap_url() -> str:
@@ -154,6 +157,11 @@ class SynapseAdmin:
         self.session.headers["Authorization"] = f"Bearer {token}"
 
     def _login(self, username: str, password: str) -> str:
+        if not password or password.startswith("CHANGE_ME"):
+            raise RuntimeError(
+                "Brak hasla administratora Synapse -- ustaw SYNAPSE_ADMIN_PASSWORD w .env "
+                "(wzor: .env.example) albo w zmiennej srodowiskowej."
+            )
         r = self.session.post(
             f"{self.base_url}/_matrix/client/r0/login",
             json={
