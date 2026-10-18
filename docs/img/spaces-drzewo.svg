@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" width="1200" height="500" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t3 d3">
+  <title id="t3">Matrix Spaces – struktura firmy w Elemencie</title>
+  <desc id="d3">Przestrzeń „Firma” jako korzeń, w niej wszyscy pracownicy. Pod nią siedem przestrzeni-działów (Księgowość, Wydział EFS, Dyrekcja, IT, Sprzedaż, Bydgoszcz Poradnictwo, Włocławek Poradnictwo), do których należą członkowie odpowiednich grup LLDAP, oraz pokój tylko do odczytu „Książka adresowa” z listą osób pogrupowaną po działach. Struktura jest tylko do odczytu.</desc>
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
+    </marker>
+    <marker id="arr3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6cb6ff"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="500" rx="18" fill="#0b1410"/>
+  <text x="600" y="44" text-anchor="middle" font-size="24" font-weight="700" fill="#e8fff1">Matrix Spaces · struktura firmy w Elemencie</text>
+
+  <!-- korzeń -->
+  <rect x="480" y="80" width="240" height="70" rx="12" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
+  <text x="600" y="112" text-anchor="middle" font-size="19" font-weight="700" fill="#e8fff1">Space: Firma</text>
+  <text x="600" y="134" text-anchor="middle" font-size="13" fill="#9bd6b3">wszyscy pracownicy (ok. 204 konta)</text>
+
+  <!-- linie -->
+  <path d="M600 150 L600 180" stroke="#3fa56b" stroke-width="2"/>
+  <path d="M110 180 L1090 180" stroke="#3fa56b" stroke-width="2"/>
+  <path d="M110 180 L110 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M250 180 L250 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M390 180 L390 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M530 180 L530 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M670 180 L670 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M810 180 L810 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M950 180 L950 206" stroke="#3fa56b" stroke-width="2" marker-end="url(#arr3)"/>
+  <path d="M1090 180 L1090 206" stroke="#6cb6ff" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr3b)"/>
+
+  <!-- działy -->
+  <g text-anchor="middle" font-size="15" font-weight="700" fill="#e8fff1">
+    <rect x="45" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="110" y="249">Księgowość</text>
+
+    <rect x="185" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="250" y="249">Wydział EFS</text>
+
+    <rect x="325" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="390" y="249">Dyrekcja</text>
+
+    <rect x="465" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="530" y="249">IT</text>
+
+    <rect x="605" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="670" y="249">Sprzedaż</text>
+
+    <rect x="745" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="810" y="241">Bydgoszcz</text>
+    <text x="810" y="261">Poradnictwo</text>
+
+    <rect x="885" y="206" width="130" height="76" rx="10" fill="#16382a" stroke="#3fa56b"/>
+    <text x="950" y="241">Włocławek</text>
+    <text x="950" y="261">Poradnictwo</text>
+
+    <rect x="1025" y="206" width="130" height="76" rx="10" fill="#10263a" stroke="#6cb6ff" stroke-dasharray="6 4"/>
+    <text x="1090" y="241">Książka</text>
+    <text x="1090" y="261">adresowa</text>
+  </g>
+
+  <!-- zawartość działów -->
+  <g text-anchor="middle" font-size="12" fill="#9bd6b3">
+    <rect x="45" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <rect x="185" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <rect x="325" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <rect x="465" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <rect x="605" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <rect x="745" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+    <rect x="885" y="296" width="130" height="92" rx="10" fill="#10231a" stroke="#2e5d45"/>
+
+    <text x="110" y="318">członkowie</text><text x="110" y="334">grupy LLDAP</text>
+    <text x="250" y="318">członkowie</text><text x="250" y="334">grupy LLDAP</text>
+    <text x="390" y="318">członkowie</text><text x="390" y="334">grupy LLDAP</text>
+    <text x="530" y="318">członkowie</text><text x="530" y="334">grupy LLDAP</text>
+    <text x="670" y="318">członkowie</text><text x="670" y="334">grupy LLDAP</text>
+    <text x="810" y="318">członkowie</text><text x="810" y="334">grupy LLDAP</text>
+    <text x="950" y="318">członkowie</text><text x="950" y="334">grupy LLDAP</text>
+
+    <g fill="#7dffb3">
+      <circle cx="85" cy="364" r="9"/><circle cx="110" cy="364" r="9"/><circle cx="135" cy="364" r="9"/>
+      <circle cx="225" cy="364" r="9"/><circle cx="250" cy="364" r="9"/><circle cx="275" cy="364" r="9"/>
+      <circle cx="365" cy="364" r="9"/><circle cx="390" cy="364" r="9"/><circle cx="415" cy="364" r="9"/>
+      <circle cx="505" cy="364" r="9"/><circle cx="530" cy="364" r="9"/><circle cx="555" cy="364" r="9"/>
+      <circle cx="645" cy="364" r="9"/><circle cx="670" cy="364" r="9"/><circle cx="695" cy="364" r="9"/>
+      <circle cx="785" cy="364" r="9"/><circle cx="810" cy="364" r="9"/><circle cx="835" cy="364" r="9"/>
+      <circle cx="925" cy="364" r="9"/><circle cx="950" cy="364" r="9"/><circle cx="975" cy="364" r="9"/>
+    </g>
+
+    <rect x="1025" y="296" width="130" height="92" rx="10" fill="#0e1d2b" stroke="#2f6a9c" stroke-dasharray="6 4"/>
+    <text x="1090" y="318" fill="#9fd0ff">pokój, nie Space</text>
+    <text x="1090" y="336" fill="#9fd0ff">tylko do odczytu</text>
+    <text x="1090" y="354" fill="#9fd0ff">osoby wg działów</text>
+    <text x="1090" y="372" fill="#9fd0ff">+ dane kontaktowe</text>
+  </g>
+
+  <!-- opis -->
+  <g text-anchor="middle" font-size="13">
+    <text x="600" y="425" fill="#9bd6b3">Każde konto jest w „Firma” (widzi wszystkich) i w swoim dziale. Przestrzenie są tylko do odczytu; rozmowy 1:1 są dozwolone.</text>
+    <text x="600" y="446" fill="#9bd6b3">Przestrzenie z grup LLDAP buduje setup_spaces.py, pokój „Książka adresowa” – setup_directory.py.</text>
+    <text x="600" y="472" fill="#7fa893">Niesprawdzone: klik osoby na liście członków = rozmowa 1:1, wygląd na telefonie, skala ok. 300 osób.</text>
+  </g>
+</svg>

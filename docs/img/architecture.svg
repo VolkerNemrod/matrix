@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">Architektura Matrix PoC</title>
-  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin (panel dostępny tylko z VM / przez tunel SSH). W Synapse działają przestrzenie Spaces i pokój książki adresowej.</desc>
+  <desc id="d">Klienci Element (Windows, Android) łączą się przez Tailscale z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin (panel dostępny tylko z VM / przez tunel SSH). Skrypty z PC administratora (provision_synapse_users, setup_spaces, setup_directory) łączą się z Admin API Synapse i z LLDAP. W Synapse działają przestrzenie Spaces i pokój książki adresowej.</desc>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
     </marker>
     <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#6cb6ff"/>
+    </marker>
+    <marker id="arrY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ffcc66"/>
     </marker>
   </defs>
 
@@ -28,8 +31,13 @@
   <text x="165" y="323" text-anchor="middle" font-size="13" fill="#9bd6b3">MagicDNS + cert Tailscale</text>
   <text x="165" y="343" text-anchor="middle" font-size="13" fill="#9bd6b3">+ Tailscale</text>
 
-  <text x="165" y="400" text-anchor="middle" font-size="13" fill="#7fa893">Logowanie kontem z LLDAP</text>
-  <text x="165" y="420" text-anchor="middle" font-size="13" fill="#7fa893">(np. j.kowalski)</text>
+  <text x="165" y="472" text-anchor="middle" font-size="13" fill="#7fa893">Logowanie kontem z LLDAP</text>
+  <text x="165" y="492" text-anchor="middle" font-size="13" fill="#7fa893">(np. j.kowalski)</text>
+
+  <!-- PC administratora -->
+  <rect x="60" y="378" width="210" height="64" rx="10" fill="#3a2a10" stroke="#ffcc66"/>
+  <text x="165" y="402" text-anchor="middle" font-size="15" font-weight="700" fill="#fff0cc">PC administratora</text>
+  <text x="165" y="423" text-anchor="middle" font-size="12" fill="#ffd98a">skrypty: Synapse + LLDAP</text>
 
   <!-- TAILSCALE -->
   <rect x="330" y="80" width="130" height="440" rx="14" fill="#6cb6ff" fill-opacity="0.07" stroke="#6cb6ff" stroke-width="1.5" stroke-dasharray="7 6"/>
@@ -55,7 +63,7 @@
 
     <rect x="520" y="290" width="170" height="100" rx="10" fill="#16382a" stroke="#3fa56b" stroke-dasharray="5 4"/>
     <text x="605" y="320" text-anchor="middle" font-size="14" font-weight="700" fill="#e8fff1">matrix-synapse-admin</text>
-    <text x="605" y="342" text-anchor="middle" font-size="13" fill="#9bd6b3">panel WWW (Etap F)</text>
+    <text x="605" y="342" text-anchor="middle" font-size="13" fill="#9bd6b3">panel WWW</text>
     <text x="605" y="361" text-anchor="middle" font-size="12" fill="#9bd6b3">tylko 127.0.0.1:8080</text>
     <text x="605" y="378" text-anchor="middle" font-size="12" fill="#9bd6b3">dostęp: tunel SSH</text>
 
@@ -90,6 +98,8 @@
     <path d="M850 300 L850 400" stroke="#6cb6ff" stroke-dasharray="8 6" marker-start="url(#arrB)" marker-end="url(#arrB)"/>
     <!-- proxy -> synapse-admin (port 8080, tylko loopback VM) -->
     <path d="M605 220 L605 290" stroke="#7dffb3" marker-end="url(#arr)"/>
+    <!-- PC administratora (skrypty) -> proxy -> Admin API / LLDAP -->
+    <path d="M270 410 L310 410 L310 205 L520 205" stroke="#ffcc66" stroke-dasharray="3 5" marker-end="url(#arrY)"/>
   </g>
 
   <!-- etykiety strzałek -->

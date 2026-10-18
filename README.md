@@ -35,7 +35,7 @@ Domena testowa to `matrix.local`, reverse proxy to Nginx.
 ## Architektura
 
 <p align="center">
-  <img src="docs/img/architecture.svg" alt="Schemat architektury: klienci Element, Tailscale, VM z kontenerami Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin" width="100%">
+  <img src="docs/img/architecture.svg" alt="Schemat architektury: klienci Element, PC administratora ze skryptami, Tailscale, VM z kontenerami Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin" width="100%">
 </p>
 
 Jak wygląda logowanie (uproszczony schemat):
@@ -86,7 +86,7 @@ Etap 2 (książka adresowa: Spaces, pokój, dane dodatkowe), Etap 3 (bieżąca p
 16. [Wygląd Element Desktop (opcjonalnie)](#wyglad-element-desktop) – [docs/wyglad-element.md](docs/wyglad-element.md)
 
 <p align="center">
-  <img src="docs/img/roadmap.svg" alt="Mapa kroków instalacji 1–10" width="100%">
+  <img src="docs/img/roadmap.svg" alt="Mapa kroków: Część 1 (kroki 1–10) i Część 2 (przygotowanie, etapy 0–3)" width="100%">
 </p>
 
 ---
@@ -163,7 +163,7 @@ scripts/setup_main_room.py          biblioteka wspólna (klasa Synapse itd.) uż
                                     NIE uruchamiać jako skryptu (pokoje wycofane)
 scripts/requirements.txt            zależności Pythona dla skryptów (requests)
 Matrix.md                           pierwotny plan testów
-docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków, warianty książki adresowej)
+docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków, drzewo Spaces); wariant1/2 – archiwalne, nieużywane
 docs/administrowanie.md             Etap 3: konto admina, Admin API, kopie, logi, panel Synapse Admin, skrypty, komendy
 docs/rozwiazywanie-problemow.md     problemy 1-10 z diagnozą
 docs/produkcja.md                   lista kontrolna przed produkcją, ramki 🏭, znane ograniczenia PoC
@@ -594,7 +594,7 @@ i grupy-działy. Część 2 prowadzi od kont do działającej książki adresowe
 ### Rozwiązanie
 
 <p align="center">
-  <img src="docs/img/wariant3-spaces-drzewo.svg" alt="Przestrzeń Firma z podprzestrzeniami-działami widoczna jako drzewo w pasku bocznym Elementa" width="100%">
+  <img src="docs/img/spaces-drzewo.svg" alt="Przestrzeń Firma z siedmioma przestrzeniami-działami i pokojem Książka adresowa, widoczna jako drzewo w pasku bocznym Elementa" width="100%">
 </p>
 
 Książka adresowa to **trzy elementy**:

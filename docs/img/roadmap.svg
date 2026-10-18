@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">Mapa kroków instalacji</title>
-  <desc id="d">Dziesięć kroków: połączenie z VM, Docker, Tailscale, pliki projektu, sekrety, certyfikaty, uruchomienie usług, konta LLDAP, klienci i testy.</desc>
+  <desc id="d">Część 1: dziesięć kroków (połączenie z VM, Docker, Tailscale, pliki projektu, sekrety, certyfikaty, uruchomienie usług, konta LLDAP, klienci, testy). Część 2: przygotowanie, Etap 0 (konto administratora), Etap 1 (konta w Synapse), Etap 2 (książka adresowa), Etap 3 (bieżąca praca).</desc>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
     </marker>
   </defs>
 
-  <rect width="1200" height="460" rx="18" fill="#0b1410"/>
-  <text x="600" y="46" text-anchor="middle" font-size="26" font-weight="700" fill="#e8fff1">Mapa kroków instalacji</text>
+  <rect width="1200" height="740" rx="18" fill="#0b1410"/>
+  <text x="600" y="46" text-anchor="middle" font-size="26" font-weight="700" fill="#e8fff1">Mapa kroków · Część 1: środowisko</text>
 
   <!-- ===== wiersz 1 ===== -->
   <!-- 1 -->
@@ -82,7 +82,7 @@
   <rect x="725" y="270" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
   <circle cx="759" cy="302" r="18" fill="#00c853"/><text x="759" y="308" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">9</text>
   <text x="741" y="348" font-size="17" font-weight="700" fill="#e8fff1">Klienci</text>
-  <text x="741" y="370" font-size="13" fill="#9bd6b3">Windows i Android</text>
+  <text x="741" y="370" font-size="13" fill="#9bd6b3">Windows · Android (opc.)</text>
   <rect x="741" y="382" width="115" height="26" rx="13" fill="#1f4f7a"/><text x="798" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC · Android</text>
 
   <!-- 10 -->
@@ -97,4 +97,53 @@
   <path d="M483 337 L497 345 L483 353 z" fill="#7dffb3"/>
   <path d="M703 337 L717 345 L703 353 z" fill="#7dffb3"/>
   <path d="M923 337 L937 345 L923 353 z" fill="#7dffb3"/>
+
+  <!-- przejście do części 2 -->
+  <path d="M1040 422 L1040 440 L160 440 L160 498" fill="none" stroke="#7dffb3" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="600" y="478" text-anchor="middle" font-size="22" font-weight="700" fill="#e8fff1">Część 2: konta i książka adresowa</text>
+
+  <!-- ===== wiersz 3 (Część 2) ===== -->
+  <!-- P -->
+  <rect x="65" y="500" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="99" cy="532" r="18" fill="#00c853"/><text x="99" y="538" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">P</text>
+  <text x="81" y="578" font-size="17" font-weight="700" fill="#e8fff1">Przygotowanie</text>
+  <text x="81" y="600" font-size="13" fill="#9bd6b3">katalog i konta testowe</text>
+  <rect x="81" y="612" width="80" height="26" rx="13" fill="#1d5a38"/><text x="121" y="630" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM · PC</text>
+
+  <!-- 0 -->
+  <rect x="285" y="500" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="319" cy="532" r="18" fill="#00c853"/><text x="319" y="538" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">0</text>
+  <text x="301" y="578" font-size="17" font-weight="700" fill="#e8fff1">Konto admina</text>
+  <text x="301" y="600" font-size="13" fill="#9bd6b3">admin Synapse (raz, SQL)</text>
+  <rect x="301" y="612" width="50" height="26" rx="13" fill="#1d5a38"/><text x="326" y="630" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
+
+  <!-- 1 -->
+  <rect x="505" y="500" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="539" cy="532" r="18" fill="#00c853"/><text x="539" y="538" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">1</text>
+  <text x="521" y="578" font-size="17" font-weight="700" fill="#e8fff1">Konta w Synapse</text>
+  <text x="521" y="600" font-size="13" fill="#9bd6b3">z LLDAP, z nazwą i działem</text>
+  <rect x="521" y="612" width="50" height="26" rx="13" fill="#1f4f7a"/><text x="546" y="630" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC</text>
+
+  <!-- 2 -->
+  <rect x="725" y="500" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
+  <circle cx="759" cy="532" r="18" fill="#00c853"/><text x="759" y="538" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">2</text>
+  <text x="741" y="578" font-size="17" font-weight="700" fill="#e8fff1">Książka adresowa</text>
+  <text x="741" y="600" font-size="13" fill="#9bd6b3">Spaces + pokój + dane</text>
+  <rect x="741" y="612" width="50" height="26" rx="13" fill="#1f4f7a"/><text x="766" y="630" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC</text>
+
+  <!-- 3 -->
+  <rect x="945" y="500" width="190" height="150" rx="12" fill="#1b4a35" stroke="#00e676" stroke-width="2"/>
+  <circle cx="979" cy="532" r="18" fill="#00e676"/><text x="979" y="538" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">3</text>
+  <text x="961" y="578" font-size="17" font-weight="700" fill="#e8fff1">Bieżąca praca</text>
+  <text x="961" y="600" font-size="13" fill="#9bd6b3">panel, Admin API, logi</text>
+  <rect x="961" y="612" width="80" height="26" rx="13" fill="#1f4f7a"/><text x="1001" y="630" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC · VM</text>
+
+  <!-- strzałki wiersz 3 -->
+  <path d="M263 567 L277 575 L263 583 z" fill="#7dffb3"/>
+  <path d="M483 567 L497 575 L483 583 z" fill="#7dffb3"/>
+  <path d="M703 567 L717 575 L703 583 z" fill="#7dffb3"/>
+  <path d="M923 567 L937 575 L923 583 z" fill="#7dffb3"/>
+
+  <text x="600" y="696" text-anchor="middle" font-size="14" fill="#9bd6b3">Dane płyną w jedną stronę: LLDAP → konta w Synapse → Spaces → książka adresowa.</text>
+  <text x="600" y="718" text-anchor="middle" font-size="14" fill="#9bd6b3">Zmiana zaczyna się w LLDAP; skrypty puszczasz po kolei (tabela „Zmieniłem X – co uruchomić” w README).</text>
 </svg>
