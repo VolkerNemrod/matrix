@@ -27,7 +27,7 @@ CO ROBI (kazdy krok idempotentny -- mozna puszczac wielokrotnie, np. po dodaniu 
      NIE rusza niezmienionych, USUWA wiadomosci dzialow, ktorych juz nie ma.
      Stan (id wiadomosci + skrot tresci) trzyma w pokoju, w zdarzeniu stanu local.matrix.directory
      -- dzieki temu dziala z kazdego komputera i konta, bez plikow lokalnych.
-  6. Przypina wiadomosci (m.room.pinned_events), chyba ze --no-pin.
+  6. Domyslnie NIE przypina wiadomosci (stare przypiecia zdejmuje); --pin przypina wiadomosc wstepna.
 
 OGRANICZENIA:
   - Limit zdarzenia Matrix to ~64 KB, a EDYCJA zawiera tresc dwa razy -- dlatego wiadomosc ma
@@ -293,10 +293,7 @@ def build_dept_content(title: str, items: list, extras: dict, date: str, demo: b
             lis.append(li)
             lines.append("  " + line)
         h.append("<ul>" + "".join(lis) + "</ul>")
-    notes = footer_notes(date, demo)
-    if notes:
-        h.append(f"<p><sub>{esc(' · '.join(notes))}</sub></p>")
-        lines.append(" · ".join(notes))
+    # bez stopki z datą/dopiskiem demo: te informacje są tylko we wiadomości wstępnej (mniej szumu)
     h.append("</details>")
     return make_content("".join(h), lines)
 
@@ -461,7 +458,7 @@ def main():
     ap.add_argument("--skip-join", action="store_true", help="nie dołączaj osób do pokoju")
     ap.add_argument("--rejoin", action="store_true", help="dołącz też osoby, które same wyszły z pokoju")
     ap.add_argument("--rebuild", action="store_true", help="usuń stare wiadomości i wyślij wszystko od nowa (kolejność)")
-    ap.add_argument("--no-pin", action="store_true", help="nie przypinaj wiadomości")
+    ap.add_argument("--pin", action="store_true", help="przypnij wiadomość wstępną (domyślnie bez przypięć)")
     args = ap.parse_args()
 
     if (args.limit or args.fake_extra) and not args.alias and not args.dry_run and not args.write_extra_template:
@@ -600,11 +597,14 @@ def main():
     finally:
         syn.put_state(room_id, STATE_TYPE, {"messages": mapping})
 
-    if not args.no_pin:
-        wanted = [mapping[it["key"]]["event_id"] for it in plan if it["key"] in mapping]
-        if (syn.get_state(room_id, "m.room.pinned_events") or {}).get("pinned") != wanted:
-            syn.put_state(room_id, "m.room.pinned_events", {"pinned": wanted})
-            print(f"  Przypięto wiadomości: {len(wanted)}")
+    if args.pin:
+        wanted_pins = [mapping[INTRO_KEY]["event_id"]] if INTRO_KEY in mapping else []
+    else:
+        wanted_pins = []   # domyślnie bez przypięć (pasek u góry skleja tekst); stare przypięcia są zdejmowane
+    current_pins = (syn.get_state(room_id, "m.room.pinned_events") or {}).get("pinned") or []
+    if current_pins != wanted_pins:
+        syn.put_state(room_id, "m.room.pinned_events", {"pinned": wanted_pins})
+        print(f"  Przypięte wiadomości: {len(wanted_pins)}")
 
     print("\n=== GOTOWE ===")
     print(f"Pokój: \"{spec['name']}\" (#{alias}:{HOMESERVER_DOMAIN}). Sprawdź na koncie zwykłego pracownika:")
