@@ -57,7 +57,9 @@ sequenceDiagram
 
 ## Spis treści
 
-**Mapa etapów: [od zera do działającego systemu i co uruchomić po zmianie](#mapa-etapów-i-co-uruchomić-po-zmianie)**
+**Mapa etapów: [co uruchomić po zmianie](#mapa-etapów-i-co-uruchomić-po-zmianie)**
+
+**Część 1 – Przygotowanie środowiska** ([opis](#czesc-1))
 
 0. [Oznaczenia i zasady](#0-oznaczenia-i-zasady)
 1. [Połącz się z VM](#krok-1--połącz-się-z-vm)
@@ -72,8 +74,12 @@ sequenceDiagram
     - [Komputer w innej lokalizacji (u kolegi)](#93-komputer-w-innej-lokalizacji-u-kolegi)
 10. [Testy](#krok-10--testy)
     - [Drugie konto w Elemencie bez zamykania pierwszego](#drugie-konto-w-elemencie-bez-zamykania-pierwszego-przydatne-w-testach)
-11. [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy) (Etapy A, B0, B+C, E – Spaces, G – pokój z wiadomościami, D)
-12. [Administrowanie Synapse](#administrowanie-synapse)
+
+**Część 2 – Konta i książka adresowa** ([opis](#czesc-2)): Przygotowanie, Etap 0 (konto administratora), Etap 1 (konta w Synapse),
+Etap 2 (książka adresowa: Spaces, pokój, dane dodatkowe), Etap 3 (bieżąca praca)
+
+11. [Konta i książka adresowa](#czesc-2)
+12. [Etap 3: bieżąca praca (administrowanie)](#administrowanie-synapse)
 13. [🤖 Skrypty automatyzujące](#-skrypty-automatyzujące)
 14. [Przydatne komendy](#przydatne-komendy)
 15. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
@@ -88,27 +94,32 @@ sequenceDiagram
 
 ## Mapa etapów i co uruchomić po zmianie
 
+Instrukcja ma **dwie części**:
+
+- **Część 1 – Przygotowanie środowiska** (kroki 1–10): VM, Docker, Tailscale, certyfikaty, uruchomienie usług, LLDAP, klienci.
+- **Część 2 – Konta i książka adresowa** (etapy 0–3): na działającym już komunikatorze budujesz konta, strukturę firmy
+  i książkę adresową, a potem prowadzisz bieżącą pracę.
+
 Dane płyną **w jedną stronę**: LLDAP (w firmie: Active Directory) → konta w Synapse → przestrzenie Spaces → książka adresowa.
 Zmiany robisz **zawsze na początku łańcucha** i uruchamiasz skrypty po kolei od tego miejsca do końca. Ręczne poprawki
 w Elemencie albo w panelu Synapse Admin (nazwy, członkostwo) nadpisze następne uruchomienie skryptu.
 
 ```mermaid
 flowchart LR
-    E1[ETAP 1 Infrastruktura kroki 1-7] --> E2[ETAP 2 Konta i grupy w LLDAP]
-    E2 --> E3[ETAP 3 Konta w Synapse]
-    E3 --> E4[ETAP 4 Spaces Firma i dzialy]
-    E4 --> E5[ETAP 5 Ksiazka adresowa]
-    E5 --> E6[ETAP 6 Klienci]
+    C1[CZESC 1 Srodowisko kroki 1-10] --> E0[ETAP 0 Konto admina]
+    E0 --> E1[ETAP 1 Konta w Synapse z LLDAP]
+    E1 --> E2[ETAP 2 Ksiazka adresowa]
+    E2 --> E3[ETAP 3 Biezaca praca]
 ```
 
-| Etap | Co | Czym | Gdzie w README |
+| Część / etap | Co | Czym | Gdzie |
 |---|---|---|---|
-| **1** | Infrastruktura: VM, Docker, Tailscale, certyfikaty, 6 kontenerów | kroki 1–7 (ręcznie) | [Krok 1–7](#krok-1--połącz-się-z-vm) |
-| **2** | Źródło prawdy: konta i grupy-działy w LLDAP (w firmie: AD) | panel LLDAP; testowa masa: `seed_test_employees.py` (B0) | [Krok 8](#krok-8--konta-w-lldap), [Etap B0](#etap-b0--testowa-struktura-firmy-w-lldap) |
-| **3** | Konta w Synapse z nazwą „Imię Nazwisko – Dział” (dział = grupa z LLDAP) | `provision_synapse_users.py` (B+C) | [Etap B + C](#etap-b--c--zakładanie-kont-w-synapse-z-działem-w-nazwie) |
-| **4** | Przestrzeń „Firma” i działy, członkowie z grup LLDAP | `setup_spaces.py` (E) | [Etap E](#etap-e--drzewo-spaces-firma--działy) |
-| **5** | Pokój „Książka adresowa” (wiadomości z listą osób) | `setup_directory.py` (G) + `scripts/directory_extra.csv` | [Etap G](#etap-g--książka-adresowa-jako-pokój-z-wiadomościami) |
-| **6** | Klienci: Element, hosts/DNS, rootCA | krok 9, [Etap D](#etap-d--klienci-do-sprawdzenia-przy-produkcji) | [Krok 9](#krok-9--klienci) |
+| **Część 1** | VM, Docker, Tailscale, certyfikaty, 6 kontenerów, LLDAP, klienci | kroki 1–10 (ręcznie) | [Część 1](#czesc-1) |
+| **Przygotowanie** | wyszukiwanie wszystkich użytkowników (A); konta i grupy-działy w LLDAP (w firmie: AD; w PoC testowa masa, B0) | `homeserver.yaml`; `seed_test_employees.py` | [Przygotowanie](#przygotowanie-jednorazowo) |
+| **Etap 0** | Konto administratora Synapse | jedno polecenie SQL (raz) | [Etap 0](#etap-0) |
+| **Etap 1** | Konta w Synapse z nazwą „Imię Nazwisko – Dział” | `provision_synapse_users.py` | [Etap 1](#etap-1) |
+| **Etap 2** | Książka adresowa: 2.1 Spaces, 2.2 pokój z wiadomościami, 2.3 dane dodatkowe | `setup_spaces.py`, `setup_directory.py`, `directory_extra.csv` | [Etap 2](#etap-2) |
+| **Etap 3** | Bieżąca praca: usuwanie pokoi, konta, panel, logi, kopie | Admin API, Synapse Admin, komendy | [Etap 3](#administrowanie-synapse) |
 
 ### Zmieniłem X – co uruchomić
 
@@ -159,6 +170,12 @@ docs/img/*.svg                      grafiki do README (baner, architektura, mapa
 Prawdziwe pliki z hasłami, certyfikaty i klucze tworzysz u siebie na podstawie wzorów `*.example` (krok 5 i 6).
 
 ---
+
+<a id="czesc-1"></a>
+# CZĘŚĆ 1 – Przygotowanie środowiska
+
+Kroki 1–10: od pustej VM do działającego komunikatora (Synapse, LLDAP, Coturn, Nginx, Postgres, panel Synapse Admin), do którego
+logujesz się z Elementa kontem z LLDAP. Gdy to działa, przechodzisz do [Części 2](#czesc-2).
 
 ## 0. Oznaczenia i zasady
 
@@ -636,7 +653,22 @@ instancję – inna nazwa profilu (`--profile testowy3`). ✅ (użyte w testach 
 
 ---
 
-## Książka adresowa dla całej firmy
+<a id="czesc-2"></a>
+<a id="książka-adresowa-dla-całej-firmy"></a>
+# CZĘŚĆ 2 – Konta i książka adresowa
+
+Zakładamy, że [Część 1](#czesc-1) jest gotowa: komunikator działa, a w LLDAP (w firmie: Active Directory) są konta
+i grupy-działy. Część 2 prowadzi od kont do działającej książki adresowej i zbiera to, co przydaje się na co dzień.
+
+| Etap | Co robisz | Powtarzasz, gdy… |
+|---|---|---|
+| [Przygotowanie](#przygotowanie-jednorazowo) | jednorazowa konfiguracja katalogu, dane w LLDAP | – |
+| [Etap 0](#etap-0) | konto administratora Synapse | – (raz) |
+| [Etap 1](#etap-1) | konta w Synapse na podstawie LLDAP | nowy pracownik, zmiana działu lub nazwiska, odejście |
+| [Etap 2](#etap-2) | książka adresowa: Spaces, pokój, dane dodatkowe | j.w. oraz zmiana telefonu, pokoju, piętra |
+| [Etap 3](#administrowanie-synapse) | bieżąca praca | na bieżąco |
+
+## Założenia
 
 **Wymagania** (docelowo ok. 300 pracowników w 3 lokalizacjach):
 
@@ -684,17 +716,10 @@ Firma                          ← WSZYSCY (ok. 204 konta); lista osób do przeg
    lista pracowników pogrupowana po działach, do przeglądania bez wyszukiwania, z opcjonalnymi danymi kontaktowymi (stanowisko,
    telefon, pokój, piętro). Pokój jest tylko do odczytu i podpięty pod przestrzeń „Firma”.
 
-| Etap | Co | Status |
-|---|---|---|
-| **A** | Katalog użytkowników wyszukuje **wszystkich** (nie tylko osoby ze wspólnych pokoi) | ✅ |
-| **B0** | Testowa struktura firmy w LLDAP (skrypt, ok. 200 kont, 7 grup-działów) | ✅ |
-| **B** | Automatyczne zakładanie kont w **Synapse** na podstawie LLDAP (skrypt) | ✅ |
-| **C** | Dział w nazwie wyświetlanej (`Imię Nazwisko – Dział`) | ⚠️ format zmieniony 2026-10-14 (bez lokalizacji); ponowny przebieg skryptu niepotwierdzony |
-| **E** | Drzewo Spaces: „Firma” + 7 działów, tylko do odczytu | ✅ utworzone; widok admina i pracownika sprawdzony na zrzutach z Elementa; ⚠️ pozostałe testy w sekcji Etap E |
-| **G** | Pokój „Książka adresowa” z wiadomościami (jedna na dział, osoby jako pigułki Elementa) | ⚠️ skrypt napisany 2026-10-16, nieuruchomiony na pełnych danych |
-| **D** | Wdrożenie klientów na stanowiskach (Element Desktop z domyślnym serwerem) | ⚠️ do sprawdzenia przy produkcji |
+<a id="przygotowanie-jednorazowo"></a>
+## Przygotowanie (jednorazowo)
 
-### Etap A – wyszukiwanie wszystkich użytkowników ✅
+### A. Wyszukiwanie wszystkich użytkowników ✅
 
 W `synapse/homeserver.yaml` dopisz:
 
@@ -719,7 +744,8 @@ więc wyszukiwarka go nie znajdzie). Dla całej firmy rozwiązuje to Etap B.
 
 Kliknięcie znalezionej osoby otwiera od razu rozmowę 1:1 (sprawdzone 2026-10-10, bez `matrix.to` i bez dodatkowych zgód).
 
-### Etap B0 – testowa struktura firmy w LLDAP
+<a id="etap-b0--testowa-struktura-firmy-w-lldap"></a>
+### B0. Konta i grupy w LLDAP (w PoC: testowa masa pracowników)
 
 ✅ *Sprawdzone na PoC (2026-10-11); struktura grup zmieniona 2026-10-14.*
 
@@ -794,21 +820,12 @@ Po zakończeniu spróbuj zalogować się do Elementa jednym z testowych kont (lo
 > przed brute-force), nie błąd hasła. Rozwiązanie: 🐧 **VM** `docker compose restart synapse` (czyści licznik),
 > potem spróbuj **raz**, nie wielokrotnie pod rząd.
 
-### Etap B + C – zakładanie kont w Synapse (z działem w nazwie)
+<a id="etap-b--c--zakładanie-kont-w-synapse-z-działem-w-nazwie"></a>
+<a id="etap-0"></a>
+## Etap 0 – Konto administratora Synapse
 
-✅ *Zakładanie kont (B) sprawdzone 2026-10-11; format nazwy wyświetlanej (C) zmieniony 2026-10-14.*
-
-Inny temat niż Etap B0 (ten dotyczył LLDAP, ten dotyczy **Synapse**). Konto w Synapse (i wpis
-w katalogu `user_directory`, z którego korzysta wyszukiwarka w Elemencie) powstaje domyślnie dopiero
-przy **pierwszym logowaniu** przez LDAP. Ten skrypt zakłada konta z wyprzedzeniem, przez Admin API
-Synapse, bez potrzeby logowania każdej osoby osobno – i przy okazji ustawia nazwę wyświetlaną (Etap C).
-
-**Format nazwy wyświetlanej:** `Imię Nazwisko – Dział`; konta bez grupy-działu dostają samo imię i nazwisko.
-Skrypt aktualizuje też nazwy istniejących kont, więc po zmianie działu w LLDAP wystarczy uruchomić go ponownie.
-
-**Plik:** `scripts/provision_synapse_users.py` (uruchamiany na PC).
-
-**Wymagania wstępne (jednorazowe):**
+Skrypty z Etapów 1 i 2 logują się do Synapse jako administrator i wywołują Admin API. Przygotowujesz to **raz**,
+przed pierwszym uruchomieniem jakiegokolwiek skryptu.
 
 **1. Konto administratora Synapse.** Zamiast zakładać nowe (co wymagałoby ustawienia
 `registration_shared_secret`, którego nie mamy skonfigurowanego), podnosimy uprawnienia jednemu
@@ -847,9 +864,22 @@ docker compose exec proxy nginx -s reload
 > Admin API jest w ten sposób wystawione publicznie przez to samo proxy co klienci – wciąż chronione
 > tokenem administratora, ale na produkcji warto rozważyć dodatkowe ograniczenie (np. po adresie IP).
 
-**Uruchomienie (PC):**
+<a id="etap-1"></a>
+## Etap 1 – Konta w Synapse na podstawie LLDAP (B + C)
 
-🪟 **PC**, PowerShell (ten sam `venv` co Etap B0):
+✅ *Sprawdzone na PoC; format nazwy wyświetlanej zmieniony 2026-10-14.*
+
+Konto w Synapse (i wpis w katalogu `user_directory`, z którego korzysta wyszukiwarka w Elemencie) powstaje domyślnie
+dopiero przy **pierwszym logowaniu** przez LDAP. Skrypt zakłada konta z wyprzedzeniem, przez Admin API Synapse, bez
+potrzeby logowania każdej osoby osobno, i ustawia nazwę wyświetlaną.
+
+- **Plik:** `scripts/provision_synapse_users.py` (uruchamiany na PC).
+- **Warunki:** gotowy [Etap 0](#etap-0) i dane w LLDAP (konto + grupa-dział dla każdego pracownika).
+- **Format nazwy wyświetlanej:** `Imię Nazwisko – Dział`; konta bez grupy-działu dostają samo imię i nazwisko.
+
+### Pierwsze uruchomienie
+
+🪟 **PC**, PowerShell (ten sam `venv` co w B0):
 
 ```powershell
 cd "<KATALOG_PROJEKTU>\scripts"
@@ -872,7 +902,36 @@ konto istnieje w katalogu mimo braku logowania.
 > prawdziwym logowaniu tej osoby). Czy po jej zalogowaniu ten sam pokój automatycznie staje się
 > szyfrowany, czy trzeba nowego pokoju/weryfikacji – **niesprawdzone**.
 
-### Etap E – drzewo Spaces („Firma” + działy)
+### Aktualizacje: nowy pracownik, zmiana działu, odejście
+
+Źródłem jest zawsze LLDAP (w firmie: AD): zmianę robisz tam, a potem uruchamiasz skrypty po kolei, zaczynając od tego
+Etapu.
+
+| Sytuacja | W LLDAP | Uruchom na PC (po kolei) |
+|---|---|---|
+| **Nowy pracownik** | utwórz konto (login, imię i nazwisko), dodaj do grupy-działu | `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py` |
+| **Konto bez działu** (w książce trafia do „Bez działu”) | dodaj do grupy-działu | jak „nowy pracownik” |
+| **Zmiana nazwiska lub poprawa nazwy** | edytuj imię i nazwisko | `provision_synapse_users.py` → `setup_directory.py` |
+| **Zmiana działu** | zmień grupę | `provision_synapse_users.py` → `setup_spaces.py --prune` → `setup_directory.py` |
+| **Odejście** | usuń lub zablokuj konto | dezaktywuj konto w Synapse (panel Synapse Admin lub Admin API), potem `setup_spaces.py --prune` → `setup_directory.py` |
+
+Zasady:
+
+- Najpierw `--dry-run` każdego skryptu, dopiero potem właściwe uruchomienie.
+- Skrypty logują administratora; przy HTTP 429 odczekaj kilka minut ([Rozwiązywanie problemów](#rozwiązywanie-problemów), punkt 4).
+- Przed pełnym przebiegiem sprawdź, czy stała `LIMIT` na górze `provision_synapse_users.py` nie ogranicza liczby kont
+  (pełny przebieg: `None`).
+- Nowy pracownik **nie musi** się wcześniej logować – konto powstaje z wyprzedzeniem.
+
+<a id="etap-2"></a>
+## Etap 2 – Książka adresowa
+
+Książka składa się z trzech elementów (patrz [Rozwiązanie](#rozwiązanie)): katalog użytkowników (działa już po Etapie 1),
+przestrzenie Spaces (2.1) i pokój z wiadomościami (2.2). Dane dodatkowe (2.3) są opcjonalne i można je dodać później.
+Kolejność: 2.1 → 2.2 → 2.3.
+
+<a id="etap-e--drzewo-spaces-firma--działy"></a>
+### 2.1 Spaces – „Firma” i działy (E)
 
 **Plik:** `scripts/setup_spaces.py` (uruchamiany na PC, to samo środowisko `venv` co pozostałe skrypty).
 
@@ -984,7 +1043,8 @@ Admin API (`POST /_synapse/admin/v1/join/<pokój>` osobno dla każdego konta) �
 
 </details>
 
-### Etap G – książka adresowa jako pokój z wiadomościami
+<a id="etap-g--książka-adresowa-jako-pokój-z-wiadomościami"></a>
+### 2.2 Pokój „Książka adresowa” – wiadomości z listą osób (G)
 
 > ⚠️ **Status:** skrypt sprawdzony 2026-10-18 w Element Desktop: `--dry-run` na 204 kontach i pokój próbny (`--fake-extra --alias
 > test-ksiazka-pelna --limit 20`) działają poprawnie. **Niesprawdzone:** wygląd na telefonie, prawdziwe dane z `directory_extra.csv`
@@ -1077,7 +1137,37 @@ python setup_directory.py                             # dopiero potem właściwy
 
 </details>
 
-### Etap D – klienci *(do sprawdzenia przy produkcji)*
+### 2.3 Dane dodatkowe i pola własne (telefon, pokój, piętro, stanowisko…)
+
+Te dane nie istnieją w LLDAP, więc trzyma je plik **`scripts/directory_extra.csv`** (na PC, nie w repozytorium – to dane osobowe).
+Bez niego książka działa, ale pokazuje tylko imię, nazwisko i dział.
+
+1. **Szablon:** `python setup_directory.py --write-extra-template` tworzy plik ze wszystkimi loginami. Przy ponownym
+   uruchomieniu **dopisuje nowe osoby** i nie kasuje wpisanych wartości.
+2. **Uzupełnij** kolumny `stanowisko`, `telefon`, `pokoj`, `pietro` (separator `;`, UTF-8 z BOM; w Excelu zapisz jako CSV UTF-8).
+   Kolumny `login`, `imie_nazwisko`, `dzial` są tylko pomocnicze. Puste pola się nie wyświetlają.
+3. **Sprawdź i wyślij:** `python setup_directory.py --dry-run`, potem `python setup_directory.py`. Skrypt edytuje tylko te
+   wiadomości, które się zmieniły.
+
+**Pole własne** (np. numer wewnętrzny, adres e-mail działu): w `scripts/setup_directory.py`, w górnej części pliku, dopisz
+pozycję do listy `EXTRA_FIELDS` (nazwa kolumny + przedrostek wyświetlany przed wartością) oraz **tę samą nazwę kolumny
+w tym samym miejscu** w `TEMPLATE_COLUMNS`. Nazwa kolumny: małe litery, bez polskich znaków i spacji (zamiast spacji `_`).
+Kolejność w `EXTRA_FIELDS` to kolejność w wiadomości. Potem: `--write-extra-template` (doda nową kolumnę do CSV,
+istniejące wartości zostają), uzupełnij ją i uruchom `setup_directory.py`.
+
+### 2.4 Aktualizacja książki
+
+| Co się zmieniło | Co zrobić |
+|---|---|
+| Telefon, pokój, piętro, stanowisko | edytuj `directory_extra.csv` → `setup_directory.py` |
+| Nowy pracownik, zmiana działu lub nazwiska, odejście | [Aktualizacje w Etapie 1](#aktualizacje-nowy-pracownik-zmiana-działu-odejście) (kolejność skryptów) |
+| Nowy dział | grupa w LLDAP + `SPACE_TREE` w `setup_spaces.py` → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` |
+| Ukryć konto z książki (techniczne, testowe) | `DIRECTORY_EXCLUDE` w `.env` albo `--exclude login1,login2` |
+| Nazwa lub temat pokoju | `DIRECTORY_ROOM_NAME`, `DIRECTORY_ROOM_TOPIC` w `.env` |
+| Kolejność wiadomości się rozjechała | `setup_directory.py --rebuild` (wysyła wiadomości od nowa) |
+
+<a id="etap-d--klienci-do-sprawdzenia-przy-produkcji"></a>
+## Wdrożenie klientów (D, do sprawdzenia przy produkcji)
 
 - `config.json` Element Desktop z domyślnym serwerem `matrix.local`, żeby pracownik nie wpisywał adresu,
 - `rootCA.pem` na stanowiskach (docelowo przez GPO),
@@ -1097,7 +1187,18 @@ Skutek: federacja pozostaje wyłączona (`federation_domain_whitelist: []`), a r
 
 ---
 
-## Administrowanie Synapse
+<a id="administrowanie-synapse"></a>
+## Etap 3 – Bieżąca praca (podręcznik administratora)
+
+Tu zbieramy to, co przydaje się na co dzień po uruchomieniu systemu: usuwanie pokoi, konta użytkowników, panel Synapse Admin,
+restarty i logi, kopie zapasowe. **Ta sekcja będzie rosła** – nowe automatyzacje i rzeczy „warto mieć pod ręką” dopisuj tutaj.
+
+Szybkie odsyłacze:
+
+- zmiana kont i działów (nowy pracownik, odejście): [Aktualizacje w Etapie 1](#aktualizacje-nowy-pracownik-zmiana-działu-odejście),
+- zmiana danych w książce adresowej: [Etap 2](#etap-2), tabela „2.4 Aktualizacja książki”,
+- skąd wziąć komend: [🤖 Skrypty automatyzujące](#-skrypty-automatyzujące) i [Przydatne komendy](#przydatne-komendy),
+- gdy coś nie działa: [Rozwiązywanie problemów](#rozwiązywanie-problemów).
 
 Synapse nie ma wbudowanego panelu administracyjnego. Zarządzanie odbywa się przez **Admin API** (HTTP),
 bezpośrednio w **bazie PostgreSQL** i przez **dokumentację/logi**. Poniżej wszystko, co potrzebne na co dzień.
