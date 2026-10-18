@@ -16,7 +16,7 @@ Proof of Concept zamkniętego komunikatora firmowego opartego na Matrix:
 - **Matrix Spaces** – struktura firmy w Elemencie: przestrzeń „Firma” (wszyscy pracownicy) i podprzestrzenie-działy
   (budowane skryptem z grup LLDAP; patrz [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy)),
 - **Pokój „Książka adresowa”** – lista pracowników z działami jako wiadomości w pokoju tylko do odczytu, podpiętym pod
-  przestrzeń „Firma” (⚠️ w budowie, nieprzetestowane; patrz [Etap G](#etap-g--książka-adresowa-jako-pokój-z-wiadomościami)),
+  przestrzeń „Firma” (patrz [Etap 2](#etap-2)),
 - **Tailscale** – prywatna sieć, która symuluje izolowaną sieć firmową między lokalizacjami.
 
 Instrukcja jest napisana tak, żeby dało się ją odtworzyć od zera – krok po kroku, z komendami do wklejenia.
@@ -79,12 +79,11 @@ sequenceDiagram
 Etap 2 (książka adresowa: Spaces, pokój, dane dodatkowe), Etap 3 (bieżąca praca)
 
 11. [Konta i książka adresowa](#czesc-2)
-12. [Etap 3: bieżąca praca (administrowanie)](#administrowanie-synapse)
-13. [🤖 Skrypty automatyzujące](#-skrypty-automatyzujące)
-14. [Przydatne komendy](#przydatne-komendy)
-15. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)
-16. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-17. [Znane ograniczenia](#znane-ograniczenia-poc)
+12. [Etap 3: bieżąca praca (administrowanie)](#administrowanie-synapse) – podręcznik, skrypty automatyzujące i przydatne komendy: [docs/administrowanie.md](docs/administrowanie.md)
+13. [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym) – [docs/produkcja.md](docs/produkcja.md)
+14. [Rozwiązywanie problemów](#rozwiązywanie-problemów) – [docs/rozwiazywanie-problemow.md](docs/rozwiazywanie-problemow.md)
+15. [Znane ograniczenia](#znane-ograniczenia-poc) – [docs/produkcja.md](docs/produkcja.md)
+16. [Wygląd Element Desktop (opcjonalnie)](#wyglad-element-desktop) – [docs/wyglad-element.md](docs/wyglad-element.md)
 
 <p align="center">
   <img src="docs/img/roadmap.svg" alt="Mapa kroków instalacji 1–10" width="100%">
@@ -165,6 +164,13 @@ scripts/setup_main_room.py          biblioteka wspólna (klasa Synapse itd.) uż
 scripts/requirements.txt            zależności Pythona dla skryptów (requests)
 Matrix.md                           pierwotny plan testów
 docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków, warianty książki adresowej)
+docs/administrowanie.md             Etap 3: konto admina, Admin API, kopie, logi, panel Synapse Admin, skrypty, komendy
+docs/rozwiazywanie-problemow.md     problemy 1-10 z diagnozą
+docs/produkcja.md                   lista kontrolna przed produkcją, ramki 🏭, znane ograniczenia PoC
+docs/wyglad-element.md              motywy i logo Element Desktop (opcjonalnie)
+docs/klienci-dodatkowe.md           Android i komputer w innej lokalizacji (opcjonalnie)
+docs/szkic-coturn-webrtc.md         szkic konfiguracji Coturn/WebRTC
+element-layout/                     config.json, logo i motywy Element Desktop (opcjonalnie)
 ```
 
 Prawdziwe pliki z hasłami, certyfikaty i klucze tworzysz u siebie na podstawie wzorów `*.example` (krok 5 i 6).
@@ -208,6 +214,23 @@ logujesz się z Elementa kontem z LLDAP. Gdy to działa, przechodzisz do [Częś
 
 **Wymagania:** VM z Debianem 12 lub Ubuntu 24.04 (min. 4 GB RAM, 2 vCPU – dla testu wystarczy; dla ok. 300
 użytkowników rozmiar niesprawdzony), konto w Tailscale, komputery klienckie z Windows lub telefon z Androidem.
+
+### Checklista postępu (Część 1)
+
+Odhaczaj w swojej kopii na bieżąco; każdy krok ma na końcu własne sprawdzenie.
+
+- [ ] [Krok 1 – Połącz się z VM](#krok-1--połącz-się-z-vm)
+- [ ] [Krok 2 – Docker i Docker Compose](#krok-2--docker-i-docker-compose)
+- [ ] [Krok 3 – Tailscale na serwerze](#krok-3--tailscale-na-serwerze)
+- [ ] [Krok 4 – Pliki projektu na serwerze](#krok-4--pliki-projektu-na-serwerze)
+- [ ] [Krok 5 – Sekrety i pliki lokalne](#krok-5--sekrety-i-pliki-lokalne)
+- [ ] [Krok 6 – Certyfikaty (PKI)](#krok-6--certyfikaty-pki)
+- [ ] [Krok 7 – Uruchomienie usług](#krok-7--uruchomienie-usług)
+- [ ] [Krok 8 – Konta w LLDAP](#krok-8--konta-w-lldap)
+- [ ] [Krok 9 – Klienci](#krok-9--klienci)
+- [ ] [Krok 10 – Testy](#krok-10--testy)
+
+Potem [Część 2](#czesc-2): Przygotowanie, Etap 0 (konto admina), Etap 1 (konta w Synapse), Etap 2 (książka adresowa).
 
 ---
 
@@ -262,6 +285,8 @@ Wynik (np. `100.64.12.34`) to **`<IP_TAILSCALE>`**. Zapisz go – wpiszesz go w 
 
 Pozostałe komputery (i telefon) muszą być w **tym samym tailnecie** (zaproś użytkownika albo udostępnij
 mu maszynę w panelu Tailscale).
+
+**Sprawdzenie:** `tailscale ip -4` pokazuje adres `100.x.x.x`, a w panelu Tailscale serwer ma status **Connected**.
 
 ---
 
@@ -366,6 +391,8 @@ Jeśli **nie** będziesz łączyć się z telefonu, usuń z `nginx/conf.d/matrix
 
 Jeśli będziesz – robisz to w kroku 9.2 (potrzebna jest `<PELNA-NAZWA-TS>`).
 
+**Sprawdzenie:** `grep -n CHANGE_ME .env synapse/homeserver.yaml` nic nie wypisuje (wszystkie placeholdery podmienione).
+
 ---
 
 ## Krok 6 – Certyfikaty (PKI)
@@ -431,6 +458,8 @@ na samym początku, końcówka to zwykle tylko wydruk pomocy.
    - `j.kowalski` (Display name: Jan Kowalski, e-mail `j.kowalski@matrix.local`, hasło min. 8 znaków) → grupa `Zarzad`,
    - `a.nowak` (Anna Nowak, e-mail `a.nowak@matrix.local`, hasło) → grupa `IT`.
 
+**Sprawdzenie:** w LLDAP (Users) widzisz `j.kowalski` w grupie `Zarzad` i `a.nowak` w grupie `IT`.
+
 > Dla większej liczby kont (testy na realnej skali) użyj skryptu `seed_test_employees.py` – patrz
 > [Etap B0](#etap-b0--testowa-struktura-firmy-w-lldap). Struktura firmy
 > w Elemencie (Spaces) powstaje z **grup** LLDAP – patrz [Etap E](#etap-e--drzewo-spaces-firma--działy).
@@ -481,131 +510,14 @@ domowym i wpisz `https://matrix.local`. Zaloguj się loginem i hasłem z LLDAP (
 
 ### 9.2 Android (Element przez nazwę z Tailscale)
 
-**Dlaczego inaczej niż na Windows:** telefon nie ma pliku `hosts`, więc nie rozwiąże `matrix.local`.
-Zamiast tego łączymy się przez nazwę MagicDNS z Tailscale (`<PELNA-NAZWA-TS>`) i prawdziwy certyfikat
-z Tailscale – **na telefonie nie instalujesz żadnego Root CA**.
-
-> Sprawdzone na: Android 16, Element Classic 1.6.66. Telefon musi mieć włączone Tailscale i być w tym samym
-> tailnecie co serwer.
-
-**1. Panel Tailscale** (login.tailscale.com → zakładka **DNS**): włącz **MagicDNS** i **HTTPS Certificates**.
-
-**2. Certyfikat z Tailscale** – 🐧 **VM**:
-
-```bash
-cd /opt/matrix/certs
-sudo tailscale cert <PELNA-NAZWA-TS>
-```
-
-Wynik: `Wrote public cert to ...crt` i `Wrote private key to ...key`. Nazwy plików muszą być takie same
-jak w `nginx/conf.d/matrix.conf` (krok 3).
-
-**3. Nginx** – w `nginx/conf.d/matrix.conf` zamień wszystkie wystąpienia `matrix-test.TWOJ-TAILNET.ts.net`
-na `<PELNA-NAZWA-TS>` (pięć miejsc: dwa `server_name`, dwie ścieżki certyfikatu i adres w
-`.well-known`). Drugi blok `server` ma **własny** `/.well-known/matrix/client` wskazujący na tę nazwę – to
-ważne, bo ten z `matrix.local` jest dla telefonu nieosiągalny.
-
-**4. Synapse (kluczowe!)** – w `synapse/homeserver.yaml` ustaw:
-
-```yaml
-public_baseurl: "https://<PELNA-NAZWA-TS>/"
-```
-
-Synapse dokleja ten adres do odpowiedzi na logowanie, a Element na telefonie przełącza się na niego.
-Przy `https://matrix.local/` telefon loguje się, ale potem wisi na „Wstępna synchronizacja – czekanie
-na odpowiedź serwera" (patrz „Rozwiązywanie problemów"). Skutek uboczny: Element na Windowsie przy **nowym**
-logowaniu też przełączy się na tę nazwę (wymaga włączonego Tailscale); zalogowane sesje się nie zmieniają.
-
-**5. Sprawdzenie i restart** – 🐧 **VM**:
-
-```bash
-cd /opt/matrix
-docker compose exec proxy nginx -t
-docker compose restart proxy
-docker compose restart synapse
-```
-
-`nginx -t` musi pokazać `syntax is ok` i `test is successful`. Nginx nie wstanie, jeśli plików z kroku 2
-nie ma w `certs/`.
-
-**6. Test w przeglądarce telefonu** (przed Elementem): otwórz
-`https://<PELNA-NAZWA-TS>/_matrix/client/versions` – ma pokazać JSON, **bez** ostrzeżenia o certyfikacie.
-
-**7. Element na telefonie:** zmień serwer domowy na `https://<PELNA-NAZWA-TS>` i zaloguj się loginem
-z LLDAP (np. `j.kowalski`, bez `@` i bez domeny). Jeśli wcześniej logowałeś się z błędnym `public_baseurl`,
-najpierw wyloguj się albo w ustawieniach Androida wyczyść dane Elementa – inaczej aplikacja zapamięta
-stary adres.
-
-**Jeszcze niesprawdzone:**
-
-- weryfikacja nowego urządzenia w Elemencie (klucz odzyskiwania lub emotikony z drugiej sesji),
-- rozmowy audio/wideo z telefonu – `turn_uris` w `homeserver.yaml` wskazują `matrix.local`, którego telefon
-  nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>` (szkic: [docs/szkic-coturn-webrtc.md](docs/szkic-coturn-webrtc.md)),
-- odnawianie certyfikatu z Tailscale (ważny ok. 90 dni) – trzeba powtórzyć `tailscale cert` i zrestartować
-  proxy, najlepiej w cronie.
+*Opcjonalne – tylko jeśli chcesz łączyć się z telefonu.* Telefon nie ma pliku `hosts`, więc łączy się przez nazwę MagicDNS z Tailscale
+(`<PELNA-NAZWA-TS>`) i certyfikat z Tailscale (bez instalowania Root CA). Kroki (certyfikat, Nginx, `public_baseurl`, test, logowanie)
+i lista rzeczy niesprawdzonych: [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
 
 ### 9.3 Komputer w innej lokalizacji (u kolegi)
 
-> ⚠️ **Status: opisane, ale NIESPRAWDZONE w praktyce.** To jest plan krok po kroku na test „co widzi osoba
-> w zupełnie innej sieci, u siebie w domu/biurze” – symulacja drugiej lokalizacji firmy. Dopisz tu wynik,
-> gdy kolega faktycznie to przetestuje.
-
-**Dlaczego to inny przypadek niż Krok 9.1 (Windows w tej samej sieci):** tam komputer łączył się po
-`matrix.local`, co wymagało ręcznego wpisu w pliku `hosts` i zainstalowania **własnego** Root CA (`rootCA.pem`)
-jako zaufanego urzędu – to ma sens na firmowym komputerze, ale instalowanie prywatnego CA na komputerze
-osoby z zewnątrz to niepotrzebne namieszanie w zaufaniu cudzego systemu. Zamiast tego używamy **tej samej
-drogi co telefon w kroku 9.2** – adresu `<PELNA-NAZWA-TS>` z certyfikatem wydanym przez Tailscale (publicznie
-zaufanym, przez Let's Encrypt) – **kolega NIE instaluje żadnego certyfikatu ani CA**, dzięki czemu ryzyko
-i kłopot po jego stronie są minimalne.
-
-**Co kolega musi zrobić u siebie, krok po kroku:**
-
-1. **Założyć konto w Tailscale** (tailscale.com, może być darmowe konto osobiste – np. logowanie przez
-   Google/Microsoft), jeśli jeszcze nie ma.
-2. **Dostać zaproszenie do sieci (tailnetu)** – to robi administrator (Ty), nie kolega:
-   - Panel Tailscale (login.tailscale.com) → **Access controls** albo wprost przy maszynie VM na liście
-     **Machines** → opcja **Share** → podajesz e-mail kolegi. Kolega dostaje e-mail z linkiem, klika
-     **Accept** – to udostępnia mu **tylko tę jedną maszynę** (VM), bez dołączania do reszty Twojej sieci.
-   - **Niesprawdzone:** czy udostępniona w ten sposób maszyna działa identycznie jak pełne członkostwo
-     w tailnecie (np. czy adres `100.x.x.x` VM wygląda tak samo po stronie kolegi), czy ruch jest
-     rzeczywiście jednokierunkowy (kolega widzi VM, ale czy VM/inni mogliby zobaczyć jego komputer).
-     Jeśli **Share** nie zadziała jak trzeba, alternatywa to zaproszenie kolegi jako pełnego członka
-     Twojego tailnetu (ten sam ekran, zakładka **Users** → **Invite**).
-3. **Zainstalować Tailscale** na swoim komputerze (tailscale.com/download) i zalogować się kontem
-   z punktu 1 – zaakceptuje zaproszenie automatycznie.
-4. **Sprawdzić połączenie** – w terminalu/PowerShellu kolegi:
-   ```powershell
-   tailscale ping <PELNA-NAZWA-TS>
-   ```
-   Powinno pokazać odpowiedzi (czas w ms), a nie `no response`. Jeśli nie działa – sprawdź w panelu
-   Tailscale, czy maszyna kolegi faktycznie jest połączona (status **Connected**).
-5. **Test w przeglądarce** (przed Elementem, tak jak w kroku 9.2.6): otwórz
-   `https://<PELNA-NAZWA-TS>/_matrix/client/versions` – ma pokazać JSON, **bez żadnego ostrzeżenia
-   o certyfikacie** (to jest ten test, który potwierdza, że certyfikat jest publicznie zaufany i kolega
-   nie musi niczego instalować).
-6. **Zainstalować Element Desktop** (element.io/download).
-7. **Przy logowaniu** kliknij **Edytuj** przy serwerze domowym i wpisz `https://<PELNA-NAZWA-TS>`
-   (NIE `matrix.local` – tego kolega nie rozwiąże, bo nie ma takiego wpisu w swoim pliku `hosts`).
-8. **Zalogować się** loginem i hasłem z LLDAP. **Zalecane: użyj jednego z testowych kont z Etapu B0**
-   (patrz [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy), ok. 200
-   fikcyjnych kont, wspólne hasło testowe) zamiast prawdziwego konta pracownika – to dane niezwiązane
-   z żadną realną tożsamością, bezpieczniejsze do testu z kimś spoza zaufanego środowiska.
-
-**Co przetestować po zalogowaniu:**
-
-- **Wiadomości:** pokój `Firma-Ogolny` albo nowy DM z kolegi do Ciebie – podstawowy test, czy w ogóle
-  wszystko działa przez prawdziwą sieć (nie LAN).
-- **Rozmowa audio/wideo 1:1** – to jest kluczowy test tego scenariusza (symulacja 2. lokalizacji firmy).
-  **Niesprawdzone, do zweryfikowania:**
-  - czy połączenie A/V w ogóle przechodzi między dwiema różnymi sieciami przez Coturn (u nas testowane
-    tylko w jednej sieci lokalnej),
-  - jeśli u kolegi jest zawężony firewall/ACL (np. sieć firmowa, router korporacyjny) – Coturn
-    potrzebuje portu **3478** oraz zakresu **49160–49200** na adresie Tailscale serwera (`TS_IP`), poza
-    standardowym **443** dla samego Elementa. Jeśli połączenie głosowe/wideo nie działa, to pierwsze
-    podejrzane miejsce.
-- Kolejność zalecana: najpierw zwykłe wiadomości, dopiero potem A/V – łatwiej odróżnić, czy problem jest
-  w samym połączeniu Tailscale, czy specyficznie w Coturn/WebRTC.
-
+*Opcjonalne – test z drugiej sieci; ⚠️ niesprawdzone w praktyce.* Kolega dołącza do tailnetu i łączy się po `<PELNA-NAZWA-TS>`, bez
+instalowania certyfikatów. Plan krok po kroku i lista testów (w tym A/V przez Coturn): [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
 ---
 
 ## Krok 10 – Testy
@@ -746,6 +658,8 @@ Kliknięcie znalezionej osoby otwiera od razu rozmowę 1:1 (sprawdzone 2026-10-1
 
 <a id="etap-b0--testowa-struktura-firmy-w-lldap"></a>
 ### B0. Konta i grupy w LLDAP (w PoC: testowa masa pracowników)
+
+*Opcjonalne – do testów na skali (ok. 200 fikcyjnych kont); przy pierwszym wdrożeniu wystarczą konta z kroku 8.*
 
 ✅ *Sprawdzone na PoC (2026-10-11); struktura grup zmieniona 2026-10-14.*
 
@@ -997,6 +911,8 @@ Każde uruchomienie loguje konto administratora – nie uruchamiaj skryptów wie
 
 #### Pokój ogłoszeń albo inny pokój wspólny – ręcznie, bez skryptu ⚠️ *(niesprawdzone)*
 
+*Opcjonalne – nie jest potrzebne do działania przestrzeni ani książki adresowej.*
+
 Skrypt nie tworzy pokoi (decyzja: bez pokoi dyskusyjnych w przestrzeniach). Gdyby admin chciał mieć np. tablicę
 ogłoszeń dla wszystkich, można ją założyć w Elemencie, **bez skryptu i bez Admin API**:
 
@@ -1010,38 +926,7 @@ ogłoszeń dla wszystkich, można ją założyć w Elemencie, **bez skryptu i be
 Jeśli pokój ma być *obowiązkowy* (wszyscy w nim od razu, nawet bez klikania), pozostaje dołączenie na siłę przez
 Admin API (`POST /_synapse/admin/v1/join/<pokój>` osobno dla każdego konta) – do tego trzeba skryptu.
 
-<details>
-<summary>🏭 <b>Produkcja:</b> przestrzenie z grup LLDAP</summary>
-
-- **Licencja ESS Pro (AIM).** Płatny moduł Advanced Identity Management robi dokładnie to samo (drzewo Spaces
-  z grup katalogu, ciągła synchronizacja co ok. 60 s, wycofywanie dostępu, uprawnienia z grup). Przy
-  produkcji porównaj koszt licencji z utrzymaniem własnego skryptu.
-- **Synchronizacja.** `setup_spaces.py` działa na żądanie. Nowy pracownik, przeniesienie między działami albo
-  odejście wymaga ponownego uruchomienia (po `provision_synapse_users.py`); na produkcji uruchamiaj je cyklicznie
-  (cron na serwerze) albo po zmianie w LLDAP. Przeniesienie do innego działu: `--prune` wyrzuca ze starego.
-- **Domena i `server_name`.** `server_name` (`matrix.local`) jest wpisany w każdy identyfikator użytkownika
-  (`@login:matrix.local`) i Synapse nie pozwala go zmienić po fakcie. Docelową domenę wybierz **przed** założeniem
-  kont produkcyjnych. `matrix.local` odpada (`.local` jest zarezerwowane dla mDNS, na PoC wymaga wpisu w `hosts`
-  i ręcznie zainstalowanego rootCA); na produkcji prawdziwa domena i certyfikat zaufany bez ręcznej instalacji.
-- **Konto administratora.** W PoC: konto testowe `s.lewandowski`, hasło w `.env` (`SYNAPSE_ADMIN_PASSWORD`) i flaga `admin` ustawiona
-  `UPDATE`-em w bazie. Na produkcji: osobne konto serwisowe (nie osoba z działu), założone przez
-  `register_new_matrix_user -a` (wymaga `registration_shared_secret`), z hasłem lub tokenem poza kodem
-  (`.env` albo menedżer sekretów).
-- **Admin API.** `/_synapse/admin` jest w PoC wystawione przez to samo proxy co klienci. Na produkcji ogranicz je
-  po adresie IP albo uruchamiaj skrypty na serwerze przez localhost.
-- **Limit logowania (`rc_login`).** Każde uruchomienie skryptu loguje konto administratora, a Synapse ogranicza
-  liczbę prób. Na produkcji uruchamiaj skrypt rzadko albo użyj tokenu zamiast logowania hasłem; limit można też
-  poluzować w `homeserver.yaml` dla konta serwisowego.
-- **Wyjście z przestrzeni.** Matrix nie pozwala zablokować wyjścia – kto sam wyjdzie z „Firma”, traci strukturę.
-  Skrypt nie wciąga takich osób z powrotem (chyba że `--rejoin`).
-- **Kto może pisać.** `SPACES_WRITERS` w `.env` jest najprostsze na PoC; na produkcji lepiej wyprowadzić listę
-  z grupy w LLDAP.
-- **Partnerzy (20 firm).** Każda ma własną strukturę. Konfiguracja drzewa jest rekurencyjna (poddrzewa), ale
-  sposób importu kont partnerów (np. CSV) i to, czy ich pracownicy mają widzieć całą „Firma”, nie jest zdecydowane.
-- **Nowi pracownicy.** `auto_join_rooms` w `homeserver.yaml` nie dotyczy przestrzeni i jest niesprawdzone dla kont
-  z Admin API/LDAP – dołączanie do „Firma” robi skrypt.
-
-</details>
+🏭 Produkcja: patrz [docs/produkcja.md](docs/produkcja.md) (przestrzenie z grup LLDAP, ESS Pro, domena, konto serwisowe).
 
 <a id="etap-g--książka-adresowa-jako-pokój-z-wiadomościami"></a>
 ### 2.2 Pokój „Książka adresowa” – wiadomości z listą osób (G)
@@ -1122,20 +1007,7 @@ python setup_directory.py                             # dopiero potem właściwy
   i większy dział jest dzielony na części.
 - Dane kontaktowe (telefon, pokój, piętro) są widoczne dla wszystkich członków pokoju.
 
-<details>
-<summary>🏭 <b>Produkcja:</b> książka adresowa w pokoju</summary>
-
-- **Źródło danych: AD zamiast CSV.** W wersji produkcyjnej stanowisko, telefon, pokój i piętro mogą pochodzić
-  z Active Directory (atrybuty `title`, `telephoneNumber`, `physicalDeliveryOfficeName`) – odczyt z AD zastąpi
-  plik `directory_extra.csv`. Na PoC LLDAP symuluje AD i tych atrybutów nie ma, stąd CSV.
-- **Aktualizacja.** Skrypt działa na żądanie. Po zmianach w AD/LLDAP uruchamiaj go po `provision_synapse_users.py`
-  i `setup_spaces.py`, najlepiej cyklicznie (cron na serwerze).
-- **Nowy dział.** Pojawi się na dole listy; do uporządkowania kolejności potrzebny jest `--rebuild`.
-- **Dane osobowe w pokoju.** Telefony i lokalizacje są widoczne dla każdego członka pokoju (i zostają w historii
-  zdarzeń Synapse po edycji) – zdecyduj, które pola publikować.
-- **Hasła i konto administratora** – jak w pozostałych skryptach (ramka 🏭 przy Etapie E).
-
-</details>
+🏭 Produkcja: patrz [docs/produkcja.md](docs/produkcja.md) (książka adresowa: AD zamiast CSV, aktualizacja cykliczna, dane osobowe w pokoju).
 
 ### 2.3 Dane dodatkowe i pola własne (telefon, pokój, piętro, stanowisko…)
 
@@ -1190,427 +1062,34 @@ Skutek: federacja pozostaje wyłączona (`federation_domain_whitelist: []`), a r
 <a id="administrowanie-synapse"></a>
 ## Etap 3 – Bieżąca praca (podręcznik administratora)
 
-Tu zbieramy to, co przydaje się na co dzień po uruchomieniu systemu: usuwanie pokoi, konta użytkowników, panel Synapse Admin,
-restarty i logi, kopie zapasowe. **Ta sekcja będzie rosła** – nowe automatyzacje i rzeczy „warto mieć pod ręką” dopisuj tutaj.
-
-Szybkie odsyłacze:
-
-- zmiana kont i działów (nowy pracownik, odejście): [Aktualizacje w Etapie 1](#aktualizacje-nowy-pracownik-zmiana-działu-odejście),
-- zmiana danych w książce adresowej: [Etap 2](#etap-2), tabela „2.4 Aktualizacja książki”,
-- skąd wziąć komend: [🤖 Skrypty automatyzujące](#-skrypty-automatyzujące) i [Przydatne komendy](#przydatne-komendy),
-- gdy coś nie działa: [Rozwiązywanie problemów](#rozwiązywanie-problemów).
-
-Synapse nie ma wbudowanego panelu administracyjnego. Zarządzanie odbywa się przez **Admin API** (HTTP),
-bezpośrednio w **bazie PostgreSQL** i przez **dokumentację/logi**. Poniżej wszystko, co potrzebne na co dzień.
-
-Do pracy z przeglądarki (konta, pokoje, przestrzenie) jest dodatkowo panel
-[Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem) (Etap F) – działa na tym samym Admin API,
-więc skrypty i wywołania z PowerShella nadal działają równolegle.
-
-> Oznaczenia: ✅ = użyte w naszych skryptach albo sprawdzone u nas; ⚠️ = przykład z dokumentacji Synapse,
-> niesprawdzony na tym PoC. Przy ⚠️ najpierw spróbuj na koncie testowym.
-
-### Konto administratora ✅
-
-Administrator to zwykłe konto Matrix z flagą `admin`. W PoC jest to `s.lewandowski` (konto testowe z LLDAP,
-flaga ustawiona w bazie – patrz [Etap B + C](#etap-b--c--zakładanie-kont-w-synapse-z-działem-w-nazwie)).
-Lista administratorów w bazie (🐧 **VM**, `/opt/matrix`):
-
-```bash
-docker compose exec postgres psql -U synapse -d synapse -c "select name, admin, deactivated from users where admin = 1;"
-```
-
-⚠️ Na produkcji załóż osobne konto serwisowe (patrz ramka 🏭 w Etapie E).
-
-### Token administratora i wywołania Admin API
-
-Admin API wymaga tokenu (`access_token`) konta z flagą `admin`. Token dostajesz przez zwykłe logowanie
-(`POST /_matrix/client/v3/login`) – tak robią nasze skrypty ✅. Przykład z PowerShell (⚠️ składnia nieprzetestowana
-w całości; `matrix.local` musi być rozwiązywalne i rootCA zaufane, jak dla Elementa):
-
-🪟 **PC**, PowerShell:
-
-```powershell
-$base = "https://matrix.local"
-$login = @{
-  type = "m.login.password"
-  identifier = @{ type = "m.id.user"; user = "s.lewandowski" }
-  password = (Read-Host "Hasło administratora")
-} | ConvertTo-Json
-$token = (Invoke-RestMethod -Method Post -Uri "$base/_matrix/client/v3/login" -ContentType "application/json" -Body $login).access_token
-$h = @{ Authorization = "Bearer $token" }
-```
-
-Token działa jak hasło – nie zapisuj go w plikach ani w repozytorium. Każde logowanie administratora wlicza się
-do limitu prób (HTTP 429 – patrz [Rozwiązywanie problemów](#rozwiązywanie-problemów), punkt 4).
-
-> `/_synapse/admin` musi być przepuszczone przez nginx – patrz Etap B + C (wymaganie 2). Bez tego każde wywołanie
-> kończy się `404` od nginx.
-
-### Typowe operacje
-
-Wszystkie przykłady zakładają zmienne `$base` i `$h` z poprzedniego bloku.
-
-| Co zrobić | Jak | Status |
-|---|---|---|
-| **Utworzyć/zaktualizować konto i nazwę wyświetlaną** | `PUT /_synapse/admin/v2/users/@login:matrix.local` z `displayname` (robi to `provision_synapse_users.py`) | ✅ |
-| **Dołączyć użytkownika do pokoju bez zaproszenia** | `POST /_synapse/admin/v1/join/<pokój>` z ciałem `{"user_id": "@login:matrix.local"}` (robi to `setup_spaces.py`; pokój podajesz jako identyfikator `!abc:matrix.local`) | ✅ |
-| **Lista użytkowników** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v2/users?limit=50&name=kowal"` | ⚠️ |
-| **Dezaktywować konto** (np. odejście pracownika) | `POST /_synapse/admin/v1/deactivate/@login:matrix.local`; osobno usuń/zablokuj konto w LLDAP, bo inaczej logowanie przez LDAP założy je znowu | ⚠️ |
-| **Lista pokoi i przestrzeni** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v1/rooms?limit=100&search_term=Firma"` – w wyniku `room_id`, `name`, `canonical_alias`, `joined_members` | ⚠️ |
-| **Usunąć pokój** (wszyscy lokalni użytkownicy zostaną usunięci, dane skasowane) | patrz niżej albo panel Synapse Admin (✅ usunięcie z `purge` przez panel – test F4 pkt 6; ⚠️ wywołanie z PowerShella) | ✅/⚠️ |
-| **Wyczyścić licznik prób logowania** (po HTTP 429 / `M_LIMIT_EXCEEDED`) | 🐧 **VM** `docker compose restart synapse` | ✅ |
-| **Podejrzeć katalog użytkowników** | zapytanie SQL z Etapu A | ✅ |
-
-**Usunięcie pokoju** (⚠️ nieodwracalne; zrób najpierw na pokoju testowym):
-
-```powershell
-# 1) znajdź identyfikator pokoju po nazwie
-(Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v1/rooms?search_term=Struktura").rooms |
-  Select-Object room_id, name, canonical_alias, joined_members
-
-# 2) usuń (purge = skasuj też dane pokoju z bazy); identyfikator ma w adresie wykrzyknik i dwukropek -> koduj
-$room = [uri]::EscapeDataString('!abcDEF:matrix.local')
-Invoke-RestMethod -Method Delete -Headers $h -Uri "$base/_synapse/admin/v2/rooms/$room" `
-  -ContentType "application/json" -Body '{"purge": true}'
-
-# 3) wynik zawiera delete_id; status usuwania:
-Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v2/rooms/delete_status/<delete_id>"
-```
-
-Przy usuwaniu przestrzeni (nie pokoju) pamiętaj, że jej podprzestrzenie są **osobnymi** pokojami – usuwasz każdą
-osobno. Skrypt `setup_spaces.py` odtworzy usuniętą przestrzeń przy następnym uruchomieniu (po aliasie).
-
-### Baza danych (PostgreSQL) ✅
-
-Tylko do odczytu i diagnostyki – zmiany w tabelach Synapse rób ostrożnie (jedyna zmiana, którą robimy u siebie:
-`UPDATE users SET admin = 1 ...`):
-
-```bash
-docker compose exec postgres psql -U synapse -d synapse -c "select count(*) from users;"
-docker compose exec postgres psql -U synapse -d synapse -c "select user_id, display_name from user_directory limit 20;"
-```
-
-### Logi, restart, kontrola ✅
-
-```bash
-docker compose ps                         # co działa
-docker compose logs --tail=100 synapse    # ostatnie logi Synapse
-docker compose logs -f --tail=0 proxy     # zapytania przechodzące przez nginx na żywo
-docker compose restart synapse            # restart (czyści też limity prób logowania)
-```
-
-### Kopie zapasowe ⚠️ *(niesprawdzone, do zrobienia przed produkcją)*
-
-Dane do zabezpieczenia: baza Postgres (`pg_dump`), wolumen `lldap_data`, katalog `synapse/` (w tym klucz
-podpisu i plik `homeserver.yaml`), pliki mediów Synapse oraz `.env` i `certs/` (poza repozytorium). Przywracanie
-nie było testowane.
-
-### Synapse Admin – panel WWW do administrowania serwerem
-
-**Status (Etap F):** ✅ wdrożony na VM 2026-10-15 (kontener działa, izolacja do loopbacku potwierdzona);
-✅ wszystkie 9 testów funkcjonalnych panelu (checklista F4 poniżej) przeszły.
-
-[Synapse Admin](https://github.com/Awesome-Technologies/synapse-admin) (Awesome-Technologies, osobny projekt
-społecznościowy) to webowe GUI, które łączy się z serwerem przez to samo Admin API (`/_synapse/admin`) i pozwala
-z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarządzać pokojami i przestrzeniami
-(w tym usuwać z `purge`), media i limity. Wymaga Synapse ≥ 1.52.0 (u nas ✅ 1.162.0).
-
-**Jak jest wpięty (decyzje projektowe):**
-
-- Usługa `synapse-admin` w `docker-compose.yml`: obraz `awesometechnologies/synapse-admin` z **przypiętym tagiem**
-  (`0.11.4`, nie `latest`), **bez publikowanych portów**. ✅ Sprawdzone 2026-10-17: `0.11.4` jest oznaczone jako najnowsze wydanie („Latest”) na stronie wydań projektu i jest
-  najwyższym numerowanym tagiem w zewnętrznym zestawieniu tagów obrazu z Docker Huba; przypięty tag zmieniasz świadomie, nie przy `up -d`.
-- Nginx dostał osobny blok `server { listen 8080; }` (w `matrix.conf.example`): `/` → panel, a
-  `/_matrix` i `/_synapse/admin` → Synapse. Panel i API są pod **tym samym adresem**, więc nie ma problemu z CORS ani
-  z certyfikatem (certyfikat serwera ma tylko `matrix.local`). Zwykły HTTP jest tu celowy – ruch idzie po loopbacku
-  i tunelu SSH.
-- Port 8080 jest publikowany przez Docker **wyłącznie na `127.0.0.1` VM** (`127.0.0.1:8080:8080` w usłudze `proxy`).
-  Dostęp „tylko z VM” zapewnia więc sam bind na loopback, a nie reguła `allow/deny` po adresie IP (która w Dockerze
-  bywa zawodna: połączenia przez loopback lub tunel mogą być widziane jako adres bramy mostu Dockera).
-- Panel **nie** jest w blokach 80/443 ani w bloku Tailscale.
-
-**Adres VM w konfiguracji:** w plikach konfiguracyjnych panelu **nie ma żadnego adresu VM**. W dokumentacji pojawia się
-tylko jako placeholder `<IP_VM>` w komendzie tunelu. Przy przepięciu serwerów do innej sieci zmieniasz więc tylko
-to, co i tak zależy od adresu: wpis w `hosts` na PC (`<IP_VM>   matrix.local`) i polecenie tunelu SSH.
-
-#### Wdrożenie na istniejącej VM
-
-🐧 **VM**, w `/opt/matrix` – kopie zapasowe (rollback) i sprawdzenie, że port 8080 jest wolny:
-
-```bash
-cp docker-compose.yml docker-compose.yml.bak
-cp nginx/conf.d/matrix.conf nginx/conf.d/matrix.conf.bak
-ss -tlnp | grep 8080          # nic nie powinno być wypisane
-```
-
-🪟 **PC** – wyślij dwa zmienione pliki (VM dostaje pliki przez `scp`, nie przez `git pull`; `matrix.conf` jest w
-`.gitignore`, więc to **Twój** lokalny plik, wyrównany z tym z VM, nie wzór z repozytorium):
-
-```powershell
-scp "<KATALOG_PROJEKTU>\docker-compose.yml" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/
-scp "<KATALOG_PROJEKTU>\nginx\conf.d\matrix.conf" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/nginx/conf.d/
-```
-
-🐧 **VM** – porównaj z kopią (powinny być tylko oczekiwane zmiany: port 8080, `depends_on`, usługa panelu, blok
-`listen 8080`), potem **jedno** uruchomienie:
-
-```bash
-diff docker-compose.yml.bak docker-compose.yml
-diff nginx/conf.d/matrix.conf.bak nginx/conf.d/matrix.conf
-docker compose up -d
-docker compose ps                                   # cel: 6 kontenerów Up
-docker compose logs --tail=50 proxy synapse-admin   # bez błędów
-```
-
-> `nginx -t` uruchomiony **przed** startem zgłosi `host not found in upstream "synapse-admin"` (kontener jeszcze nie
-> istnieje) – testuj dopiero po `up`. Dlatego `proxy` ma w `docker-compose.yml` `depends_on: synapse-admin`.
-
-✅ **Sprawdzone 2026-10-15:** `diff` względem kopii pokazał wyłącznie oczekiwane zmiany; `docker compose up -d` OK,
-6 kontenerów `Up` (coturn, lldap, postgres, proxy, synapse, synapse-admin), logi `proxy` i `synapse-admin` bez
-błędów; `ss -tlnp | grep 8080` pokazuje wyłącznie `127.0.0.1:8080`.
-
-#### Użycie
-
-🪟 **PC** – tunel SSH (okno z tunelem zostaw otwarte):
-
-```powershell
-ssh -L 8080:127.0.0.1:8080 <UZYTKOWNIK>@<IP_VM>
-```
-
-Przeglądarka na PC: `http://localhost:8080`. W polu serwera wpisz **`http://localhost:8080`**, zaloguj się kontem
-administratora (w PoC `s.lewandowski`, hasło z LLDAP). Konto bez flagi `admin` nie wejdzie do panelu.
-
-> ⚠️ Logowanie administratora wlicza się do limitu prób Synapse (HTTP 429 – Rozwiązywanie problemów pkt 4), więc nie
-> loguj się w panelu i skryptach pod rząd wiele razy.
-
-#### Zasady pracy z panelem (LLDAP + Spaces)
-
-1. **Konta zakłada i hasła zmienia LLDAP, nie panel.** Konto założone w panelu to lokalne konto Synapse z hasłem poza
-   LDAP; reset hasła użytkownikowi z LDAP nic nie daje (logowanie i tak idzie przez LLDAP).
-2. **Nazwy wyświetlane** edytowane ręcznie w panelu nadpisze następne uruchomienie `provision_synapse_users.py`.
-3. **Przestrzenie** usunięte w panelu odtworzy `setup_spaces.py` (po aliasie) – więc usunięcie „na stałe” wymaga też
-   zmiany drzewa w skrypcie.
-4. **Odejście pracownika:** dezaktywacja konta w panelu **oraz** usunięcie/zablokowanie w LLDAP (inaczej logowanie
-   przez LDAP założy konto znowu).
-5. **Operacje destrukcyjne** (usunięcie pokoju z `purge`, dezaktywacja) najpierw na koncie/pokoju **testowym**.
-6. `/_synapse/admin` w bloku 443 pozostaje osiągalne z LAN jak dotąd (chronione tokenem; potrzebne skryptom z PC).
-   Panel tego nie zmienia – ewentualne ograniczenie to osobna decyzja (produkcja).
-
-#### Checklista testów panelu (F4)
-
-| # | Test | Status |
-|---|---|---|
-| 1 | Tunel SSH, `http://localhost:8080` ładuje panel | ✅ |
-| 2 | Logowanie `s.lewandowski` (pole serwera `http://localhost:8080`) | ✅ |
-| 3 | Lista użytkowników (ok. 204), wyszukiwanie, szczegóły konta, urządzenia | ✅ |
-| 4 | Lista pokoi: „Firma” + 7 działów, członkowie | ✅ |
-| 5 | Konto bez flagi `admin` (np. `a.nowak`) nie wejdzie do panelu | ✅ |
-| 6 | Zapis na koncie/pokoju **testowym**: dezaktywacja konta, usunięcie pokoju z `purge` (zamyka też niesprawdzony punkt w tabeli „Typowe operacje” wyżej) | ✅ |
-| 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py --dry-run` i `setup_spaces.py --dry-run` (nie pod rząd – HTTP 429) | ✅ |
-| 8 | Bez tunelu: `Test-NetConnection <IP_VM> -Port 8080` z PC → `TcpTestSucceeded : False` | ✅ |
-| 9 | Zapora na VM (`ufw`): port 8080 nie jest otwarty | ✅ |
-
-**Rollback:** przywróć `docker-compose.yml.bak` i `nginx/conf.d/matrix.conf.bak` na VM, potem
-`docker compose up -d --remove-orphans` (usuwa kontener panelu; dane Synapse i LLDAP nie są ruszane).
-
-<details>
-<summary>🏭 <b>Produkcja:</b> Synapse Admin</summary>
-
-- **Dostęp.** Albo nadal tylko loopback + tunel SSH/VPN (najprostsze), albo panel pod własną nazwą (np.
-  `admin.<domena>`) z prawdziwym certyfikatem i ograniczeniem po adresie IP / VPN. Nie wystawiaj panelu publicznie.
-- **Osobne konto administratora** (`register_new_matrix_user -a`, wymaga `registration_shared_secret`) zamiast konta
-  testowego `s.lewandowski`; hasło poza kodem.
-- **Aktualizacje.** Tag obrazu jest przypięty – ustal, kto i jak często go podnosi, oraz sprawdzaj zgodność panelu
-  z wersją Synapse.
-- **Kopia zapasowa** (baza, wolumen LLDAP, `synapse/`, media) **przed** operacjami destrukcyjnymi.
-- **Admin API w bloku 443.** Rozważ ograniczenie `/_synapse/admin` (po IP albo skrypty uruchamiane na serwerze przez
-  localhost); panel działa na osobnym porcie i go nie potrzebuje.
-
-</details>
-
----
-
-## 🤖 Skrypty automatyzujące
-
-Przegląd skryptów Python w `scripts/` – co robią, kiedy ich użyć, jak uruchomić. Wszystkie czytają adres serwera
-i hasła automatycznie z `.env` (nic nie trzeba wpisywać na sztywno ani commitować; hasło administratora Synapse to
-`SYNAPSE_ADMIN_PASSWORD`, patrz krok 5.1).
-
-**Wspólne środowisko** (raz, przy pierwszym użyciu któregokolwiek ze skryptów):
-
-🪟 **PC**, PowerShell:
-
-```powershell
-cd "<KATALOG_PROJEKTU>\scripts"
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowiska i instalowania zależności.
-
-| Skrypt | Co robi | Kiedy użyć |
-|---|---|---|
-| `seed_test_employees.py` | Tworzy testowe konta w LLDAP (7 grup-działów, wspólne hasło testowe); `--reassign` przepina istniejące konta do aktualnych grup | Potrzebujesz testowej masy pracowników do testów na realnej skali |
-| `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział` | Żeby cała firma była od razu widoczna w katalogu Synapse; po zmianie działów w LLDAP |
-| `setup_spaces.py` | Buduje drzewo Spaces (Firma + 7 działów) z grup LLDAP, tylko do odczytu, dołącza członków | Po provisioningu kont i po każdej zmianie przynależności do działów |
-| `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ⚠️ Po przetestowaniu: po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py` i `setup_spaces.py`) |
-| `test_directory_message.py` | Eksperyment układu wiadomości (zwijane `<details>` vs nagłówki), `--measure` sprawdza rozmiar | Tylko do prób układu; nie jest częścią normalnego przepływu |
-| `setup_main_room.py` | **Biblioteka wspólna** (klasa `Synapse`, `cfg()`, stałe) importowana przez `setup_spaces.py` i `setup_directory.py` | **Nie uruchamiaj** – pokoje i widget wycofane; TODO: wydzielić bibliotekę do osobnego modułu |
-
-Pełny opis, wymagania wstępne i wyniki testów:
-
-- `seed_test_employees.py` i `provision_synapse_users.py` – w sekcji
-  [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy), podsekcje **Etap B0** i **Etap B + C**,
-- `setup_spaces.py` – w tej samej sekcji, podsekcja [Etap E](#etap-e--drzewo-spaces-firma--działy).
-
-### Typowe zadania administratora (kolejność skryptów)
-
-⚠️ Poniższe sekwencje wynikają z opisu skryptów i z testów Etapów B/E; nie wszystkie były przećwiczone od początku
-do końca.
-
-| Zadanie | Kroki |
-|---|---|
-| **Nowy pracownik** | LLDAP: utwórz konto i wpisz do grupy-działu → `provision_synapse_users.py` → `setup_spaces.py` |
-| **Przeniesienie do innego działu** | LLDAP: zmień grupę → `provision_synapse_users.py` (nowa nazwa wyświetlana) → `setup_spaces.py --prune` (wyrzuca ze starego działu, dołącza do nowego) |
-| **Odejście pracownika** | LLDAP: usuń/zablokuj konto → dezaktywuj konto w Synapse (Admin API, patrz [Administrowanie Synapse](#administrowanie-synapse)) |
-| **Zmiana nazwy przestrzeni „Firma”** | `SPACES_ROOT_NAME` w `.env` → `setup_spaces.py` (alias się nie zmienia) |
-| **Nowy dział** | LLDAP: utwórz grupę → dopisz węzeł w `SPACE_TREE` w `setup_spaces.py` (z nowym, stałym `id`) → `provision_synapse_users.py` → `setup_spaces.py` |
-
----
-
-## Przydatne komendy
-
-🐧 **VM**, zawsze w `/opt/matrix`:
-
-| Co chcę zrobić | Komenda |
-|---|---|
-| Zobaczyć, co działa | `docker compose ps` |
-| Logi jednej usługi | `docker compose logs --tail=50 NAZWA` |
-| Logi na żywo | `docker compose logs -f NAZWA` (wyjście: `Ctrl+C`) |
-| Zrestartować usługę | `docker compose restart NAZWA` |
-| Zatrzymać wszystko | `docker compose down` |
-| Uruchomić po zmianach | `docker compose up -d --build` |
-| ⚠️ Skasować wszystko razem z danymi | `docker compose down -v` *(usuwa bazę i konta LLDAP!)* |
-
 ---
 
 ## Przed wdrożeniem produkcyjnym
 
-1. **Własne, losowe hasła** w `.env` i `synapse/homeserver.yaml` (`openssl rand -hex 24`) – nigdy wartości
-   z przykładów ani z dokumentacji.
-2. **Wpisz je w OBU plikach** (tabela w kroku 5): `POSTGRES_PASSWORD`, `TURN_SECRET`, `LLDAP_ADMIN_PASSWORD`.
-3. **Ustaw hasła PRZED pierwszym uruchomieniem.** *(Niesprawdzone u nas, ale to typowe zachowanie
-   kontenerów:)* PostgreSQL i LLDAP zapisują hasło w wolumenie przy pierwszym starcie, więc późniejsza
-   zmiana samego `.env` może go nie zmienić. Jeśli trzeba zmienić po fakcie – zmień hasło w samej bazie /
-   w panelu LLDAP albo odtwórz wolumeny (`docker compose down -v` **kasuje dane!**).
-5. Panel LLDAP (port 17170) jest w `docker-compose.yml` otwarty na wszystkich interfejsach VM – rozważ
-   ograniczenie go do adresu Tailscale (*niesprawdzone*).
-6. Po zmianach przetestuj ponownie: logowanie kontem z LLDAP (Synapse → LDAP) i rozmowę A/V
-   (Synapse ↔ Coturn).
-7. Rozmiar VM (4 GB / 2 vCPU) dla ok. 300 użytkowników jest **niesprawdzony**.
-8. **Domena i `server_name`:** wybierz docelową domenę przed założeniem kont – `server_name` jest wpisany
-   w każdy identyfikator użytkownika i nie da się go zmienić (szczegóły: ramka 🏭 przy Etapie E).
-9. **Konto administratora Synapse:** osobne konto serwisowe zamiast testowego, hasło poza kodem skryptów;
-   `/_synapse/admin` ograniczone po IP.
-10. **Słabe hasła PoC** w danych testowych i w historii gita (hasło administratora – od 2026-10-17 w `.env`, ale stara wartość jest w commitach; wspólne hasło testowe
-    kont z Etapu B0) – zmień przed udostępnieniem środowiska komukolwiek. Checklista:
-    [docs/rotacja-hasel-poc.md](docs/rotacja-hasel-poc.md) (⚠️ nieprzećwiczona).
-11. **Kopie zapasowe** (baza, wolumen LLDAP, `synapse/`, media) – opisane, ale nieprzetestowane (patrz
-    [Administrowanie Synapse](#administrowanie-synapse)).
-12. **Spaces:** zdecyduj między własnym skryptem (cykliczne uruchamianie) a licencją ESS Pro (AIM) – ramka 🏭 w Etapie E.
-13. **Synapse Admin (panel):** zostaw port 8080 tylko na loopbacku VM (nie otwieraj go w zaporze), użyj osobnego konta
-    administratora zamiast testowego i ustal procedurę aktualizacji przypiętego obrazu (ramka 🏭 przy panelu).
-14. Przejrzyj wszystkie zwijane ramki **🏭 Produkcja** w tym dokumencie (szukaj po 🏭).
+**Pełna lista kontrolna przeniesiona do [docs/produkcja.md](docs/produkcja.md)** – własne hasła, domena i `server_name`,
+konto administratora serwisowe, kopie zapasowe, Spaces (własny skrypt vs licencja ESS Pro), Synapse Admin,
+rotacja słabych haseł PoC – wszystkie 14 punktów plus zebrane ramki 🏭 Produkcja z całego dokumentu.
 
 ---
 
 ## Rozwiązywanie problemów
 
-### ✅ Zweryfikowane
-
-**1. `-bash: pki/generate-pki.sh: Permission denied`**
-- **Przyczyna:** komenda wpisana jako `$bash pki/generate-pki.sh`. Znak `$` na początku robi z `bash` pustą
-  zmienną, więc system próbuje uruchomić sam plik, który nie ma prawa wykonywania.
-- **Rozwiązanie:** wpisz bez `$`: `bash pki/generate-pki.sh`.
-
-**2. `ping matrix.local` → „could not find host", przeglądarka nie otwiera strony**
-- **Przyczyna:** wpis w pliku `hosts` nie został zapisany (Notatnik otwarty, ale bez Ctrl+S). Inne możliwe
-  przyczyny: brak uprawnień administratora, plik zapisany jako `hosts.txt`.
-- **Diagnoza:** `Get-Content C:\Windows\System32\drivers\etc\hosts` – czy jest tam linia z `matrix.local`.
-- **Rozwiązanie:** zapisz plik albo dopisz z PowerShella jako administrator:
-  `Add-Content C:\Windows\System32\drivers\etc\hosts "`n<IP_TAILSCALE>   matrix.local"`,
-  potem `ipconfig /flushdns`.
-
-**3. Element na telefonie loguje się, ale „Wstępna synchronizacja – czekanie na odpowiedź serwera" wisi bez końca**
-- **Objawy:** w logu Nginx (`docker compose logs --tail=60 proxy | grep -E "sync|keys|login"`) są tylko
-  dwa wpisy `GET` i `POST /_matrix/client/r0/login` z kodem 200, potem nic – ani `sync`, ani `keys`.
-  Serwer jest bezczynny (`docker stats`), a przeglądarka telefonu ładuje `/_matrix/client/versions`.
-- **Przyczyna:** w `homeserver.yaml` było `public_baseurl: "https://matrix.local/"`. Synapse dokleja ten adres
-  do odpowiedzi na logowanie, więc Element po zalogowaniu przełączał się na `matrix.local`, którego telefon
-  nie rozwiązuje – kolejne zapytania nie docierały do serwera.
-- **Rozwiązanie:** `public_baseurl: "https://<PELNA-NAZWA-TS>/"`, `docker compose restart synapse`,
-  wylogowanie (albo wyczyszczenie danych Elementa) i ponowne logowanie na `https://<PELNA-NAZWA-TS>`.
-- **Wskazówka:** `sudo ss -tn | grep IP_TELEFONU` na VM **nic nie pokazuje**, bo Nginx działa w kontenerze –
-  do podglądu zapytań użyj logów (`docker compose logs -f --tail=0 proxy`).
-
-**4. Skrypt (`setup_spaces.py`, `provision_synapse_users.py`) kończy się `HTTP 429 M_LIMIT_EXCEEDED` przy logowaniu administratora**
-- **Objawy:** `Logowanie admina 's.lewandowski' nie powiodło się: HTTP 429 ... retry_after_ms`.
-- **Przyczyna:** limiter prób logowania w Synapse (to nie jest błąd hasła). Każde uruchomienie skryptu loguje
-  to samo konto, a kilka uruchomień pod rząd wydłuża czas oczekiwania (2026-10-14: z kilkunastu sekund do ok.
-  4 minut).
-- **Rozwiązanie:** poczekaj. Skrypt sam czeka i ponawia logowanie (wypisuje `limit prób logowania, czekam Ns`) –
-  nie przerywaj go i nie uruchamiaj drugiego równolegle, bo to wydłuża czekanie. Ewentualnie `docker compose
-  restart synapse` czyści licznik (jak w uwadze przy Etapie B0).
-
-**5. Admin API zwraca `404 Not Found` (od nginx, nie od Synapse)**
-- **Przyczyna:** nginx nie przepuszcza `/_synapse/admin` (stary `matrix.conf` na VM).
-- **Rozwiązanie:** patrz Etap B + C, wymaganie 2 (dopisać `|/_synapse/admin` do regexu i przeładować nginx).
-
-### ⚠️ Możliwe, niesprawdzone (zajrzyj tu dopiero, jeśli zobaczysz taki objaw)
-
-**6. Błędy `\r` przy uruchamianiu skryptu** – windowsowe końce linii; naprawa:
-`sed -i 's/\r$//' pki/generate-pki.sh pki/v3.ext`.
-
-**7. Synapse restartuje się, w logach brak klucza podpisu (`signing key`) lub brak uprawnień do `/data`**
-Obraz Synapse nie zawsze sam tworzy klucz, a działa jako użytkownik `991`, który może nie mieć prawa zapisu
-w zamontowanym katalogu. Rozwiązanie (do potwierdzenia po zobaczeniu logów):
-
-```bash
-cd /opt/matrix
-sudo chown -R 991:991 synapse
-docker compose run --rm --entrypoint python synapse -m synapse.app.homeserver --config-path /data/homeserver.yaml --generate-keys
-docker compose up -d
-```
-
-**8. Nginx (`matrix-proxy`) nie startuje** – zwykle brakuje certyfikatów w `/opt/matrix/certs`. Sprawdź
-`ls certs` i powtórz krok 6. Po dodaniu bloków dla Tailscale (krok 9.2) brakujące pliki
-`<PELNA-NAZWA-TS>.crt` i `.key` też zatrzymają Nginx.
-
-**9. Pracownik nie widzi swojego działu w pasku bocznym** – sprawdź w panelu LLDAP, czy konto ma grupę-dział
-(4 konta testowe nie mają: `j.kowalski`, `a.nowak`, `t.perlik`, `p.wisniewski`); potem
-`provision_synapse_users.py` i `setup_spaces.py`.
-
-**10. Panel Synapse Admin nie otwiera się pod `http://localhost:8080`** – sprawdź po kolei: czy okno z tunelem SSH jest
-otwarte, czy na VM `docker compose ps` pokazuje `matrix-proxy` i `matrix-synapse-admin` jako `Up`, czy
-`ss -tlnp | grep 8080` pokazuje `127.0.0.1:8080`, oraz `docker compose logs --tail=50 proxy synapse-admin`.
-Po błędzie `host not found in upstream "synapse-admin"` uruchom `docker compose up -d` (kontener panelu musi istnieć).
+**Pełna lista przeniesiona do [docs/rozwiazywanie-problemow.md](docs/rozwiazywanie-problemow.md)** – zweryfikowane
+problemy 1-5 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, telefon wisi na synchronizacji,
+HTTP 429, Admin API 404) i niesprawdzone 6-10.
 
 ---
 
 ## Znane ograniczenia PoC
 
-- Pracownik widzi w pasku bocznym tylko „Firma” i **swój** dział. Ludzi z innych działów znajduje po nazwie
-  (wyszukiwarka, lista osób w „Firma”). Pokazanie wszystkich działów jako drzewa bez dołączania do nich nie jest
-  możliwe w sposób, który pokazywałby też ludzi (próba z `knock` – patrz Etap E).
-- Przestrzenie nie synchronizują się same – zmiany w LLDAP wymagają ponownego uruchomienia skryptów.
-- Pokój „Książka adresowa” (Etap G) jest nieprzetestowany; zwijane działy nie działają na telefonie, a wyszukiwanie
-  w treści pokoju nie działa (szczegóły w Etapie G).
-- Kto sam wyjdzie z przestrzeni, nie wróci automatycznie (świadoma decyzja skryptu, `--rejoin` to zmienia).
-- Konto trafia do katalogu wyszukiwania dopiero po założeniu w Synapse (`provision_synapse_users.py`) albo
-  pierwszym logowaniu.
-- Certyfikat serwera jest ważny 825 dni, Root CA 10 lat; certyfikat z Tailscale ok. 90 dni.
-- Federacja jest wyłączona (`federation_domain_whitelist: []`) – serwer nie łączy się z innymi serwerami Matrix.
-- Panel Synapse Admin jest dostępny tylko z VM albo przez tunel SSH z PC (świadoma decyzja – brak wygodnego adresu dla
-  innych administratorów). Konta i hasła nadal prowadzi LLDAP, nie panel (patrz zasady przy panelu).
+**Pełna lista przeniesiona do [docs/produkcja.md](docs/produkcja.md)** – m.in. brak automatycznej synchronizacji
+Spaces, zwijane działy niedziałające na telefonie, wygaśnięcie certyfikatów, wyłączona federacja.
+
+---
+
+<a id="wyglad-element-desktop"></a>
+## Wygląd Element Desktop (motywy i logo, opcjonalnie)
+
+Opcjonalna kosmetyka (niepotrzebna do testowego wdrożenia), tylko Element Desktop: ciemny motyw, logo firmy, serwer `matrix.local` ustawiony z góry.
+Pełny opis, tabela motywów, wdrożenie `config.json` i lista rzeczy niesprawdzonych: [docs/wyglad-element.md](docs/wyglad-element.md).
+
