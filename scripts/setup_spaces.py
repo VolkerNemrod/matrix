@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-setup_spaces.py -- drzewo Matrix Spaces odwzorowujace strukture firmy z LLDAP (wariant B, plaski).
+setup_spaces.py -- Etap 2.1 (README): drzewo Matrix Spaces odwzorowujace strukture firmy z grup LLDAP.
 
-STRUKTURA (decyzja 2026-10-15):
+STRUKTURA (README, "Rozwiazanie"; wszystkie dzialy na jednym poziomie pod "Firma"):
   Firma                       <- WSZYSCY (kazdy widzi wszystkich ~300 osob; z listy czlonkow mozna otworzyc DM)
    |- Ksiegowosc               <- grupa LLDAP "Księgowość"
    |- Wydzial EFS              <- grupa "Wydział EFS"
@@ -15,11 +15,11 @@ Kazde konto ma dokladnie jedna grupe-dzial, wiec kazdy subspace = jedna grupa (z
 Nazwa glownego space'u ('Firma') jest ustawialna: SPACES_ROOT_NAME w .env (domyslnie "Firma").
 'id' wezlow (np. "firma", "ksiegowosc") sa STALE -- z nich powstaja aliasy pokoi (#space-<id>:domena),
 po aliasie skrypt rozpoznaje space przy kolejnych uruchomieniach. Nazwe wyswietlana mozna zmieniac
-swobodnie; zmiana 'id' utworzy NOWY space (tak samo jak w AIM).
+swobodnie; zmiana 'id' utworzy NOWY space.
 
 DRZEWO JEST REKURENCYJNE (SPACE_TREE nizej): wezel = id, name, topic, groups, children.
   groups = lista nazw grup LLDAP albo None (= wszyscy). Czlonkowie space'u = czlonkowie jego grup
-  + czlonkowie wszystkich jego subspace'ow (semantyka jak w AIM). Partnerow (20 firm) mozna pozniej dodac
+  + czlonkowie wszystkich jego subspace'ow. Partnerow (20 firm) mozna pozniej dodac
   jako kolejne poddrzewa w "children" -- na razie NIE sa podlaczeni (decyzja 2026-10-14).
 
 TYLKO DO ODCZYTU: nikt poza adminem i osobami z SPACES_WRITERS (domyslnie MAIN_ROOM_WRITERS z .env)
@@ -27,7 +27,7 @@ nie moze pisac w space'ach ani zmieniac ich ustawien/dzieci. Space w Elemencie t
 okna pisania); pokoi dyskusyjnych w space'ach NIE tworzymy. DM-y 1:1 sa osobnymi pokojami -- dzialaja.
 
 CO ROBI (kazdy krok idempotentny -- mozna puszczac wielokrotnie):
-  1. Loguje sie do LLDAP i do Synapse (jak seed_test_employees.py i setup_main_room.py).
+  1. Loguje sie do LLDAP i do Synapse (konto administratora z Etapu 0, jak provision_synapse_users.py).
   2. Sprawdza, czy wszystkie grupy z drzewa istnieja w LLDAP (jesli nie -- konczy bledem, nic nie zmieniajac).
   3. Dla kazdego wezla: znajduje space po aliasie albo tworzy (typ m.space), ustawia nazwe, temat
      i uprawnienia (tylko do odczytu).
@@ -39,27 +39,35 @@ CO ROBI (kazdy krok idempotentny -- mozna puszczac wielokrotnie):
   6. Z --prune: wyrzuca ze space'u osoby, ktore juz nie naleza do zadnej z jego grup (np. po przeniesieniu
      do innego dzialu). Bez --prune tylko je wypisuje.
 
-WIDOCZNOSC DZIALOW (join_rule 'knock'):
-  Space glowny ('Firma') jest invite-only (wszyscy sa do niego dolaczeni skryptem). Subspace'y (dzialy)
-  dostaja join_rule 'knock' (SPACES_SUBSPACE_JOIN_RULE w .env: knock | invite, domyslnie INVITE):
-  czlonkowie 'Firma' WIDZA dzialy w drzewie space'u, ale nie moga do nich dolaczyc sami -- moga tylko
-  poprosic o dolaczenie (admin akceptuje albo ignoruje). Listy czlonkow dzialow widza tylko ich czlonkowie.
-  Wartosc 'invite' = poprzednie zachowanie (dzialy niewidoczne dla osob spoza dzialu).
-  WYNIK TESTU 2026-10-14: 'knock' pokazuje dzialy (nazwa, liczba czlonkow), ale NIE pokazuje ludzi z dzialu
-  -- decyzja uzytkownika: wracamy do 'invite' (domyslne), szukanie ludzi po nazwie dzialu w space'ie 'Firma'.
+REGULA DOLACZANIA SUBSPACE'OW (SPACES_SUBSPACE_JOIN_RULE w .env: invite | knock, domyslnie INVITE -- zalecane):
+  Space glowny ('Firma') jest zawsze invite-only (wszyscy sa do niego dolaczeni skryptem). Subspace'y (dzialy)
+  maja domyslnie 'invite': cudzych dzialow w pasku bocznym nie widac, ludzi szuka sie po nazwie
+  (dzial jest w nazwie wyswietlanej) na liscie czlonkow 'Firma'. Wartosc 'knock' pokazuje dzialy czlonkom 'Firma'
+  (nazwa, liczba czlonkow; wejscie tylko po akceptacji admina), ale NIE pokazuje ludzi z dzialu --
+  wynik testu 2026-10-14, dlatego wrocilismy do 'invite' (README, 2.1).
 
-NIESPRAWDZONE W PRAKTYCE (do przetestowania w Elemencie):
-  - czy zwykly uzytkownik widzi dzialy na stronie glownej 'Firma' i moze o nie tylko poprosic (knock),
+WYNIK TESTU W ELEMENCIE (README, 2.1, 2026-10-14):
+  OK: administrator widzi 'Firma' i 7 dzialow; zwykly pracownik widzi 'Firma' i swoj dzial.
+  NIEPOTWIERDZONE: konto bez grupy-dzialu (np. j.kowalski) widzi tylko 'Firma', bez strzalki rozwijania.
+NIESPRAWDZONE W PRAKTYCE:
   - czy zwykly uzytkownik nie moze pisac w space ani podpiac wlasnego pokoju (m.space.child na poziomie 100),
   - czy klik osoby na liscie czlonkow space'u 'Firma' otwiera DM,
-  - czy Element pokazuje space'y bez dodatkowych zaproszen po force-join.
+  - czy wyszukiwanie w liscie czlonkow 'Firma' po nazwie dzialu dziala po odswiezeniu nazw (Etap 1).
 
-WYMAGANIA WSTEPNE: konta w Synapse istnieja (provision_synapse_users.py), LLDAP dziala, w .env sa
-TS_IP i LLDAP_ADMIN_PASSWORD, dziala konto admina Synapse (jak w setup_main_room.py). Importuje klasy
-z setup_main_room.py i seed_test_employees.py -- oba pliki musza lezec w tym samym katalogu.
+WYMAGANIA WSTEPNE: konta w Synapse istnieja (provision_synapse_users.py, Etap 1), LLDAP dziala, w .env na PC
+sa TS_IP, LLDAP_ADMIN_PASSWORD i SYNAPSE_ADMIN_PASSWORD, a konto administratora Synapse jest przygotowane
+(README, Etap 0). Importuje klasy z setup_main_room.py i seed_test_employees.py -- oba pliki musza lezec
+w tym samym katalogu.
+
+Kolejnosc przy pierwszym wdrozeniu: seed_test_employees.py (B0) -> provision_synapse_users.py (Etap 1)
+-> setup_spaces.py -> setup_directory.py. Nowy dzial: grupa w LLDAP + nowy wezel w SPACE_TREE (stale 'id'),
+potem provision_synapse_users.py -> setup_spaces.py -> setup_directory.py --rebuild (README, 2.4).
+
+Po tym skrypcie: setup_directory.py (Etap 2.2 README; pokoj "Ksiazka adresowa" podpina sie pod 'Firma'). Nie puszczaj skryptow
+pod rzad bez przerw -- kazdy loguje administratora (HTTP 429, README, Rozwiazywanie problemow, pkt 4).
 
 Wymaga: pip install requests
-Uzycie:
+Uzycie (PC, katalog scripts, venv aktywny; najpierw --dry-run):
   python setup_spaces.py --dry-run          # tylko pokaz, co by zrobil
   python setup_spaces.py                    # wykonaj
   python setup_spaces.py --prune            # + wyrzuc z space'ow osoby spoza ich grup
@@ -96,8 +104,8 @@ from seed_test_employees import LldapAdmin, resolve_lldap_url
 ALIAS_PREFIX = "space-"     # alias space'u: #space-<id>:<domena>
 ROOT_NAME = cfg("SPACES_ROOT_NAME", "Firma")
 
-# join_rule subspace'ow: "knock" = widoczne dla czlonkow rodzica, wejscie tylko po akceptacji admina;
-# "invite" = niewidoczne dla osob spoza dzialu. Glowny space (root) jest zawsze invite-only.
+# join_rule subspace'ow: "invite" (domyslnie, zalecane) = cudze dzialy niewidoczne; "knock" = dzialy widoczne
+# dla czlonkow rodzica (wejscie po akceptacji admina), ale bez listy ludzi z dzialu. Glowny space (root) jest zawsze invite-only.
 SUBSPACE_JOIN_RULE = (cfg("SPACES_SUBSPACE_JOIN_RULE", "invite") or "invite").strip().lower()
 if SUBSPACE_JOIN_RULE not in ("knock", "invite"):
     print(f"BLAD: SPACES_SUBSPACE_JOIN_RULE musi byc 'knock' albo 'invite' (jest: '{SUBSPACE_JOIN_RULE}').")
@@ -373,7 +381,7 @@ def main():
     missing = sorted(tree_groups(SPACE_TREE) - set(group_users))
     if missing:
         print(f"BLAD: w LLDAP brakuje grup uzytych w drzewie: {', '.join(missing)}")
-        print("Utworz je (seed_test_employees.py) albo popraw SPACE_TREE. Nic nie zmieniono.")
+        print("Utworz je w LLDAP (seed_test_employees.py, B0, albo recznie) albo popraw SPACE_TREE. Nic nie zmieniono.")
         sys.exit(1)
     print("LLDAP OK -- wszystkie grupy z drzewa istnieja:")
     for g in sorted(tree_groups(SPACE_TREE)):
@@ -398,7 +406,7 @@ def main():
     no_group = all_users - in_any_group - {syn.admin_mxid}
     if no_synapse:
         print(f"UWAGA: {len(no_synapse)} kont z LLDAP nie ma jeszcze konta w Synapse "
-              f"(provision_synapse_users.py / pierwsze logowanie) -- zostana pominiete.")
+              f"(provision_synapse_users.py, Etap 1) -- zostana pominiete.")
     if no_group:
         print(f"UWAGA: {len(no_group)} kont Synapse nie nalezy do zadnej grupy-dzialu "
               f"(trafia tylko do \"{SPACE_TREE['name']}\").")
@@ -462,9 +470,10 @@ def main():
     print("=== GOTOWE ===" if not args.dry_run else "=== KONIEC TRYBU PROBNEGO ===")
     if not args.dry_run:
         print("Test w Elemencie (najlepiej na koncie zwyklego pracownika, np. --profile):")
-        print(f"  1. Czy w pasku bocznym jest space \"{SPACE_TREE['name']}\" z 7 subspace'ami?")
-        print("  2. Czy klik osoby na liscie czlonkow space'u otwiera DM?")
-        print("  3. Czy zwykly uzytkownik nie moze pisac w space ani dodac do niego swojego pokoju?")
+        print(f"  1. Czy w pasku bocznym jest \"{SPACE_TREE['name']}\" i wlasny dzial (administrator widzi 7 dzialow)?")
+        print("  2. Czy w 'Firma' (lista osob) szukanie po nazwie dzialu znajduje wlasciwe osoby?")
+        print("  3. Czy klik osoby otwiera rozmowe 1:1 (DM)?")
+        print("  4. Czy zwykly uzytkownik nie moze pisac w space ani dodac do niego swojego pokoju?")
 
 
 if __name__ == "__main__":

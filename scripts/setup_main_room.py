@@ -4,8 +4,9 @@ UWAGA (2026-10-14): POKOJE I WIDGET WYCOFANE. Decyzja uzytkownika: ksiazka adres
 + podprzestrzenie-dzialy (scripts/setup_spaces.py); widget okazal sie slepym zaulkiem, a pokoje
 'Firma-Ogloszenia' i 'Struktura organizacyjna' zostaly usuniete (w razie potrzeby admin zaklada
 pokoj recznie w Elemencie). NIE URUCHAMIAJ tego pliku jako skryptu -- zalozylby usuniete pokoje
-od nowa. Plik ZOSTAJE wylacznie jako biblioteka: setup_spaces.py importuje z niego klase Synapse,
-cfg(), ensure_name_topic() i stale. TODO: wydzielic te elementy do wspolnego modulu
+od nowa. Plik ZOSTAJE wylacznie jako biblioteka wspolna (klasa Synapse, cfg(), ensure_name_topic(),
+ensure_power_levels(), stale, ADMIN_PASSWORD z SYNAPSE_ADMIN_PASSWORD): importuja z niego setup_spaces.py
+(Etap 2.1), setup_directory.py (Etap 2.2) i test_directory_message.py (README, Zawartosc repozytorium). TODO: wydzielic te elementy do wspolnego modulu
 (np. matrix_common.py) i dopiero wtedy usunac ten plik.
 
 setup_main_room.py -- (HISTORIA) pokoje glowne dla calej firmy (oba tylko do odczytu): zaklada je
@@ -48,7 +49,7 @@ im.vector.modular.widgets) i porownaj z tym, co zapisuje skrypt.
 
 WYMAGANIA WSTEPNE:
   - Konta w Synapse istnieja (provision_synapse_users.py) i dziala konto administratora
-    Synapse (README, Etap B + C), a nginx przepuszcza /_synapse/admin.
+    Synapse (README, Etap 1 i Etap 0), a nginx przepuszcza /_synapse/admin.
   - W .env (wzor: .env.example): SYNAPSE_ADMIN_PASSWORD (haslo konta administratora Synapse),
     WIDGET_URL (adres, ktory MUSI dzialac na KAZDYM kliencie --
     patrz README) oraz opcjonalnie MAIN_ROOM_NAME, MAIN_ROOM_ALIAS, MAIN_ROOM_TOPIC
@@ -533,7 +534,7 @@ def main():
         syn.login(ADMIN_LOGIN, ADMIN_PASSWORD)
     except (requests.RequestException, RuntimeError) as e:
         print(f"BLAD polaczenia/logowania do Synapse: {e}")
-        print("Sprawdz: czy konto ma admin=1 (README, Etap B), haslo, i dostep do matrix.local jak w Elemencie.")
+        print("Sprawdz: czy konto ma admin=1 (README, Etap 0), haslo, i dostep do matrix.local jak w Elemencie.")
         sys.exit(1)
     print("Zalogowano.\n")
 

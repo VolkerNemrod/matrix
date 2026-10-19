@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-setup_directory.py -- ksiazka adresowa firmy jako WIADOMOSCI z linkami matrix.to w pokoju
-"Ksiazka adresowa" (tylko do odczytu, podpiety pod space "Firma"). Zastepuje porzucony widget.
+setup_directory.py -- Etap 2.2 (README): ksiazka adresowa firmy jako WIADOMOSCI z linkami matrix.to w pokoju
+"Ksiazka adresowa" (tylko do odczytu, podpiety pod space "Firma").
+
+STATUS (README, 2.2): --dry-run na 204 kontach i pokoj probny (--fake-extra --alias test-ksiazka-pelna --limit 20)
+dzialaja w Element Desktop (2026-10-18). NIESPRAWDZONE: wyglad na telefonie, prawdziwe dane z directory_extra.csv
+i wlasciwy przebieg bez --alias.
 
 WYNIK: w pokoju jest jedna wiadomosc wstepna i po jednej wiadomosci na dzial. Dzial rozwija sie
 kliknieciem (<details>, dziala w Element Desktop, NIE na telefonie), osoby sa "pigulkami" Elementa
@@ -13,7 +17,7 @@ SKAD DANE:
   - stanowisko / telefon / pokoj / pietro: plik CSV (domyslnie scripts/directory_extra.csv),
     edytowany w Excelu. Szablon z wszystkimi loginami: --write-extra-template (nie nadpisuje
     wpisanych wartosci, dopisuje tylko nowe osoby). W wersji produkcyjnej zrodlem moze byc AD
-    (telephoneNumber, physicalDeliveryOfficeName, title) -- wtedy ten plik zastapi odczyt z AD.
+    (telephoneNumber, physicalDeliveryOfficeName, title) -- wtedy ten plik zastapi odczyt z AD (docs/produkcja.md).
   - --fake-extra: SZTUCZNE dane do ogladania ukladu (wiadomosc dostaje dopisek "dane demonstracyjne").
 
 CO ROBI (kazdy krok idempotentny -- mozna puszczac wielokrotnie, np. po dodaniu pracownika):
@@ -35,8 +39,11 @@ OGRANICZENIA:
   - Nowy dzial pojawi sie na DOLE osi czasu (nie alfabetycznie). Kolejnosc naprawia --rebuild
     (usuwa stare wiadomosci i wysyla wszystko od nowa, w porzadku alfabetycznym).
   - Wyszukiwanie w pokoju nie dziala (stwierdzone w tescie); osoby szuka sie w "Rozpocznij rozmowe".
-  - NIEPRZETESTOWANE na pelnych danych w Synapse: pierwszy raz uruchom z --dry-run, potem na
-    pokoju probnym: --alias test-ksiazka-pelna --limit 20 (pokoj probny NIE jest podpinany pod Firme).
+  - Zwijane dzialy (<details>) nie dzialaja na telefonie (swiadoma decyzja: uklad zostaje).
+  - Klik w pigulke otwiera profil osoby; czy stamtad da sie wygodnie zaczac rozmowe 1:1 -- NIESPRAWDZONE.
+  - Dane kontaktowe (telefon, pokoj, pietro) widza wszyscy czlonkowie pokoju.
+  - Pierwszy raz uruchom z --dry-run, potem na pokoju probnym: --alias test-ksiazka-pelna --limit 20
+    (pokoj probny NIE jest podpinany pod Firme). --limit i --fake-extra WYMAGAJA --alias (poza --dry-run).
 
 Uzycie (PC, katalog scripts, jak setup_spaces.py):
   python setup_directory.py --write-extra-template      # utworz/uzupelnij directory_extra.csv
@@ -44,9 +51,14 @@ Uzycie (PC, katalog scripts, jak setup_spaces.py):
   python setup_directory.py                             # wykonaj (pokoj "Ksiazka adresowa")
   python setup_directory.py --fake-extra --alias test-ksiazka-pelna --limit 20   # proba
   python setup_directory.py --rebuild                   # wyslij wszystko od nowa (kolejnosc)
-Inne opcje: --extra-file SCIEZKA, --exclude login1,login2, --skip-join, --rejoin.
+Inne opcje: --extra-file SCIEZKA, --exclude login1,login2, --skip-join, --rejoin, --pin, --alias NAZWA, --limit N.
 Ustawienia w .env (opcjonalne): DIRECTORY_ROOM_ALIAS, DIRECTORY_ROOM_NAME, DIRECTORY_ROOM_TOPIC,
 DIRECTORY_EXCLUDE (loginy po przecinku), SPACES_WRITERS.
+
+WYMAGANIA WSTEPNE: konto administratora Synapse (README, Etap 0), konta w Synapse (provision_synapse_users.py,
+Etap 1), SYNAPSE_ADMIN_PASSWORD w .env na PC oraz space "Firma" z setup_spaces.py (Etap 2.1) -- bez niego pokoj
+powstanie, ale nie zostanie podpiety. Nie puszczaj skryptow pod rzad bez przerw (HTTP 429, README, Rozwiazywanie
+problemow, pkt 4).
 
 Wymaga: pip install requests. Importuje setup_main_room.py (musi lezec w tym samym katalogu).
 """
@@ -91,6 +103,8 @@ INTRO_KEY = "00 Wstęp"
 NO_DEPT = "Bez działu"
 
 # Dodatkowe pola z CSV: (nazwa kolumny, przedrostek przed wartoscia). Kolejnosc = kolejnosc w wiadomosci.
+# Pole wlasne (README, 2.3): dopisz pare tutaj ORAZ ta sama nazwe kolumny w TEMPLATE_COLUMNS; nazwa kolumny: male litery,
+# bez polskich znakow i spacji (zamiast spacji '_'); potem --write-extra-template dodaje kolumne do CSV.
 EXTRA_FIELDS = [("stanowisko", ""), ("telefon", "tel. "), ("pokoj", "pok. "), ("pietro", "piętro ")]
 TEMPLATE_COLUMNS = ["login", "imie_nazwisko", "dzial", "stanowisko", "telefon", "pokoj", "pietro"]
 
@@ -370,7 +384,7 @@ def ensure_room(syn: Synapse, spec: dict, dry_run: bool):
 def link_to_space(syn: Synapse, room_id: str, dry_run: bool):
     space_id = syn.find_room_by_alias(SPACE_ALIAS)
     if not space_id:
-        print(f"  Space: nie znaleziono {SPACE_ALIAS} (uruchom najpierw setup_spaces.py) -- pomijam podpięcie.")
+        print(f"  Space: nie znaleziono {SPACE_ALIAS} (uruchom najpierw setup_spaces.py, Etap 2.1) -- pomijam podpięcie.")
         return
     via = [HOMESERVER_DOMAIN]
     child = {"via": via, "order": "00"}      # "00" = przed działami (01..07)
@@ -610,7 +624,8 @@ def main():
     print(f"Pokój: \"{spec['name']}\" (#{alias}:{HOMESERVER_DOMAIN}). Sprawdź na koncie zwykłego pracownika:")
     print("  1. czy pokój jest na liście (dla właściwego pokoju: w space Firma),")
     print("  2. czy działy się rozwijają, a nazwiska są pigułkami z danymi obok,")
-    print("  3. co robi klik w pigułkę, 4. czy wpisy 'X dołączył' są zwinięte w jedną linię.")
+    print("  3. co robi klik w pigułkę (profil osoby; czy stamtąd łatwo zacząć rozmowę 1:1 -- niesprawdzone),")
+    print("  4. czy wpisy 'X dołączył' są zwinięte w jedną linię.")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-test_directory_message.py -- TEST (eksperyment, nie wdrozenie): ksiazka adresowa jako WIADOMOSC
-z linkami matrix.to zamiast widgetu.
+test_directory_message.py -- EKSPERYMENT ZAKONCZONY (historia): sprawdzal ksiazke adresowa jako WIADOMOSC
+z linkami matrix.to. Wyniki (README, 2.2): <details> dziala w Element Desktop, nie na telefonie; wyszukiwanie
+w tresci pokoju nie dziala; pigulka otwiera profil osoby (czy stamtad wygodnie zaczac DM -- niesprawdzone).
+PRODUKCYJNIE sluzy do tego setup_directory.py (Etap 2.2); ten plik zostaje do prob ukladu i pomiaru rozmiaru
+(--measure). Wymaga SYNAPSE_ADMIN_PASSWORD w .env na PC i konta administratora (README, Etap 0).
 
-CO SPRAWDZA (checklista po uruchomieniu, na DRUGIM koncie zwyklego pracownika):
+CO SPRAWDZAL (checklista, na DRUGIM koncie zwyklego pracownika):
   1. Czy linki do osob renderuja sie jako "pigulki" z nazwa osoby (a nie surowy URL).
   2. Co robi klik w pigulke: karta osoby z przyciskiem "Wyslij wiadomosc" czy od razu DM,
      i czy w ogole nie otwiera przegladarki (matrix.to ma byc przechwycony lokalnie).
@@ -20,7 +23,7 @@ WIADOMOSCI:
 
 Pokoj testowy: #test-ksiazka-adresowa:matrix.local, BEZ szyfrowania (wyszukiwanie po stronie
 serwera dziala tylko w pokojach nieszyfrowanych -- pokoj tworzony przez API taki jest).
-Do pokoju dolaczane sa tylko osoby uzyte w ttescie (+ opcjonalnie --join login1,login2),
+Do pokoju dolaczane sa tylko osoby uzyte w tescie (+ opcjonalnie --join login1,login2),
 zeby mozna bylo zalogowac sie na jedno z tych kont i obejrzec wiadomosc oczami zwyklego usera.
 
 Uzycie (PC, cd scripts, Tailscale/hosts jak przy setup_spaces.py):
@@ -33,7 +36,7 @@ mozna zignorowac albo usunac pokoj przez panel Synapse Admin (purge).
 
 Format nazwy wyswietlanej (provision_synapse_users.py): "Imie Nazwisko – Dzial"
 (opcjonalnie "Imie Nazwisko – Dzial, Lokalizacja"). Skrypt z niej buduje drzewo.
-UWAGA: nic tu nie jest jeszcze sprawdzone w praktyce.
+UWAGA: wyniki testow i decyzje -- patrz README, 2.2 (setup_directory.py).
 """
 
 import argparse

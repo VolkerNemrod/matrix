@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-seed_test_employees.py -- Etap B0: generuje testowa strukture firmy w LLDAP.
+seed_test_employees.py -- Przygotowanie, B0 (README): generuje testowa strukture firmy w LLDAP.
 
 CEL: utworzyc ~200 fikcyjnych kont pracownikow w LLDAP (przez GraphQL API),
-przypisanych do grup-dzialow i grup-lokalizacji, z jednym wspolnym haslem
-testowym -- zeby sprawdzic w praktyce, jak wyglada wbudowany katalog
-uzytkownikow Synapse (Wariant 1 z README) na realnej liczbie kont.
+przypisanych do grup-dzialow, z jednym wspolnym haslem
+testowym -- zeby sprawdzic w praktyce, jak dziala wbudowany katalog
+uzytkownikow Synapse i drzewo Spaces na realnej liczbie kont.
 
 WYLACZNIE DO TESTOW PoC. Nigdy nie uzywac wspolnego hasla na produkcji
 z prawdziwymi ludzmi.
 
 =====================================================================
-JAK TO DZIALA (dwa etapy, bo LLDAP nie ma prostego REST do hasel)
+JAK TO DZIALA (dwa kroki, bo LLDAP nie ma prostego REST do hasel)
 =====================================================================
-ETAP 1 (ten skrypt, uruchamiany TUTAJ na Twoim PC):
-  Tworzy uzytkownikow i grupy (dzialy + lokalizacje) przez GraphQL API
+KROK 1 (ten skrypt, uruchamiany TUTAJ na Twoim PC):
+  Tworzy uzytkownikow i grupy-dzialy przez GraphQL API
   LLDAP -- to dziala bezposrednio przez HTTP, bez problemu z PC.
 
-ETAP 2 (plik wygenerowany przez ten skrypt, uruchamiany NA VM):
+KROK 2 (plik wygenerowany przez ten skrypt, uruchamiany NA VM):
   Ustawianie hasel w LLDAP korzysta ze wzgledow bezpieczenstwa z protokolu
   PAKE (Opaque), wiec NIE da sie tego zrobic prostym zapytaniem REST z PC
   (sprawdzone empirycznie 2026-10-11 -- endpoint faktycznie "przyjmowal"
@@ -34,10 +34,13 @@ Uzycie:
   python seed_test_employees.py --reassign --dry-run   # POKAZ, kogo przepieto by do nowych grup
   python seed_test_employees.py --reassign             # przepnij ISTNIEJACE konta (bez kasowania, bez hasel)
 
-STRUKTURA (decyzja 2026-10-15): BRAK grup lokalizacji. Kazde konto ma DOKLADNIE JEDNA grupe-dzial:
-Ksiegowosc, Wydzial EFS, Dyrekcja, IT, Sprzedaz (siedziba w Toruniu) albo Bydgoszcz Poradnictwo /
-Wloclawek Poradnictwo (te dwa to zwykle dzialy, na tym samym poziomie co Ksiegowosc).
-Drzewo spaces (Firma -> wszystkie dzialy plasko) buduje setup_spaces.py.
+STRUKTURA (README, B0): kazde konto ma DOKLADNIE JEDNA grupe-dzial (7 grup): Ksiegowosc, Wydzial EFS,
+Dyrekcja, IT, Sprzedaz (siedziba w Toruniu) albo Bydgoszcz Poradnictwo / Wloclawek Poradnictwo
+(te dwa to zwykle dzialy, na tym samym poziomie co Ksiegowosc).
+Drzewo Spaces (Firma -> wszystkie dzialy na jednym poziomie) buduje setup_spaces.py (Etap 2.1).
+
+HASLO TESTOWE: TEST_PASSWORD w .env NA VM (README, krok 5.1) -- czyta je wygenerowany set_test_passwords.sh.
+DALEJ: konta w Synapse -- provision_synapse_users.py (README, Etap 1); wymaga Etapu 0 (konto administratora).
 """
 
 import argparse
@@ -456,10 +459,11 @@ def main():
     print("  ssh <UZYTKOWNIK>@<IP_VM>")
     print("  cd /opt/matrix")
     print("  bash scripts/set_test_passwords.sh")
+    print("\nPotem (PC): provision_synapse_users.py -- konta w Synapse z dzialem w nazwie wyswietlanej (README, Etap 1).")
 
     if LIMIT is not None:
         print(f"\nTo bylo uruchomienie testowe (LIMIT={LIMIT}).")
-        print("Po uruchomieniu skryptu z hasiami NA VM, sprobuj zalogowac sie do Elementa.")
+        print("Po uruchomieniu skryptu z haslami NA VM, sprobuj zalogowac sie do Elementa.")
         print("Jesli zadziala -- ustaw LIMIT = None u gory pliku i uruchom ponownie dla")
         print(f"pelnej puli ({TOTAL_TARGET} kont), a potem powtorz krok ze skryptem hasel na VM")
         print("(nowy plik set_test_passwords.sh bedzie zawieral wszystkich, w tym juz istniejacych)")
