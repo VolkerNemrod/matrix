@@ -131,7 +131,7 @@ więc **nie puszczaj ich pod rząd bez przerw** (HTTP 429, ok. 4 min – [Rozwi�
 | **Konto bez działu** (np. `a.nowak`, `j.kowalski`) albo zła nazwa/dział | LLDAP: dodaj do grupy-działu (lub popraw imię i nazwisko) | `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py` |
 | **Przeniesienie do innego działu** | LLDAP: zmień grupę | `provision_synapse_users.py` → `setup_spaces.py --prune` → `setup_directory.py` |
 | **Odejście pracownika** | LLDAP: usuń/zablokuj; Synapse: dezaktywuj konto (panel lub Admin API) | `setup_spaces.py --prune` → `setup_directory.py` (nieaktywne konta znikają z listy) |
-| **Nowy dział** | LLDAP: nowa grupa; `SPACE_TREE` w `setup_spaces.py` (nowe stałe `id`) | `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` (kolejność alfabetyczna) |
+| **Nowy dział** | LLDAP: nowa grupa; nowa pozycja w `DEPARTMENTS` w `provision_synapse_users.py` (bez niej dział nie trafi do nazwy wyświetlanej); `SPACE_TREE` w `setup_spaces.py` (nowe stałe `id`) | `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` (kolejność alfabetyczna) |
 | **Telefon, pokój, piętro, stanowisko** | `scripts/directory_extra.csv` (nowe osoby: `setup_directory.py --write-extra-template`) | tylko `setup_directory.py` |
 | **Ukryć konto techniczne w książce** | `DIRECTORY_EXCLUDE` w `.env` albo `--exclude login1,login2` | tylko `setup_directory.py` |
 | **Nazwa lub temat pokoju książki** | `DIRECTORY_ROOM_NAME`, `DIRECTORY_ROOM_TOPIC` w `.env` | tylko `setup_directory.py` |
@@ -153,11 +153,11 @@ synapse/homeserver.yaml.example     wzór konfiguracji Synapse (federacja wyłą
 synapse/matrix.local.log.config     konfiguracja logowania Synapse
 nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL (+ blok panelu Synapse Admin na porcie 8080)
 pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.local
-scripts/seed_test_employees.py      Etap B0: testowe konta i grupy-działy w LLDAP (też --reassign)
-scripts/provision_synapse_users.py  Etap B+C: zakładanie kont w Synapse z nazwą „Imię Nazwisko – Dział”
-scripts/setup_spaces.py             Etap E: drzewo Spaces (Firma + działy) z grup LLDAP, tylko do odczytu
-scripts/setup_directory.py          Etap G: książka adresowa jako wiadomości w pokoju tylko do odczytu (⚠️ nieprzetestowany)
-scripts/test_directory_message.py   eksperyment z układem wiadomości (zwijane <details> vs nagłówki; --measure = rozmiar)
+scripts/seed_test_employees.py      Przygotowanie B0: testowe konta i grupy-działy w LLDAP (też --reassign)
+scripts/provision_synapse_users.py  Etap 1: zakładanie kont w Synapse z nazwą „Imię Nazwisko – Dział”
+scripts/setup_spaces.py             Etap 2.1: drzewo Spaces (Firma + działy) z grup LLDAP, tylko do odczytu
+scripts/setup_directory.py          Etap 2.2: książka adresowa jako wiadomości w pokoju tylko do odczytu (⚠️ pokój próbny OK, pełny przebieg niesprawdzony)
+scripts/test_directory_message.py   zakończony eksperyment z układem wiadomości (zwijane <details> vs nagłówki; --measure = rozmiar)
 scripts/directory_extra.csv         (tworzony lokalnie, w repo go nie ma) stanowisko/telefon/pokój/piętro dla książki adresowej
 scripts/setup_main_room.py          biblioteka wspólna (klasa Synapse itd.) używana przez setup_spaces.py i setup_directory.py;
                                     NIE uruchamiać jako skryptu (pokoje wycofane)
@@ -461,8 +461,8 @@ na samym początku, końcówka to zwykle tylko wydruk pomocy.
 **Sprawdzenie:** w LLDAP (Users) widzisz `j.kowalski` w grupie `Zarzad` i `a.nowak` w grupie `IT`.
 
 > Dla większej liczby kont (testy na realnej skali) użyj skryptu `seed_test_employees.py` – patrz
-> [Etap B0](#etap-b0--testowa-struktura-firmy-w-lldap). Struktura firmy
-> w Elemencie (Spaces) powstaje z **grup** LLDAP – patrz [Etap E](#etap-e--drzewo-spaces-firma--działy).
+> [Przygotowanie, B0](#etap-b0--testowa-struktura-firmy-w-lldap). Struktura firmy
+> w Elemencie (Spaces) powstaje z **grup** LLDAP – patrz [Etap 2.1](#etap-e--drzewo-spaces-firma--działy).
 
 ---
 
@@ -526,9 +526,9 @@ instalowania certyfikatów. Plan krok po kroku i lista testów (w tym A/V przez 
 2. **Pokój i wiadomości** – utwórz pokój `Firma-Ogolny`, zaproś drugie konto z drugiego komputera,
    wymieńcie wiadomości.
 3. **Wyszukiwanie osoby** – w Elemencie: **+ → Rozpocznij czat** i wpisz fragment imienia, nazwiska albo
-   nazwy działu (np. `Sprzedaż`). Kliknięcie znalezionej osoby otwiera rozmowę 1:1 ✅ (patrz Etap A).
+   nazwy działu (np. `Sprzedaż`). Kliknięcie znalezionej osoby otwiera rozmowę 1:1 ✅ (patrz [Przygotowanie, A](#przygotowanie-jednorazowo)).
    Test struktury firmy (przestrzeń „Firma” i działy) – patrz
-   [Etap E](#etap-e--drzewo-spaces-firma--działy), punkt „Co sprawdzić po uruchomieniu”.
+   [Etap 2.1](#etap-e--drzewo-spaces-firma--działy), punkt „Co sprawdzić po uruchomieniu”.
 4. **Rozmowa audio/wideo 1:1** – w czacie bezpośrednim kliknij ikonę słuchawki / kamery. Wymaga, żeby klient
    był w Tailscale (adres zewnętrzny Coturn to `TS_IP`). Jeśli nie ma dźwięku lub obrazu, zajrzyj w logi:
    `docker compose logs --tail=50 coturn`. Porty: 3478 oraz 49160–49200 na IP Tailscale. Test A/V
@@ -624,7 +624,7 @@ Firma                          ← WSZYSCY (ok. 204 konta); lista osób do przeg
   więc partnerzy mogą później dojść jako poddrzewa bez przebudowy. Sposób ich importu (np. z pliku CSV) nie jest
   zaprojektowany.
 
-3. **Pokój „Książka adresowa”** (skrypt `setup_directory.py`, patrz [Etap G](#etap-g--książka-adresowa-jako-pokój-z-wiadomościami)) –
+3. **Pokój „Książka adresowa”** (skrypt `setup_directory.py`, patrz [Etap 2.2](#etap-g--książka-adresowa-jako-pokój-z-wiadomościami)) –
    lista pracowników pogrupowana po działach, do przeglądania bez wyszukiwania, z opcjonalnymi danymi kontaktowymi (stanowisko,
    telefon, pokój, piętro). Pokój jest tylko do odczytu i podpięty pod przestrzeń „Firma”.
 
@@ -652,7 +652,7 @@ docker compose exec postgres psql -U synapse -d synapse -c "select user_id, disp
 ```
 
 **Ważne:** konto trafia do katalogu dopiero po **pierwszym logowaniu** (przed nim w tabeli go nie ma,
-więc wyszukiwarka go nie znajdzie). Dla całej firmy rozwiązuje to Etap B.
+więc wyszukiwarka go nie znajdzie). Dla całej firmy rozwiązuje to Etap 1.
 
 Kliknięcie znalezionej osoby otwiera od razu rozmowę 1:1 (sprawdzone 2026-10-10, bez `matrix.to` i bez dodatkowych zgód).
 
@@ -665,7 +665,7 @@ Kliknięcie znalezionej osoby otwiera od razu rozmowę 1:1 (sprawdzone 2026-10-1
 
 Żeby mieć co testować w skali, potrzebna jest realna liczba kont w LLDAP – kilka ręcznie wpisanych użytkowników
 nie pokazuje, jak zachowa się katalog przy setkach osób. Etap B0 to skrypt, który generuje testową strukturę
-**w samym LLDAP** (nie w Synapse – to Etap B niżej).
+**w samym LLDAP** (nie w Synapse – to Etap 1 niżej).
 
 **Pliki:** `scripts/seed_test_employees.py` (uruchamiany na PC), `scripts/requirements.txt`.
 
@@ -779,7 +779,7 @@ docker compose exec proxy nginx -s reload
 > tokenem administratora, ale na produkcji warto rozważyć dodatkowe ograniczenie (np. po adresie IP).
 
 <a id="etap-1"></a>
-## Etap 1 – Konta w Synapse na podstawie LLDAP (B + C)
+## Etap 1 – Konta w Synapse na podstawie LLDAP
 
 ✅ *Sprawdzone na PoC; format nazwy wyświetlanej zmieniony 2026-10-14.*
 
@@ -845,7 +845,7 @@ przestrzenie Spaces (2.1) i pokój z wiadomościami (2.2). Dane dodatkowe (2.3) 
 Kolejność: 2.1 → 2.2 → 2.3.
 
 <a id="etap-e--drzewo-spaces-firma--działy"></a>
-### 2.1 Spaces – „Firma” i działy (E)
+### 2.1 Spaces – „Firma” i działy
 
 **Plik:** `scripts/setup_spaces.py` (uruchamiany na PC, to samo środowisko `venv` co pozostałe skrypty).
 
@@ -900,7 +900,7 @@ Każde uruchomienie loguje konto administratora – nie uruchamiaj skryptów wie
   w LLDAP.
 - ⚠️ **Niesprawdzone:** czy zwykły użytkownik nie może pisać w przestrzeni ani podpiąć do niej własnego pokoju
   (`m.space.child` na poziomie 100), czy klik osoby na liście członków „Firma” otwiera rozmowę 1:1, czy wyszukiwanie
-  w liście członków „Firma” po nazwie działu działa po odświeżeniu nazw (Etap C).
+  w liście członków „Firma” po nazwie działu działa po odświeżeniu nazw (Etap 1).
 
 **Co sprawdzić po uruchomieniu** (najlepiej na koncie zwykłego pracownika, np. `--profile`, patrz Krok 10):
 
@@ -929,7 +929,7 @@ Admin API (`POST /_synapse/admin/v1/join/<pokój>` osobno dla każdego konta) �
 🏭 Produkcja: patrz [docs/produkcja.md](docs/produkcja.md) (przestrzenie z grup LLDAP, ESS Pro, domena, konto serwisowe).
 
 <a id="etap-g--książka-adresowa-jako-pokój-z-wiadomościami"></a>
-### 2.2 Pokój „Książka adresowa” – wiadomości z listą osób (G)
+### 2.2 Pokój „Książka adresowa” – wiadomości z listą osób
 
 > ⚠️ **Status:** skrypt sprawdzony 2026-10-18 w Element Desktop: `--dry-run` na 204 kontach i pokój próbny (`--fake-extra --alias
 > test-ksiazka-pelna --limit 20`) działają poprawnie. **Niesprawdzone:** wygląd na telefonie, prawdziwe dane z `directory_extra.csv`
@@ -999,7 +999,7 @@ python setup_directory.py                             # dopiero potem właściwy
 
 - Zwijane działy (`<details>`) działają w Element Desktop, **nie działają na telefonie** (świadoma decyzja: układ zostaje).
 - Wyszukiwanie w treści pokoju nie działa (stwierdzone w teście); osoby szuka się przez „Rozpocznij rozmowę”
-  (patrz Etap A).
+  (patrz [Przygotowanie, A](#przygotowanie-jednorazowo)).
 - ⚠️ Pigułka osoby otwiera jej profil. Czy z profilu da się wygodnie zacząć rozmowę 1:1 bez dodatkowych zgód
   (wymaganie z początku sekcji) – niesprawdzone.
 - Nowy dział ląduje na **dole** osi czasu (nie alfabetycznie); kolejność naprawia `--rebuild`.
@@ -1033,7 +1033,7 @@ istniejące wartości zostają), uzupełnij ją i uruchom `setup_directory.py`.
 |---|---|
 | Telefon, pokój, piętro, stanowisko | edytuj `directory_extra.csv` → `setup_directory.py` |
 | Nowy pracownik, zmiana działu lub nazwiska, odejście | [Aktualizacje w Etapie 1](#aktualizacje-nowy-pracownik-zmiana-działu-odejście) (kolejność skryptów) |
-| Nowy dział | grupa w LLDAP + `SPACE_TREE` w `setup_spaces.py` → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` |
+| Nowy dział | grupa w LLDAP + `DEPARTMENTS` w `provision_synapse_users.py` + `SPACE_TREE` w `setup_spaces.py` → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` |
 | Ukryć konto z książki (techniczne, testowe) | `DIRECTORY_EXCLUDE` w `.env` albo `--exclude login1,login2` |
 | Nazwa lub temat pokoju | `DIRECTORY_ROOM_NAME`, `DIRECTORY_ROOM_TOPIC` w `.env` |
 | Kolejność wiadomości się rozjechała | `setup_directory.py --rebuild` (wysyła wiadomości od nowa) |
