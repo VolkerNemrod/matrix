@@ -12,7 +12,7 @@ Proof of Concept zamkniętego komunikatora firmowego opartego na Matrix:
 - **Nginx** – reverse proxy z SSL,
 - **PostgreSQL** – baza Synapse,
 - **Synapse Admin** – webowy panel administracyjny (konta, pokoje, przestrzenie), dostępny tylko z VM / przez tunel SSH
-  (patrz [Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem)),
+  (patrz [Synapse Admin](docs/administrowanie.md#synapse-admin--panel-www-do-administrowania-serwerem)),
 - **Matrix Spaces** – struktura firmy w Elemencie: przestrzeń „Firma” (wszyscy pracownicy) i podprzestrzenie-działy
   (budowane skryptem z grup LLDAP; patrz [Książka adresowa dla całej firmy](#książka-adresowa-dla-całej-firmy)),
 - **Pokój „Książka adresowa”** – lista pracowników z działami jako wiadomości w pokoju tylko do odczytu, podpiętym pod
@@ -1006,6 +1006,11 @@ python setup_directory.py                             # dopiero potem właściwy
 - Limit zdarzenia Matrix to ok. 64 KB, a edycja zawiera treść dwa razy – dlatego jedna wiadomość ma maks. ok. 28 KB
   i większy dział jest dzielony na części.
 - Dane kontaktowe (telefon, pokój, piętro) są widoczne dla wszystkich członków pokoju.
+- **Nie włączaj szyfrowania w pokoju książki.** Skrypt wysyła wiadomości jawnym tekstem, więc w pokoju szyfrowanym każda
+  dostaje czerwoną ikonę „niezaszyfrowana”. Szyfrowania nie da się wyłączyć – trzeba usunąć pokój (panel Synapse Admin,
+  z opcją purge) i uruchomić `setup_directory.py` ponownie.
+- Szerokość „baniek” zwiniętych działów wyrównuje stała `SUMMARY_WIDTH` w `setup_directory.py` (dopełnienie spacjami
+  nierozdzielającymi); dokładnej szerokości Element nie pozwala ustawić.
 
 🏭 Produkcja: patrz [docs/produkcja.md](docs/produkcja.md) (książka adresowa: AD zamiast CSV, aktualizacja cykliczna, dane osobowe w pokoju).
 
@@ -1061,6 +1066,21 @@ Skutek: federacja pozostaje wyłączona (`federation_domain_whitelist: []`), a r
 
 <a id="administrowanie-synapse"></a>
 ## Etap 3 – Bieżąca praca (podręcznik administratora)
+
+Pełny podręcznik (konto administratora, Admin API, usuwanie pokoi, baza, logi, kopie, **panel Synapse Admin**, skrypty
+i przydatne komendy): **[docs/administrowanie.md](docs/administrowanie.md)**.
+
+**Synapse Admin w skrócie** (panel WWW do kont i pokoi; ✅ wdrożony i przetestowany). Działa tylko z VM, przez tunel SSH:
+
+🪟 **PC**, PowerShell (okno z tunelem zostaw otwarte):
+
+```powershell
+ssh -L 8080:127.0.0.1:8080 <UZYTKOWNIK>@<IP_VM>
+```
+
+Potem w przeglądarce `http://localhost:8080`, w polu serwera wpisz `http://localhost:8080` i zaloguj się kontem administratora
+(w PoC `s.lewandowski`). Wdrożenie, zasady pracy z panelem i checklista testów:
+[docs/administrowanie.md](docs/administrowanie.md#synapse-admin--panel-www-do-administrowania-serwerem).
 
 ---
 

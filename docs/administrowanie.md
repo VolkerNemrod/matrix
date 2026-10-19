@@ -15,7 +15,7 @@ Synapse nie ma wbudowanego panelu administracyjnego. Zarządzanie odbywa się pr
 bezpośrednio w **bazie PostgreSQL** i przez **dokumentację/logi**. Poniżej wszystko, co potrzebne na co dzień.
 
 Do pracy z przeglądarki (konta, pokoje, przestrzenie) jest dodatkowo panel
-[Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem) (Etap F) – działa na tym samym Admin API,
+[Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem) – działa na tym samym Admin API,
 więc skrypty i wywołania z PowerShella nadal działają równolegle.
 
 > Oznaczenia: ✅ = użyte w naszych skryptach albo sprawdzone u nas; ⚠️ = przykład z dokumentacji Synapse,
@@ -119,7 +119,7 @@ nie było testowane.
 
 ### Synapse Admin – panel WWW do administrowania serwerem
 
-**Status (Etap F):** ✅ wdrożony na VM 2026-10-15 (kontener działa, izolacja do loopbacku potwierdzona);
+**Status:** ✅ wdrożony na VM 2026-10-15 (kontener działa, izolacja do loopbacku potwierdzona);
 ✅ wszystkie 9 testów funkcjonalnych panelu (checklista F4 poniżej) przeszły.
 
 [Synapse Admin](https://github.com/Awesome-Technologies/synapse-admin) (Awesome-Technologies, osobny projekt
@@ -253,26 +253,26 @@ Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowi
 | `seed_test_employees.py` | Tworzy testowe konta w LLDAP (7 grup-działów, wspólne hasło testowe); `--reassign` przepina istniejące konta do aktualnych grup | Potrzebujesz testowej masy pracowników do testów na realnej skali |
 | `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział` | Żeby cała firma była od razu widoczna w katalogu Synapse; po zmianie działów w LLDAP |
 | `setup_spaces.py` | Buduje drzewo Spaces (Firma + 7 działów) z grup LLDAP, tylko do odczytu, dołącza członków | Po provisioningu kont i po każdej zmianie przynależności do działów |
-| `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ⚠️ Po przetestowaniu: po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py` i `setup_spaces.py`) |
+| `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ⚠️ (pokój próbny OK 2026-10-18, pełny przebieg niesprawdzony) Po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py` i `setup_spaces.py`) |
 | `test_directory_message.py` | Eksperyment układu wiadomości (zwijane `<details>` vs nagłówki), `--measure` sprawdza rozmiar | Tylko do prób układu; nie jest częścią normalnego przepływu |
 | `setup_main_room.py` | **Biblioteka wspólna** (klasa `Synapse`, `cfg()`, stałe) importowana przez `setup_spaces.py` i `setup_directory.py` | **Nie uruchamiaj** – pokoje i widget wycofane; TODO: wydzielić bibliotekę do osobnego modułu |
 
 Pełny opis, wymagania wstępne i wyniki testów – w README: `seed_test_employees.py` i `provision_synapse_users.py`
-w sekcji [Książka adresowa dla całej firmy](../README.md#książka-adresowa-dla-całej-firmy), podsekcje **Etap B0** i **Etap B + C**;
-`setup_spaces.py` – tamże, podsekcja [Etap E](../README.md#etap-e--drzewo-spaces-firma--działy).
+w sekcji [Książka adresowa dla całej firmy](../README.md#książka-adresowa-dla-całej-firmy), podsekcje **Przygotowanie, B0** i **Etap 1**;
+`setup_spaces.py` – tamże, podsekcja [Etap 2.1](../README.md#etap-e--drzewo-spaces-firma--działy); `setup_directory.py` – [Etap 2.2](../README.md#etap-g--książka-adresowa-jako-pokój-z-wiadomościami).
 
 ### Typowe zadania administratora (kolejność skryptów)
 
-⚠️ Poniższe sekwencje wynikają z opisu skryptów i z testów Etapów B/E; nie wszystkie były przećwiczone od początku
+⚠️ Poniższe sekwencje wynikają z opisu skryptów i z testów Etapów 1 i 2; nie wszystkie były przećwiczone od początku
 do końca.
 
 | Zadanie | Kroki |
 |---|---|
-| **Nowy pracownik** | LLDAP: utwórz konto i wpisz do grupy-działu → `provision_synapse_users.py` → `setup_spaces.py` |
-| **Przeniesienie do innego działu** | LLDAP: zmień grupę → `provision_synapse_users.py` (nowa nazwa wyświetlana) → `setup_spaces.py --prune` (wyrzuca ze starego działu, dołącza do nowego) |
+| **Nowy pracownik** | LLDAP: utwórz konto i wpisz do grupy-działu → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py` |
+| **Przeniesienie do innego działu** | LLDAP: zmień grupę → `provision_synapse_users.py` (nowa nazwa wyświetlana) → `setup_spaces.py --prune` (wyrzuca ze starego działu, dołącza do nowego) → `setup_directory.py` |
 | **Odejście pracownika** | LLDAP: usuń/zablokuj konto → dezaktywuj konto w Synapse (Admin API, patrz wyżej) |
 | **Zmiana nazwy przestrzeni „Firma”** | `SPACES_ROOT_NAME` w `.env` → `setup_spaces.py` (alias się nie zmienia) |
-| **Nowy dział** | LLDAP: utwórz grupę → dopisz węzeł w `SPACE_TREE` w `setup_spaces.py` (z nowym, stałym `id`) → `provision_synapse_users.py` → `setup_spaces.py` |
+| **Nowy dział** | LLDAP: utwórz grupę → dopisz ją do `DEPARTMENTS` w `provision_synapse_users.py` → dopisz węzeł w `SPACE_TREE` w `setup_spaces.py` (z nowym, stałym `id`) → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` |
 
 ---
 
