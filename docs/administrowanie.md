@@ -218,7 +218,7 @@ administratora (w PoC `s.lewandowski`, hasło z LLDAP). Konto bez flagi `admin` 
 | 4 | Lista pokoi i ich członkowie (wtedy: „Firma” + 7 działów, Spaces wycofane 2026-10-19) | ✅ |
 | 5 | Konto bez flagi `admin` (np. `a.nowak`) nie wejdzie do panelu | ✅ |
 | 6 | Zapis na koncie/pokoju **testowym**: dezaktywacja konta, usunięcie pokoju z `purge` (zamyka też niesprawdzony punkt w tabeli „Typowe operacje” wyżej) | ✅ |
-| 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py --dry-run` (wtedy też `setup_spaces.py --dry-run`, skrypt wycofany) (nie pod rząd – HTTP 429) | ✅ |
+| 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py --dry-run` (nie pod rząd – HTTP 429) | ✅ |
 | 8 | Bez tunelu: `Test-NetConnection <IP_VM> -Port 8080` z PC → `TcpTestSucceeded : False` | ✅ |
 | 9 | Zapora na VM (`ufw`): port 8080 nie jest otwarty | ✅ |
 
