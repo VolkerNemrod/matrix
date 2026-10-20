@@ -8,13 +8,13 @@
 Szybkie odsyłacze:
 
 - zmiana kont i działów (nowy pracownik, odejście): [README – Aktualizacje w Etapie 1](../README.md#aktualizacje-nowy-pracownik-zmiana-działu-odejście),
-- zmiana danych w książce adresowej: [README – Etap 2](../README.md#etap-2), tabela „2.4 Aktualizacja książki”,
+- zmiana danych w książce adresowej: [README – Etap 2](../README.md#etap-2), tabela „2.3 Aktualizacja książki”,
 - gdy coś nie działa: [Rozwiązywanie problemów](rozwiazywanie-problemow.md).
 
 Synapse nie ma wbudowanego panelu administracyjnego. Zarządzanie odbywa się przez **Admin API** (HTTP),
 bezpośrednio w **bazie PostgreSQL** i przez **dokumentację/logi**. Poniżej wszystko, co potrzebne na co dzień.
 
-Do pracy z przeglądarki (konta, pokoje, przestrzenie) jest dodatkowo panel
+Do pracy z przeglądarki (konta, pokoje) jest dodatkowo panel
 [Synapse Admin](#synapse-admin--panel-www-do-administrowania-serwerem) – działa na tym samym Admin API,
 więc skrypty i wywołania z PowerShella nadal działają równolegle.
 
@@ -65,10 +65,10 @@ Wszystkie przykłady zakładają zmienne `$base` i `$h` z poprzedniego bloku.
 | Co zrobić | Jak | Status |
 |---|---|---|
 | **Utworzyć/zaktualizować konto i nazwę wyświetlaną** | `PUT /_synapse/admin/v2/users/@login:matrix.local` z `displayname` (robi to `provision_synapse_users.py`) | ✅ |
-| **Dołączyć użytkownika do pokoju bez zaproszenia** | `POST /_synapse/admin/v1/join/<pokój>` z ciałem `{"user_id": "@login:matrix.local"}` (robi to `setup_spaces.py`; pokój podajesz jako identyfikator `!abc:matrix.local`) | ✅ |
+| **Dołączyć użytkownika do pokoju bez zaproszenia** | `POST /_synapse/admin/v1/join/<pokój>` z ciałem `{"user_id": "@login:matrix.local"}` (robi to `setup_directory.py`; pokój podajesz jako identyfikator `!abc:matrix.local`) | ✅ |
 | **Lista użytkowników** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v2/users?limit=50&name=kowal"` | ⚠️ |
 | **Dezaktywować konto** (np. odejście pracownika) | `POST /_synapse/admin/v1/deactivate/@login:matrix.local`; osobno usuń/zablokuj konto w LLDAP, bo inaczej logowanie przez LDAP założy je znowu | ⚠️ |
-| **Lista pokoi i przestrzeni** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v1/rooms?limit=100&search_term=Firma"` – w wyniku `room_id`, `name`, `canonical_alias`, `joined_members` | ⚠️ |
+| **Lista pokoi** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v1/rooms?limit=100&search_term=ksiazka"` – w wyniku `room_id`, `name`, `canonical_alias`, `joined_members` | ⚠️ |
 | **Usunąć pokój** (wszyscy lokalni użytkownicy zostaną usunięci, dane skasowane) | patrz niżej albo panel Synapse Admin (✅ usunięcie z `purge` przez panel – test F4 pkt 6; ⚠️ wywołanie z PowerShella) | ✅/⚠️ |
 | **Wyczyścić licznik prób logowania** (po HTTP 429 / `M_LIMIT_EXCEEDED`) | 🐧 **VM** `docker compose restart synapse` | ✅ |
 | **Podejrzeć katalog użytkowników** | zapytanie SQL z README – Przygotowanie, punkt A | ✅ |
@@ -89,8 +89,8 @@ Invoke-RestMethod -Method Delete -Headers $h -Uri "$base/_synapse/admin/v2/rooms
 Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v2/rooms/delete_status/<delete_id>"
 ```
 
-Przy usuwaniu przestrzeni (nie pokoju) pamiętaj, że jej podprzestrzenie są **osobnymi** pokojami – usuwasz każdą
-osobno. Skrypt `setup_spaces.py` odtworzy usuniętą przestrzeń przy następnym uruchomieniu (po aliasie).
+Pokój „Książka adresowa” odtworzy przy następnym uruchomieniu `setup_directory.py` (po aliasie `ksiazka-adresowa`;
+alias zwalnia się dopiero po usunięciu z `purge`).
 
 ### Baza danych (PostgreSQL) ✅
 
@@ -124,7 +124,7 @@ nie było testowane.
 
 [Synapse Admin](https://github.com/Awesome-Technologies/synapse-admin) (Awesome-Technologies, osobny projekt
 społecznościowy) to webowe GUI, które łączy się z serwerem przez to samo Admin API (`/_synapse/admin`) i pozwala
-z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarządzać pokojami i przestrzeniami
+z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarządzać pokojami
 (w tym usuwać z `purge`), media i limity. Wymaga Synapse ≥ 1.52.0 (u nas ✅ 1.162.0).
 
 **Jak jest wpięty (decyzje projektowe):**
@@ -195,13 +195,13 @@ administratora (w PoC `s.lewandowski`, hasło z LLDAP). Konto bez flagi `admin` 
 > ⚠️ Logowanie administratora wlicza się do limitu prób Synapse (HTTP 429 – [Rozwiązywanie problemów](rozwiazywanie-problemow.md) pkt 4), więc nie
 > loguj się w panelu i skryptach pod rząd wiele razy.
 
-#### Zasady pracy z panelem (LLDAP + Spaces)
+#### Zasady pracy z panelem (LLDAP)
 
 1. **Konta zakłada i hasła zmienia LLDAP, nie panel.** Konto założone w panelu to lokalne konto Synapse z hasłem poza
    LDAP; reset hasła użytkownikowi z LDAP nic nie daje (logowanie i tak idzie przez LLDAP).
 2. **Nazwy wyświetlane** edytowane ręcznie w panelu nadpisze następne uruchomienie `provision_synapse_users.py`.
-3. **Przestrzenie** usunięte w panelu odtworzy `setup_spaces.py` (po aliasie) – więc usunięcie „na stałe” wymaga też
-   zmiany drzewa w skrypcie.
+3. **Pokój „Książka adresowa”** usunięty w panelu odtworzy `setup_directory.py` (po aliasie; alias zwalnia się dopiero
+   po `purge`).
 4. **Odejście pracownika:** dezaktywacja konta w panelu **oraz** usunięcie/zablokowanie w LLDAP (inaczej logowanie
    przez LDAP założy konto znowu).
 5. **Operacje destrukcyjne** (usunięcie pokoju z `purge`, dezaktywacja) najpierw na koncie/pokoju **testowym**.
@@ -215,10 +215,10 @@ administratora (w PoC `s.lewandowski`, hasło z LLDAP). Konto bez flagi `admin` 
 | 1 | Tunel SSH, `http://localhost:8080` ładuje panel | ✅ |
 | 2 | Logowanie `s.lewandowski` (pole serwera `http://localhost:8080`) | ✅ |
 | 3 | Lista użytkowników (ok. 204), wyszukiwanie, szczegóły konta, urządzenia | ✅ |
-| 4 | Lista pokoi: „Firma” + 7 działów, członkowie | ✅ |
+| 4 | Lista pokoi i ich członkowie (wtedy: „Firma” + 7 działów, Spaces wycofane 2026-10-19) | ✅ |
 | 5 | Konto bez flagi `admin` (np. `a.nowak`) nie wejdzie do panelu | ✅ |
 | 6 | Zapis na koncie/pokoju **testowym**: dezaktywacja konta, usunięcie pokoju z `purge` (zamyka też niesprawdzony punkt w tabeli „Typowe operacje” wyżej) | ✅ |
-| 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py --dry-run` i `setup_spaces.py --dry-run` (nie pod rząd – HTTP 429) | ✅ |
+| 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py --dry-run` (wtedy też `setup_spaces.py --dry-run`, skrypt wycofany) (nie pod rząd – HTTP 429) | ✅ |
 | 8 | Bez tunelu: `Test-NetConnection <IP_VM> -Port 8080` z PC → `TcpTestSucceeded : False` | ✅ |
 | 9 | Zapora na VM (`ufw`): port 8080 nie jest otwarty | ✅ |
 
@@ -252,14 +252,16 @@ Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowi
 |---|---|---|
 | `seed_test_employees.py` | Tworzy testowe konta w LLDAP (7 grup-działów, wspólne hasło testowe); `--reassign` przepina istniejące konta do aktualnych grup | Potrzebujesz testowej masy pracowników do testów na realnej skali |
 | `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział` | Żeby cała firma była od razu widoczna w katalogu Synapse; po zmianie działów w LLDAP |
-| `setup_spaces.py` | Buduje drzewo Spaces (Firma + 7 działów) z grup LLDAP, tylko do odczytu, dołącza członków | Po provisioningu kont i po każdej zmianie przynależności do działów |
-| `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ⚠️ (pokój próbny OK 2026-10-18, pełny przebieg niesprawdzony) Po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py` i `setup_spaces.py`) |
+| `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ✅ (pełny przebieg wykonany 2026-10-20) Po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py`) |
+| `setup_announcements.py` | Zakłada pokój „Ogłoszenia” (`#ogloszenia:matrix.local`): publiczny, tylko do odczytu dla zwykłych użytkowników, dołącza wszystkich; skrypt nie wysyła żadnych wiadomości; idempotentny; opcje `--dry-run`, `--alias`, `--skip-join`, `--rejoin`, `--reactions`, `--exclude`; ustawienia `ANNOUNCE_*` w `.env` | Pierwsze założenie pokoju ogłoszeń; po `provision_synapse_users.py`, żeby nowe konta też dołączyły (✅ uruchomiony 2026-10-20) |
+| `cleanup_spaces.py` | **Jednorazowe** sprzątanie po wycofaniu Matrix Spaces: usuwa z `purge` pokoje-przestrzenie (`#space-*` lub typ `m.space`) i – bez `--keep-book` – pokój „Książka adresowa”; `--dry-run`, `--yes`, `--keep-book` | Tylko na instalacji, która kiedyś miała Spaces; ⚠️ nieodwracalne, zawsze najpierw `--dry-run` (✅ wykonany 2026-10-20) |
+| `deactivate_orphans.py` | Dezaktywuje w Synapse konta, których nie ma już w LLDAP (pomija administratorów, konta techniczne i loginy z `--keep` / `DEACTIVATE_KEEP` w `.env`; nic nie robi przy pustej liście z LLDAP lub gdy do dezaktywacji byłaby ponad połowa kont, chyba że `--force`); `--dry-run`, `--yes`, `--erase` | Po odejściu pracownika (usunięty/zablokowany w LLDAP), żeby zniknął z wyszukiwarki i książki adresowej; ⚠️ nieodwracalne, zawsze najpierw `--dry-run` (✅ wykonany 2026-10-20) |
 | `test_directory_message.py` | Eksperyment układu wiadomości (zwijane `<details>` vs nagłówki), `--measure` sprawdza rozmiar | Tylko do prób układu; nie jest częścią normalnego przepływu |
-| `setup_main_room.py` | **Biblioteka wspólna** (klasa `Synapse`, `cfg()`, stałe) importowana przez `setup_spaces.py` i `setup_directory.py` | **Nie uruchamiaj** – pokoje i widget wycofane; TODO: wydzielić bibliotekę do osobnego modułu |
+| `setup_main_room.py` | **Biblioteka wspólna** (klasa `Synapse`, `cfg()`, stałe) importowana przez `setup_directory.py` i `test_directory_message.py` | **Nie uruchamiaj** – pokoje i widget wycofane; TODO: wydzielić bibliotekę do osobnego modułu |
 
 Pełny opis, wymagania wstępne i wyniki testów – w README: `seed_test_employees.py` i `provision_synapse_users.py`
 w sekcji [Książka adresowa dla całej firmy](../README.md#książka-adresowa-dla-całej-firmy), podsekcje **Przygotowanie, B0** i **Etap 1**;
-`setup_spaces.py` – tamże, podsekcja [Etap 2.1](../README.md#etap-e--drzewo-spaces-firma--działy); `setup_directory.py` – [Etap 2.2](../README.md#etap-g--książka-adresowa-jako-pokój-z-wiadomościami).
+`setup_directory.py` – [Etap 2.1](../README.md#etap-g--książka-adresowa-jako-pokój-z-wiadomościami).
 
 ### Typowe zadania administratora (kolejność skryptów)
 
@@ -268,11 +270,10 @@ do końca.
 
 | Zadanie | Kroki |
 |---|---|
-| **Nowy pracownik** | LLDAP: utwórz konto i wpisz do grupy-działu → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py` |
-| **Przeniesienie do innego działu** | LLDAP: zmień grupę → `provision_synapse_users.py` (nowa nazwa wyświetlana) → `setup_spaces.py --prune` (wyrzuca ze starego działu, dołącza do nowego) → `setup_directory.py` |
-| **Odejście pracownika** | LLDAP: usuń/zablokuj konto → dezaktywuj konto w Synapse (Admin API, patrz wyżej) |
-| **Zmiana nazwy przestrzeni „Firma”** | `SPACES_ROOT_NAME` w `.env` → `setup_spaces.py` (alias się nie zmienia) |
-| **Nowy dział** | LLDAP: utwórz grupę → dopisz ją do `DEPARTMENTS` w `provision_synapse_users.py` → dopisz węzeł w `SPACE_TREE` w `setup_spaces.py` (z nowym, stałym `id`) → `provision_synapse_users.py` → `setup_spaces.py` → `setup_directory.py --rebuild` |
+| **Nowy pracownik** | LLDAP: utwórz konto i wpisz do grupy-działu → `provision_synapse_users.py` → `setup_directory.py` + `setup_announcements.py` (żeby nowe konto dołączyło do obu pokoi) |
+| **Przeniesienie do innego działu** | LLDAP: zmień grupę → `provision_synapse_users.py` (nowa nazwa wyświetlana) → `setup_directory.py` |
+| **Odejście pracownika** | LLDAP: usuń/zablokuj konto → `deactivate_orphans.py --dry-run`, potem bez `--dry-run` (albo ręcznie: Admin API / panel Synapse Admin) → `setup_directory.py` |
+| **Nowy dział** | LLDAP: utwórz grupę → dopisz ją do `DEPARTMENTS` w `provision_synapse_users.py` → `provision_synapse_users.py` → `setup_directory.py --rebuild` |
 
 ---
 
