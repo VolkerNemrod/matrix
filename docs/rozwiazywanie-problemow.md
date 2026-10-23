@@ -29,8 +29,8 @@
 - **Wskazówka:** `sudo ss -tn | grep IP_TELEFONU` na VM **nic nie pokazuje**, bo Nginx działa w kontenerze –
   do podglądu zapytań użyj logów (`docker compose logs -f --tail=0 proxy`).
 
-**4. Skrypt (`setup_spaces.py`, `provision_synapse_users.py`) kończy się `HTTP 429 M_LIMIT_EXCEEDED` przy logowaniu administratora**
-- **Objawy:** `Logowanie admina 's.lewandowski' nie powiodło się: HTTP 429 ... retry_after_ms`.
+**4. Skrypt (`setup_directory.py`, `provision_synapse_users.py`) kończy się `HTTP 429 M_LIMIT_EXCEEDED` przy logowaniu administratora**
+- **Objawy:** `Logowanie admina '<LOGIN_ADMINA>' nie powiodło się: HTTP 429 ... retry_after_ms`.
 - **Przyczyna:** limiter prób logowania w Synapse (to nie jest błąd hasła). Każde uruchomienie skryptu loguje
   to samo konto, a kilka uruchomień pod rząd wydłuża czas oczekiwania (2026-10-14: z kilkunastu sekund do ok.
   4 minut).
@@ -40,7 +40,7 @@
 
 **5. Admin API zwraca `404 Not Found` (od nginx, nie od Synapse)**
 - **Przyczyna:** nginx nie przepuszcza `/_synapse/admin` (stary `matrix.conf` na VM).
-- **Rozwiązanie:** patrz [README – Etap 0](../README.md#etap-0), punkt 2 (dopisać `|/_synapse/admin` do regexu i przeładować nginx).
+- **Rozwiązanie:** patrz [Etap 0](administrowanie.md#etap-0), punkt 2 (dopisać `|/_synapse/admin` do regexu i przeładować nginx).
 
 ## ⚠️ Możliwe, niesprawdzone (zajrzyj tu dopiero, jeśli zobaczysz taki objaw)
 
@@ -62,9 +62,9 @@ docker compose up -d
 `ls certs` i powtórz [README – krok 6](../README.md#krok-6--certyfikaty-pki). Po dodaniu bloków dla Tailscale brakujące pliki
 `<PELNA-NAZWA-TS>.crt` i `.key` też zatrzymają Nginx.
 
-**9. Pracownik nie widzi swojego działu w pasku bocznym** – sprawdź w panelu LLDAP, czy konto ma grupę-dział
+**9. Pracownik ma w książce adresowej „Bez działu” albo nie ma działu w nazwie wyświetlanej** – sprawdź w panelu LLDAP, czy konto ma grupę-dział
 (4 konta testowe nie mają: `j.kowalski`, `a.nowak`, `t.perlik`, `p.wisniewski`); potem
-`provision_synapse_users.py` i `setup_spaces.py`.
+`provision_synapse_users.py` i `setup_directory.py`.
 
 **10. Panel Synapse Admin nie otwiera się pod `http://localhost:8080`** – sprawdź po kolei: czy okno z tunelem SSH jest
 otwarte, czy na VM `docker compose ps` pokazuje `matrix-proxy` i `matrix-synapse-admin` jako `Up`, czy

@@ -1,0 +1,52 @@
+{
+  "_README": "FRAGMENT do WKLEJENIA w istniejacy config.json Element Desktop (%APPDATA%\\Element-<profil>\\config.json). NIE zastepuj calego pliku - dopisz klucze 'default_theme', 'features', 'setting_defaults.custom_themes' i 'branding'. Usun ten klucz _README po wklejeniu. Kolory: granat i roz z logo firmy (granat ~#2D3A8C, roz ~#EC2E5B), tlo stonowane (grafitowo-granatowe, nie czarne). Wersja robocza do strojenia po obejrzeniu w aplikacji.",
+
+  "default_theme": "custom-Firma Dark",
+
+  "features": {
+    "feature_custom_themes": "enable"
+  },
+
+  "setting_defaults": {
+    "custom_themes": [
+      {
+        "name": "Firma Dark",
+        "is_dark": true,
+        "colors": {
+          "accent-color": "#EC2E5B",
+          "primary-color": "#7C8CF0",
+          "warning-color": "#F0A23B",
+          "sidebar-color": "#1B1F2E",
+          "roomlist-background-color": "#232839",
+          "roomlist-text-color": "#E6E9F2",
+          "roomlist-text-secondary-color": "#A4AABF",
+          "roomlist-highlights-color": "#2F3650",
+          "roomlist-separator-color": "#3A4160",
+          "timeline-background-color": "#2A3042",
+          "timeline-text-color": "#E6E9F2",
+          "timeline-text-secondary-color": "#A4AABF",
+          "timeline-highlights-color": "#343B52",
+          "username-colors": [
+            "#7C8CF0",
+            "#EC2E5B",
+            "#4FC3A1",
+            "#F0A23B",
+            "#B07CF0",
+            "#4FB3E8",
+            "#E8795A",
+            "#9BC24F"
+          ],
+          "avatar-background-colors": [
+            "#2D3A8C",
+            "#EC2E5B",
+            "#4A5BB8"
+          ]
+        }
+      }
+    ]
+  },
+
+  "branding": {
+    "auth_header_logo_url": "file:///F:/!Projekty%20Cyfrowe/Matrix/docs/img/logo-firma.png"
+  }
+}

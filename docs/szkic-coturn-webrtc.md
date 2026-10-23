@@ -59,5 +59,5 @@ Wariant awaryjny, gdyby MagicDNS zawodził: wpisać wprost `<IP_TAILSCALE>` zami
   zakresu relay.
 - **TURNS** (TLS, zwykle port `5349` lub `443` dla restrykcyjnych sieci firmowych) z certyfikatem zaufanym bez ręcznej
   instalacji; wymaga zmiany `turn_uris` na `turns:` i opcji TLS w Coturn.
-- Ograniczenie zakresu relay i limity (`--total-quota`, `--user-quota`) do rozmiaru ok. 300 użytkowników – niesprawdzone.
+- Ograniczenie zakresu relay i limity (`--total-quota`, `--user-quota`) do rozmiaru kilkuset użytkowników – niesprawdzone.
 - Rozmowy grupowe (Element Call / MatrixRTC) to osobny temat i inna infrastruktura; ten szkic dotyczy tylko 1:1.

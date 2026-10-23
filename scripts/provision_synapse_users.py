@@ -3,7 +3,7 @@
 provision_synapse_users.py -- Etap 1 (README; w nazewnictwie skryptow B + C): zaklada/aktualizuje
 konta w Synapse na podstawie uzytkownikow juz istniejacych w LLDAP (w PoC: scripts/seed_test_employees.py,
 Etap B0), z nazwa wyswietlana w formacie "Imie Nazwisko – Dzial" (bez lokalizacji:
-Bydgoszcz Poradnictwo i Wloclawek Poradnictwo to zwykle dzialy). Konta bez grupy-dzialu
+Oddzial A Obsluga i Oddzial B Obsluga to zwykle dzialy). Konta bez grupy-dzialu
 dostaja sama nazwe "Imie Nazwisko" (w ksiazce adresowej trafiaja do "Bez dzialu").
 
 CEL: bez tego skryptu konto w Synapse (i wpis w katalogu user_directory, z ktorego
@@ -16,17 +16,17 @@ WYMAGANIA WSTEPNE (jednorazowe, patrz README, "Etap 0 – Konto administratora S
   1. Jeden z istniejacych, dzialajacych kont (w PoC: konto testowe z Etapu B0) musi byc
      oznaczony jako administrator Synapse -- przez bezposredni UPDATE w bazie
      (na VM): patrz README, Etap 0. Domyslnie ten skrypt zaklada, ze to konto
-     ADMIN_LOGIN ponizej. Nginx musi przepuszczac /_synapse/admin (README, Etap 0, pkt 2).
-  2. W .env na PC: SYNAPSE_ADMIN_PASSWORD (haslo administratora Synapse), TS_IP oraz
+     SYNAPSE_ADMIN_LOGIN z .env. Nginx musi przepuszczac /_synapse/admin (README, Etap 0, pkt 2).
+  2. W .env na PC: SYNAPSE_ADMIN_LOGIN i SYNAPSE_ADMIN_PASSWORD (konto i haslo administratora Synapse), TS_IP oraz
      LLDAP_ADMIN_PASSWORD (wzor: .env.example).
   3. PC, na ktorym uruchamiasz ten skrypt, musi miec dzialajacy dostep do
      https://matrix.local (wpis w hosts + zaufany rootCA) -- dokladnie to
      samo, czego wymaga Element Desktop. Jesli Element u Ciebie dziala,
      ten skrypt tez powinien.
 
-KOLEJNOSC (README, "Zmienilem X – co uruchomic"): po tym skrypcie uruchom setup_spaces.py,
-potem setup_directory.py (przy zmianie dzialu: setup_spaces.py --prune). Nie puszczaj skryptow
-pod rzad bez przerw -- kazdy loguje administratora (HTTP 429, README, Rozwiazywanie problemow, pkt 4).
+KOLEJNOSC (README, "Zmienilem X – co uruchomic"): po tym skrypcie uruchom setup_directory.py
+(przy zmianie dzialu wystarczy uruchomic go ponownie -- bez dodatkowego kroku). Nie puszczaj
+skryptow pod rzad bez przerw -- kazdy loguje administratora (HTTP 429, README, Rozwiazywanie problemow, pkt 4).
 
 Wymaga: pip install requests (scripts/requirements.txt)
 Uzycie (PC, katalog scripts, venv aktywny): python provision_synapse_users.py
@@ -53,17 +53,17 @@ ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 # Konto podniesione do roli administratora Synapse (patrz README, Etap 0 --
 # jednorazowy UPDATE w bazie na VM). Haslo NIE jest w kodzie: SYNAPSE_ADMIN_PASSWORD
 # z .env (albo zmiennej srodowiskowej) -- patrz ADMIN_PASSWORD nizej, za load_dotenv_value().
-ADMIN_LOGIN = "s.lewandowski"
+# ADMIN_LOGIN (SYNAPSE_ADMIN_LOGIN z .env) jest wczytywany nizej, za load_dotenv_value().
 
 HOMESERVER_DOMAIN = "matrix.local"  # czesc MXID po dwukropku, np. @login:matrix.local
 
 # Ilu userow z LLDAP przetworzyc w TYM uruchomieniu. USTAW MALA WARTOSC NA TEST.
 LIMIT = None     # np. 3 na start -> sprawdz czy dziala -> potem None = wszyscy
 
-# Ta sama lista co w seed_test_employees.py i setup_spaces.py (SPACE_TREE) -- musi sie zgadzac, zeby skrypt
+# Ta sama lista co w seed_test_employees.py -- musi sie zgadzac, zeby skrypt
 # wiedzial, ktora grupa usera to dzial (nowy dzial: dopisz go tez tutaj). Lokalizacji juz nie ma.
-DEPARTMENTS = ["Księgowość", "Wydział EFS", "Dyrekcja", "IT", "Sprzedaż",
-               "Bydgoszcz Poradnictwo", "Włocławek Poradnictwo"]
+DEPARTMENTS = ["Księgowość", "Projekty", "Dyrekcja", "IT", "Sprzedaż",
+               "Oddział A Obsługa", "Oddział B Obsługa"]
 
 # ============================================================
 
@@ -85,6 +85,11 @@ def load_dotenv_value(key: str) -> str:
 
 # Haslo administratora Synapse (SYNAPSE_ADMIN_PASSWORD w .env); brak/placeholder wykrywa SynapseAdmin._login().
 ADMIN_PASSWORD = os.environ.get("SYNAPSE_ADMIN_PASSWORD") or load_dotenv_value("SYNAPSE_ADMIN_PASSWORD")
+
+# Login konta administratora Synapse (SYNAPSE_ADMIN_LOGIN w .env) -- dowolne konto z LLDAP podniesione do admina (README, Etap 0).
+ADMIN_LOGIN = os.environ.get("SYNAPSE_ADMIN_LOGIN") or load_dotenv_value("SYNAPSE_ADMIN_LOGIN")
+if not ADMIN_LOGIN or ADMIN_LOGIN.startswith("CHANGE_ME"):
+    sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, Etap 0).")
 
 
 def resolve_lldap_url() -> str:

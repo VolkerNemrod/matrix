@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 test_directory_message.py -- EKSPERYMENT ZAKONCZONY (historia): sprawdzal ksiazke adresowa jako WIADOMOSC
-z linkami matrix.to. Wyniki (README, 2.2): <details> dziala w Element Desktop, nie na telefonie; wyszukiwanie
+z linkami matrix.to. Wyniki (README, 2.1): <details> dziala w Element Desktop, nie na telefonie; wyszukiwanie
 w tresci pokoju nie dziala; pigulka otwiera profil osoby (czy stamtad wygodnie zaczac DM -- niesprawdzone).
-PRODUKCYJNIE sluzy do tego setup_directory.py (Etap 2.2); ten plik zostaje do prob ukladu i pomiaru rozmiaru
+PRODUKCYJNIE sluzy do tego setup_directory.py (Etap 2.1); ten plik zostaje do prob ukladu i pomiaru rozmiaru
 (--measure). Wymaga SYNAPSE_ADMIN_PASSWORD w .env na PC i konta administratora (README, Etap 0).
 
 CO SPRAWDZAL (checklista, na DRUGIM koncie zwyklego pracownika):
@@ -26,7 +26,7 @@ serwera dziala tylko w pokojach nieszyfrowanych -- pokoj tworzony przez API taki
 Do pokoju dolaczane sa tylko osoby uzyte w tescie (+ opcjonalnie --join login1,login2),
 zeby mozna bylo zalogowac sie na jedno z tych kont i obejrzec wiadomosc oczami zwyklego usera.
 
-Uzycie (PC, cd scripts, Tailscale/hosts jak przy setup_spaces.py):
+Uzycie (PC, cd scripts, Tailscale/hosts jak przy setup_directory.py):
   .\\venv\\Scripts\\python.exe test_directory_message.py --dry-run
   .\\venv\\Scripts\\python.exe test_directory_message.py
   .\\venv\\Scripts\\python.exe test_directory_message.py --limit 20 --join j.kowalski
@@ -35,7 +35,8 @@ Kazde uruchomienie wysyla NOWE wiadomosci A i B (pokoj jest ponownie uzywany). S
 mozna zignorowac albo usunac pokoj przez panel Synapse Admin (purge).
 
 Format nazwy wyswietlanej (provision_synapse_users.py): "Imie Nazwisko – Dzial"
-(opcjonalnie "Imie Nazwisko – Dzial, Lokalizacja"). Skrypt z niej buduje drzewo.
+(opcjonalnie "Imie Nazwisko – Dzial, Lokalizacja"). Z niej ten skrypt (i produkcyjnie
+setup_directory.py) grupuje osoby po dziale.
 UWAGA: wyniki testow i decyzje -- patrz README, 2.2 (setup_directory.py).
 """
 

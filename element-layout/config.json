@@ -1,0 +1,86 @@
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://matrix.local",
+      "server_name": "matrix.local"
+    }
+  },
+  "default_federate": false,
+  "default_country_code": "PL",
+  "disable_guests": true,
+
+  "default_theme": "custom-Firma Dark",
+
+  "features": {
+    "feature_custom_themes": "enable"
+  },
+
+  "setting_defaults": {
+    "layout": "group",
+    "useIRCLayout": false,
+    "showJoinLeaves": false,
+    "showAvatarChanges": false,
+    "showDisplaynameChanges": false,
+    "showRedactions": false,
+    "custom_themes": [
+      {
+        "name": "Firma Dark",
+        "is_dark": true,
+        "colors": {
+          "sidebar-color": "#1B1F2E",
+          "roomlist-background-color": "#232839",
+          "timeline-background-color": "#2A3042"
+        }
+      },
+      {
+        "name": "Grafit i Szalwia",
+        "is_dark": true,
+        "colors": {
+          "sidebar-color": "#1E2220",
+          "roomlist-background-color": "#252A27",
+          "timeline-background-color": "#2C322E"
+        }
+      },
+      {
+        "name": "Nord Zmierzch",
+        "is_dark": true,
+        "colors": {
+          "sidebar-color": "#2B303B",
+          "roomlist-background-color": "#323845",
+          "timeline-background-color": "#3B4252"
+        }
+      },
+      {
+        "name": "Sliwkowy Wieczor",
+        "is_dark": true,
+        "colors": {
+          "sidebar-color": "#231D26",
+          "roomlist-background-color": "#2B242F",
+          "timeline-background-color": "#322A36"
+        }
+      },
+      {
+        "name": "Bursztyn i Mgla",
+        "is_dark": true,
+        "colors": {
+          "sidebar-color": "#26241F",
+          "roomlist-background-color": "#2E2B25",
+          "timeline-background-color": "#36322B"
+        }
+      },
+      {
+        "name": "Morska Stal",
+        "is_dark": true,
+        "colors": {
+          "sidebar-color": "#1C2529",
+          "roomlist-background-color": "#232E33",
+          "timeline-background-color": "#2A373D"
+        }
+      }
+    ]
+  },
+
+  "branding": {
+    "auth_header_logo_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMTIwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjEyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJMb2dvIHphc3TEmXBjemUiPgogIDxyZWN0IHg9IjEyIiB5PSIxMCIgd2lkdGg9IjEzNiIgaGVpZ2h0PSI4MCIgcng9IjIyIiBmaWxsPSIjN0M4Q0YwIi8+CiAgPHBhdGggZD0iTTQ0IDg2IEwzMiAxMTIgTDcyIDg4IFoiIGZpbGw9IiM3QzhDRjAiLz4KICA8Y2lyY2xlIGN4PSI1MiIgY3k9IjUwIiByPSI5IiBmaWxsPSIjMUIxRjJFIi8+CiAgPGNpcmNsZSBjeD0iODAiIGN5PSI1MCIgcj0iOSIgZmlsbD0iIzFCMUYyRSIvPgogIDxjaXJjbGUgY3g9IjEwOCIgY3k9IjUwIiByPSI5IiBmaWxsPSIjMUIxRjJFIi8+Cjwvc3ZnPgo="
+  }
+}

@@ -128,7 +128,7 @@
   <rect x="725" y="500" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
   <circle cx="759" cy="532" r="18" fill="#00c853"/><text x="759" y="538" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">2</text>
   <text x="741" y="578" font-size="17" font-weight="700" fill="#e8fff1">Książka adresowa</text>
-  <text x="741" y="600" font-size="13" fill="#9bd6b3">Spaces + pokój + dane</text>
+  <text x="741" y="600" font-size="13" fill="#9bd6b3">pokój + dane dodatkowe</text>
   <rect x="741" y="612" width="50" height="26" rx="13" fill="#1f4f7a"/><text x="766" y="630" text-anchor="middle" font-size="13" font-weight="700" fill="#cfe8ff">PC</text>
 
   <!-- 3 -->
@@ -144,6 +144,6 @@
   <path d="M703 567 L717 575 L703 583 z" fill="#7dffb3"/>
   <path d="M923 567 L937 575 L923 583 z" fill="#7dffb3"/>
 
-  <text x="600" y="696" text-anchor="middle" font-size="14" fill="#9bd6b3">Dane płyną w jedną stronę: LLDAP → konta w Synapse → Spaces → książka adresowa.</text>
+  <text x="600" y="696" text-anchor="middle" font-size="14" fill="#9bd6b3">Dane płyną w jedną stronę: LLDAP → konta w Synapse → książka adresowa.</text>
   <text x="600" y="718" text-anchor="middle" font-size="14" fill="#9bd6b3">Zmiana zaczyna się w LLDAP; skrypty puszczasz po kolei (tabela „Zmieniłem X – co uruchomić” w README).</text>
 </svg>

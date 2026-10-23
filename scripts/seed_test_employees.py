@@ -34,10 +34,10 @@ Uzycie:
   python seed_test_employees.py --reassign --dry-run   # POKAZ, kogo przepieto by do nowych grup
   python seed_test_employees.py --reassign             # przepnij ISTNIEJACE konta (bez kasowania, bez hasel)
 
-STRUKTURA (README, B0): kazde konto ma DOKLADNIE JEDNA grupe-dzial (7 grup): Ksiegowosc, Wydzial EFS,
-Dyrekcja, IT, Sprzedaz (siedziba w Toruniu) albo Bydgoszcz Poradnictwo / Wloclawek Poradnictwo
+STRUKTURA (README, B0): kazde konto ma DOKLADNIE JEDNA grupe-dzial (7 grup): Ksiegowosc, Projekty,
+Dyrekcja, IT, Sprzedaz (siedziba) albo Oddzial A Obsluga / Oddzial B Obsluga
 (te dwa to zwykle dzialy, na tym samym poziomie co Ksiegowosc).
-Drzewo Spaces (Firma -> wszystkie dzialy na jednym poziomie) buduje setup_spaces.py (Etap 2.1).
+Ksiazke adresowa (wszystkie dzialy, jeden plaski pokoj) buduje setup_directory.py (Etap 2).
 
 HASLO TESTOWE: TEST_PASSWORD w .env NA VM (README, krok 5.1) -- czyta je wygenerowany set_test_passwords.sh.
 DALEJ: konta w Synapse -- provision_synapse_users.py (README, Etap 1); wymaga Etapu 0 (konto administratora).
@@ -75,14 +75,14 @@ EMAIL_DOMAIN = "matrix.local"
 LIMIT = None            # np. 3 na start -> sprawdz czy dziala -> potem None = wszyscy
 TOTAL_TARGET = 200   # docelowa liczba kont przy LIMIT = None
 
-# Kazde konto ma jedna grupe-dzial. Poradnictwo z Bydgoszczy i Wloclawka to zwykle dzialy.
-DEPARTMENTS = ["Księgowość", "Wydział EFS", "Dyrekcja", "IT", "Sprzedaż",
-               "Bydgoszcz Poradnictwo", "Włocławek Poradnictwo"]
-# Rozklad kont miedzy dzialy (Torun = 5 pierwszych ~70%, po ~15% na kazde Poradnictwo).
+# Kazde konto ma jedna grupe-dzial. Oddzialy (A, B) to zwykle dzialy, na tym samym poziomie co pozostale.
+DEPARTMENTS = ["Księgowość", "Projekty", "Dyrekcja", "IT", "Sprzedaż",
+               "Oddział A Obsługa", "Oddział B Obsługa"]
+# Rozklad kont miedzy dzialy (siedziba = 5 pierwszych ~70%, po ~15% na kazdy Oddzial).
 # To zalozenie TESTOWE, nie dane firmy.
 DEPARTMENT_WEIGHTS = [14, 14, 14, 14, 14, 15, 15]
 # Stare grupy lokalizacji z poprzednich seedow -- --reassign wyjmuje z nich konta (grup nie kasuje).
-LEGACY_LOCATIONS = ["Warszawa", "Kraków", "Poznań", "Toruń"]
+LEGACY_LOCATIONS = ["Warszawa", "Kraków", "Poznań"]
 
 # Plik wynikowy ze skryptem do uruchomienia NA VM (ustawia hasla).
 PASSWORD_SCRIPT_PATH = Path(__file__).resolve().parent / "set_test_passwords.sh"

@@ -44,6 +44,14 @@ report_stats: false
 
 enable_registration: false
 
+# Nowe konta (zalozone przez Admin API albo przy pierwszym logowaniu przez LDAP) same dolaczaja do tych pokoi.
+# Pokoje musza byc publiczne (tak ustawiaja je setup_directory.py i setup_announcements.py) i istniec przed
+# zalozeniem konta. Dotyczy tylko NOWYCH kont; istniejacych nie rusza, a kto sam wyszedl, nie wraca.
+# Aliasy = DIRECTORY_ROOM_ALIAS i ANNOUNCE_ROOM_ALIAS z .env (domyslnie ksiazka-adresowa i ogloszenia).
+auto_join_rooms:
+  - "#ksiazka-adresowa:matrix.local"
+  - "#ogloszenia:matrix.local"
+
 # Katalog uzytkownikow (ksiazka adresowa): true = wyszukiwarka w Elemencie znajduje WSZYSTKICH
 # uzytkownikow serwera, takze tych bez wspolnego pokoju. Domyslnie (false) widac tylko osoby
 # ze wspolnych lub publicznych pokoi. Uwaga: konto pojawia sie w katalogu dopiero po pierwszym logowaniu.

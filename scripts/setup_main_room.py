@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-UWAGA (2026-10-14): POKOJE I WIDGET WYCOFANE. Decyzja uzytkownika: ksiazka adresowa = space 'Firma'
-+ podprzestrzenie-dzialy (scripts/setup_spaces.py); widget okazal sie slepym zaulkiem, a pokoje
+UWAGA (2026-10-19): POKOJE, WIDGET I SPACES WYCOFANE. Decyzja uzytkownika: ksiazka adresowa = jeden pokoj
+'Ksiazka adresowa' (scripts/setup_directory.py), bez Matrix Spaces; widget okazal sie slepym zaulkiem, a pokoje
 'Firma-Ogloszenia' i 'Struktura organizacyjna' zostaly usuniete (w razie potrzeby admin zaklada
 pokoj recznie w Elemencie). NIE URUCHAMIAJ tego pliku jako skryptu -- zalozylby usuniete pokoje
 od nowa. Plik ZOSTAJE wylacznie jako biblioteka wspolna (klasa Synapse, cfg(), ensure_name_topic(),
-ensure_power_levels(), stale, ADMIN_PASSWORD z SYNAPSE_ADMIN_PASSWORD): importuja z niego setup_spaces.py
-(Etap 2.1), setup_directory.py (Etap 2.2) i test_directory_message.py (README, Zawartosc repozytorium). TODO: wydzielic te elementy do wspolnego modulu
+ensure_power_levels(), stale, ADMIN_PASSWORD z SYNAPSE_ADMIN_PASSWORD): importuja z niego
+setup_directory.py (Etap 2) i test_directory_message.py (README, Zawartosc repozytorium). TODO: wydzielic te elementy do wspolnego modulu
 (np. matrix_common.py) i dopiero wtedy usunac ten plik.
 
 setup_main_room.py -- (HISTORIA) pokoje glowne dla calej firmy (oba tylko do odczytu): zaklada je
@@ -50,7 +50,7 @@ im.vector.modular.widgets) i porownaj z tym, co zapisuje skrypt.
 WYMAGANIA WSTEPNE:
   - Konta w Synapse istnieja (provision_synapse_users.py) i dziala konto administratora
     Synapse (README, Etap 1 i Etap 0), a nginx przepuszcza /_synapse/admin.
-  - W .env (wzor: .env.example): SYNAPSE_ADMIN_PASSWORD (haslo konta administratora Synapse),
+  - W .env (wzor: .env.example): SYNAPSE_ADMIN_LOGIN i SYNAPSE_ADMIN_PASSWORD (konto i haslo administratora Synapse),
     WIDGET_URL (adres, ktory MUSI dzialac na KAZDYM kliencie --
     patrz README) oraz opcjonalnie MAIN_ROOM_NAME, MAIN_ROOM_ALIAS, MAIN_ROOM_TOPIC
     (pokoj ogloszen), ORG_ROOM_NAME, ORG_ROOM_ALIAS, ORG_ROOM_TOPIC (pokoj ze struktura),
@@ -86,7 +86,17 @@ ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 # Konto administratora Synapse -- to samo co w provision_synapse_users.py (PoC).
 # Haslo NIE jest w kodzie: czytane z .env (SYNAPSE_ADMIN_PASSWORD) -- patrz ADMIN_PASSWORD nizej,
 # za funkcja cfg(). Pozostale skrypty importuja ADMIN_PASSWORD stad.
-ADMIN_LOGIN = "s.lewandowski"
+# Login konta administratora Synapse: SYNAPSE_ADMIN_LOGIN z .env (albo zmiennej srodowiskowej).
+ADMIN_LOGIN = os.environ.get("SYNAPSE_ADMIN_LOGIN", "")
+if not ADMIN_LOGIN:
+    _env_path = Path(__file__).resolve().parent.parent / ".env"
+    if _env_path.exists():
+        for _line in _env_path.read_text(encoding="utf-8").splitlines():
+            _line = _line.strip()
+            if _line.startswith("SYNAPSE_ADMIN_LOGIN="):
+                ADMIN_LOGIN = _line.split("=", 1)[1].strip()
+if not ADMIN_LOGIN or ADMIN_LOGIN.startswith("CHANGE_ME"):
+    sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, Etap 0).")
 HOMESERVER_DOMAIN = "matrix.local"
 
 # Pokoje -- WARTOSCI DOMYSLNE; nadpisywane z .env (MAIN_ROOM_* dla ogloszen, ORG_ROOM_* dla struktury).
@@ -250,7 +260,7 @@ class Synapse:
             "room_alias_name": spec["alias"],
             "name": spec["name"],
             "topic": spec["topic"],
-            "preset": "private_chat",
+            "preset": "public_chat" if spec.get("public") else "private_chat",   # public_chat = od razu join_rule public (bez zaproszen przy force_join)
             "visibility": "private",
             "power_level_content_override": {
                 "events": {ev: 100 for ev in ADMIN_ONLY_EVENTS},
@@ -306,7 +316,8 @@ def ensure_name_topic(syn: Synapse, room_id: str, spec: dict, dry_run: bool):
             syn.put_state(room_id, event_type, {key: value})
 
 
-def ensure_power_levels(syn: Synapse, room_id: str, readonly: bool, writers: list, dry_run: bool):
+def ensure_power_levels(syn: Synapse, room_id: str, readonly: bool, writers: list, dry_run: bool,
+                        allow_reactions: bool = True):
     """Uprawnienia pokoju. Lista 'writers' z .env jest zrodlem prawdy dla poziomu WRITER_LEVEL:
     osoby z tym poziomem, ktorych na liscie nie ma, wracaja do zwyklych uzytkownikow."""
     old = syn.get_state(room_id, "m.room.power_levels") or {}
@@ -320,7 +331,10 @@ def ensure_power_levels(syn: Synapse, room_id: str, readonly: bool, writers: lis
 
     if readonly:
         new["events_default"] = WRITER_LEVEL   # pisanie wymaga poziomu piszacego
-        events["m.reaction"] = 0               # ale reakcje (emoji) moga dawac wszyscy
+        if not allow_reactions:
+            events["m.reaction"] = WRITER_LEVEL   # reakcje (emoji) tez tylko dla piszacych -- np. ksiazka adresowa
+        else:
+            events["m.reaction"] = 0               # ale reakcje (emoji) moga dawac wszyscy
         new["kick"] = 100
         new["ban"] = 100
         new["invite"] = 100

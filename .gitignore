@@ -31,3 +31,6 @@ __pycache__/
 
 # Wzór zmiennych środowiskowych MA być w repozytorium
 !.env.example
+
+# Pliki do usuni�cia (lokalnie)
+_to_delete/

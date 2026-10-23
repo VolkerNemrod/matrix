@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120" role="img" aria-label="Logo zastępcze">
+  <rect x="12" y="10" width="136" height="80" rx="22" fill="#7C8CF0"/>
+  <path d="M44 86 L32 112 L72 88 Z" fill="#7C8CF0"/>
+  <circle cx="52" cy="50" r="9" fill="#1B1F2E"/>
+  <circle cx="80" cy="50" r="9" fill="#1B1F2E"/>
+  <circle cx="108" cy="50" r="9" fill="#1B1F2E"/>
+</svg>

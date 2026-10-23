@@ -6,13 +6,13 @@
 ⚠️ *Stan na 2026-10-18: pliki są gotowe w katalogu `element-layout/`, ale nie były jeszcze sprawdzane w aplikacji (kolory,
 logo, działanie własnych motywów w używanej wersji Element Desktop).* Notatki robocze: `element-layout/layout.md`.
 
-**Cel:** stonowany ciemny motyw (zamiast dwóch wbudowanych: jasnego i ciemnego), logo firmy na ekranie logowania i powitalnym
+**Cel:** stonowany ciemny motyw (zamiast dwóch wbudowanych: jasnego i ciemnego), własne logo na ekranie logowania i powitalnym
 oraz serwer `matrix.local` ustawiony z góry (przy logowaniu nie trzeba go wpisywać).
 
-**Jak to działa:** wygląd ustawia plik `config.json` klienta Element Desktop. Gotowy wzór: `element-layout/config.json`.
+**Jak to działa:** wygląd ma ustawiać plik `config.json` klienta Element Desktop. ⚠️ W Element Desktop 1.12.32 plik skopiowany do `%APPDATA%\Element\` **nie jest wczytywany** jako config webowy (diagnoza 2026-10-20, patrz niżej), więc do czasu wersji (a) wygląd ustawia się ręcznie w koncie – wersja (b). Gotowy wzór: `element-layout/config.json`.
 `docker-compose.yml` nie zawiera Element Web, więc nie ma serwera, na którym zmianę dałoby się zrobić centralnie –
 **każdy komputer potrzebuje własnej kopii pliku** (przy wdrożeniu klientów można ją rozdawać razem z `rootCA.pem`,
-patrz [README – Wdrożenie klientów (D)](../README.md#etap-d--klienci-do-sprawdzenia-przy-produkcji)).
+patrz [Wdrożenie klientów (D)](administrowanie.md#etap-d--klienci-do-sprawdzenia-przy-produkcji)).
 
 Plik zawiera:
 
@@ -24,17 +24,55 @@ Plik zawiera:
 
 | Motyw | Charakter |
 |---|---|
-| **Firma Dark** (domyślny) | granat i róż z logo firmy |
+| **Firma Dark** (domyślny) | granatowy, ciemne tło |
 | Grafit i Szalwia | ciepły grafit, szalwiowa zieleń |
 | Nord Zmierzch | chłodny, lodowo-niebieski |
 | Sliwkowy Wieczor | przygaszony fiolet, pudrowy róż |
 | Bursztyn i Mgla | ciepła szarość, bursztynowy akcent |
 | Morska Stal | łupkowo-morski, turkusowy akcent |
 
-Kolory logo użyte w „Firma Dark”: granat ok. `#2D3A8C`, róż ok. `#EC2E5B`. Motyw wybierasz w *Ustawienia → Wygląd*.
+Motyw wybierasz w *Ustawienia → Wygląd*.
 Kolory są pierwszym przybliżeniem do dostrojenia po obejrzeniu w aplikacji (edytuj wartości w `config.json`).
 
-## Wdrożenie na komputerze
+## Wersja (b): ręczne ustawienia konta (obowiązuje teraz)
+
+🪟 **PC**, jednorazowo dla każdego konta (nowe konto = powtórz). Bez `config.json` nie ma własnych motywów, logo ani serwera
+wpisanego z góry – za to to działa w każdej wersji Element Desktop i nie ginie przy aktualizacji aplikacji.
+
+1. **Serwer przy logowaniu:** na ekranie logowania przy nazwie serwera kliknij *Zmień* (Edit) i wpisz `https://matrix.local`
+   (komputer nadal potrzebuje wpisu w `hosts` i zaufanego `rootCA.pem`, patrz README). Po zalogowaniu Element zapamiętuje serwer.
+2. **Wygląd:** avatar (lewy górny róg) → *Wszystkie ustawienia* → *Wygląd*:
+   - *Motyw*: wbudowany **Ciemny**. Opcję „Dopasuj do systemu” wyłącz, żeby motyw nie skakał. (Własnych motywów, w tym
+     „Firma Dark”, bez `config.json` nie ma.)
+   - *Układ wiadomości*: **Nowoczesny** (Modern). Nie wybieraj dymków ani IRC: dymki zmieniają szerokość zwiniętych działów
+     w pokoju „Książka adresowa” (`SUMMARY_PX` w `scripts\setup_directory.py`).
+3. **Oś czasu:** *Wszystkie ustawienia* → *Preferencje* → sekcja *Oś czasu*. Wyłącz cztery opcje (nazwy angielskie, polskie mogą
+   brzmieć nieco inaczej):
+   - *Show join/leave events (invites/removes/bans unaffected)* – usuwa linię „… i 201 innych dołączyło”,
+   - *Show display name changes*,
+   - *Show profile picture changes*,
+   - *Show a placeholder for removed messages*.
+4. **Sprawdzenie:** otwórz pokój „Książka adresowa” i „Ogłoszenia”: ma nie być linii o dołączeniach, a działy mają mieć
+   jednakową szerokość.
+
+Ograniczenia wersji (b): brak własnego logo, brak własnych motywów, serwer trzeba wybrać przy pierwszym logowaniu; linia
+„stworzył i skonfigurował pokój” zostaje (Element jej nie ukrywa – to nie zależy od konfiguracji). Ustawienia osi czasu
+zapisują się na koncie i powinny być widoczne na innych urządzeniach, motyw i układ trzeba sprawdzić osobno na każdym
+urządzeniu (niezweryfikowane).
+
+## Wersja (a): `config.json` wewnątrz `webapp.asar` (na później)
+
+Odłożone. Pomysł: rozpakować `resources\webapp.asar` (`npx asar extract`), podmienić w nim `config.json` na
+`element-layout\config.json`, spakować (`npx asar pack`) – po zamknięciu Elementa i z kopią zapasową `webapp.asar`. Test:
+`fetch("config.json")` w konsoli (Ctrl+Shift+I) ma zwrócić 2644 znaki, a nie 1914. Wada: zmiana ginie przy każdej aktualizacji
+aplikacji, więc dla całej firmy sensowna dopiero jako własna paczka instalacyjna. Wersja (c) (Element Web na VM) nie zmienia
+Desktopa i nie jest planowana.
+
+## Kopiowanie `config.json` do `%APPDATA%` – NIE DZIAŁA (historia)
+
+Diagnoza 2026-10-20 (Element Desktop 1.12.32): log startu wczytuje `Roaming\Element\config.json` jako „local config”, ale
+`fetch("config.json")` nadal zwraca domyślny config z `webapp.asar` (1914 znaków). Wykluczone: flagi, zmienna
+`ELEMENT_DESKTOP_CONFIG_JSON`, BOM, składnia JSON, cache. Kroki poniżej zostawione tylko jako zapis tego, co sprawdzono:
 
 🪟 **PC**, dla każdego stanowiska osobno:
 
@@ -47,14 +85,14 @@ Kolory są pierwszym przybliżeniem do dostrojenia po obejrzeniu w aplikacji (ed
 
 ## Logo
 
-- Plik: `element-layout/logo-firma.png` (128×109 px, PNG z przezroczystym tłem, ok. 3,5 KB).
+- Plik: `element-layout/logo-zastepcze.svg` (neutralne logo zastępcze; prawdziwego logo firmy w repozytorium nie ma).
 - Logo pojawia się na ekranie logowania i powitalnym. Nie zmienia ikony aplikacji ani paska bocznego (do tego trzeba by
   przebudować Element Desktop).
-- Logo jest wpisane w `config.json` jako adres `data:image/png;base64,...` (plik ma tylko ok. 3,5 KB), więc działa na każdym
+- Logo jest wpisane w `config.json` jako adres `data:image/svg+xml;base64,...` (plik ma tylko ok. 0,4 KB), więc działa na każdym
   komputerze bez osobnego pliku i bez zależności od ścieżki. ⚠️ Wyświetlanie logo w Element Desktop nie jest jeszcze sprawdzone.
-  Gdy chcesz zmienić logo: zamień PNG w `element-layout/` i zakoduj go ponownie (PowerShell:
-  `[Convert]::ToBase64String([IO.File]::ReadAllBytes("logo-firma.png"))`), a wynik wstaw po `data:image/png;base64,`.
-- Granatowy łuk może być słabo widoczny na ciemnym tle. Wtedy potrzebna jest druga, jasna wersja logo.
+  Gdy chcesz zmienić logo: podmień plik w `element-layout/` i zakoduj go ponownie (PowerShell:
+  `[Convert]::ToBase64String([IO.File]::ReadAllBytes("logo-zastepcze.svg"))`), a wynik wstaw po `data:image/svg+xml;base64,` (dla PNG: `data:image/png;base64,`).
+- Jeśli własne logo będzie ciemne, może być słabo widoczne na ciemnym tle. Wtedy potrzebna jest jasna wersja logo.
 
 ## Niesprawdzone i ograniczenia
 

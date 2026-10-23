@@ -112,7 +112,7 @@ i kłopot po jego stronie są minimalne.
 7. **Przy logowaniu** kliknij **Edytuj** przy serwerze domowym i wpisz `https://<PELNA-NAZWA-TS>`
    (NIE `matrix.local` – tego kolega nie rozwiąże, bo nie ma takiego wpisu w swoim pliku `hosts`).
 8. **Zalogować się** loginem i hasłem z LLDAP. **Zalecane: użyj jednego z testowych kont z Etapu B0**
-   (patrz [README – Przygotowanie, Etap B0](../README.md#etap-b0--testowa-struktura-firmy-w-lldap), ok. 200
+   (patrz [Przygotowanie, Etap B0](administrowanie.md#etap-b0--testowa-struktura-firmy-w-lldap), ok. 200
    fikcyjnych kont, wspólne hasło testowe) zamiast prawdziwego konta pracownika – to dane niezwiązane
    z żadną realną tożsamością, bezpieczniejsze do testu z kimś spoza zaufanego środowiska.
 

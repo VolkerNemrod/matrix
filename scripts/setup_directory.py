@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-setup_directory.py -- Etap 2.2 (README): ksiazka adresowa firmy jako WIADOMOSCI z linkami matrix.to w pokoju
-"Ksiazka adresowa" (tylko do odczytu, podpiety pod space "Firma").
+setup_directory.py -- Etap 2 (README): ksiazka adresowa firmy jako WIADOMOSCI z linkami matrix.to w pokoju
+"Ksiazka adresowa" (tylko do odczytu, widoczny dla wszystkich, bez szyfrowania).
 
-STATUS (README, 2.2): --dry-run na 204 kontach i pokoj probny (--fake-extra --alias test-ksiazka-pelna --limit 20)
+STATUS (README, Etap 2): --dry-run na 204 kontach i pokoj probny (--fake-extra --alias test-ksiazka-pelna --limit 20)
 dzialaja w Element Desktop (2026-10-18). NIESPRAWDZONE: wyglad na telefonie, prawdziwe dane z directory_extra.csv
 i wlasciwy przebieg bez --alias.
 
@@ -24,7 +24,7 @@ CO ROBI (kazdy krok idempotentny -- mozna puszczac wielokrotnie, np. po dodaniu 
   1. Loguje sie do Synapse jako admin, pobiera wszystkie aktywne konta lokalne.
   2. Buduje wiadomosci: wstep + po jednej na dzial (zbyt duzy dzial dzieli sie na czesci).
   3. Pokoj: znajduje po aliasie albo tworzy; nazwa, temat, uprawnienia "tylko do odczytu"
-     (pisza admin i SPACES_WRITERS); podpina pod space "Firma" (m.space.child / m.space.parent).
+     (pisza admin i DIRECTORY_WRITERS; reakcje emoji zablokowane); regula dolaczania "public" (DIRECTORY_JOIN_RULE).
   4. Dolacza do pokoju WSZYSTKICH z listy PRZED wyslaniem wiadomosci (inaczej pigulki mogly by
      pokazac sam identyfikator zamiast nazwy; wpisy "X dolaczyl" Element zwija w jedna linie).
   5. Wysyla NOWE wiadomosci, EDYTUJE te, ktorych tresc sie zmienila (dopisek "(edited)"),
@@ -42,10 +42,13 @@ OGRANICZENIA:
   - Zwijane dzialy (<details>) nie dzialaja na telefonie (swiadoma decyzja: uklad zostaje).
   - Klik w pigulke otwiera profil osoby; czy stamtad da sie wygodnie zaczac rozmowe 1:1 -- NIESPRAWDZONE.
   - Dane kontaktowe (telefon, pokoj, pietro) widza wszyscy czlonkowie pokoju.
+  - NIE wlaczaj szyfrowania w pokoju ksiazki: skrypt wysyla wiadomosci jawnym tekstem, wiec w pokoju szyfrowanym
+    kazda dostaje czerwona ikone "niezaszyfrowana". Szyfrowania nie da sie wylaczyc -- trzeba usunac pokoj
+    (panel Synapse Admin, z purge) i puscic skrypt ponownie.
   - Pierwszy raz uruchom z --dry-run, potem na pokoju probnym: --alias test-ksiazka-pelna --limit 20
-    (pokoj probny NIE jest podpinany pod Firme). --limit i --fake-extra WYMAGAJA --alias (poza --dry-run).
+    (--limit i --fake-extra WYMAGAJA --alias, poza --dry-run).
 
-Uzycie (PC, katalog scripts, jak setup_spaces.py):
+Uzycie (PC, katalog scripts, venv aktywny):
   python setup_directory.py --write-extra-template      # utworz/uzupelnij directory_extra.csv
   python setup_directory.py --dry-run                   # co by zrobil, rozmiary wiadomosci
   python setup_directory.py                             # wykonaj (pokoj "Ksiazka adresowa")
@@ -53,11 +56,12 @@ Uzycie (PC, katalog scripts, jak setup_spaces.py):
   python setup_directory.py --rebuild                   # wyslij wszystko od nowa (kolejnosc)
 Inne opcje: --extra-file SCIEZKA, --exclude login1,login2, --skip-join, --rejoin, --pin, --alias NAZWA, --limit N.
 Ustawienia w .env (opcjonalne): DIRECTORY_ROOM_ALIAS, DIRECTORY_ROOM_NAME, DIRECTORY_ROOM_TOPIC,
-DIRECTORY_EXCLUDE (loginy po przecinku), SPACES_WRITERS.
+DIRECTORY_EXCLUDE (loginy po przecinku), DIRECTORY_WRITERS (domyslnie MAIN_ROOM_WRITERS),
+DIRECTORY_JOIN_RULE (public | invite; domyslnie public).
 
 WYMAGANIA WSTEPNE: konto administratora Synapse (README, Etap 0), konta w Synapse (provision_synapse_users.py,
-Etap 1), SYNAPSE_ADMIN_PASSWORD w .env na PC oraz space "Firma" z setup_spaces.py (Etap 2.1) -- bez niego pokoj
-powstanie, ale nie zostanie podpiety. Nie puszczaj skryptow pod rzad bez przerw (HTTP 429, README, Rozwiazywanie
+Etap 1) oraz SYNAPSE_ADMIN_PASSWORD w .env na PC.
+Nie puszczaj skryptow pod rzad bez przerw (HTTP 429, README, Rozwiazywanie
 problemow, pkt 4).
 
 Wymaga: pip install requests. Importuje setup_main_room.py (musi lezec w tym samym katalogu).
@@ -96,14 +100,20 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_EXTRA_FILE = SCRIPT_DIR / "directory_extra.csv"
 
 DEFAULT_ALIAS = "ksiazka-adresowa"                      # alias pokoju: #ksiazka-adresowa:<domena>
+DEFAULT_JOIN_RULE = "public"                            # regula dolaczania: public (bez banera E2EE) albo invite; .env: DIRECTORY_JOIN_RULE
 STATE_TYPE = "local.matrix.directory"                   # zdarzenie stanu z id wiadomosci (stan skryptu)
-SPACE_ALIAS = f"#space-firma:{HOMESERVER_DOMAIN}"       # glowny space (setup_spaces.py: ALIAS_PREFIX + id 'firma')
 MSG_LIMIT = 28000                                       # bajty; edycja = ~2x tresc, a limit zdarzenia to ~64 KB
 INTRO_KEY = "00 Wstęp"
 NO_DEPT = "Bez działu"
+# Stala szerokosc "banieczek" zwinietych dzialow: Element nie pozwala ustawic szerokosci (CSS jest wycinany), wiec naglowek
+# dzialu dopelniamy spacjami nierozdzielajacymi (&nbsp;) do SUMMARY_PX pikseli -- wg szacowanej szerokosci tekstu (text_px),
+# bo czcionka jest proporcjonalna (litera ok. 9 px, &nbsp; ok. 4.5 px). Wieksza liczba = szersze banieczki.
+SUMMARY_PX = 260     # docelowa szerokosc tekstu naglowka (px); najdluzszy dzial (np. "Oddzial B Obsluga (28)") miesci sie w 225 px
+EM_PX = 16           # rozmiar czcionki Elementa w px (zmierzone)
+NBSP_PX = 4.45       # szerokosc jednego &nbsp; w px (dopasowane do zrzutow ekranu z Element Desktop, 2026-10-19)
 
 # Dodatkowe pola z CSV: (nazwa kolumny, przedrostek przed wartoscia). Kolejnosc = kolejnosc w wiadomosci.
-# Pole wlasne (README, 2.3): dopisz pare tutaj ORAZ ta sama nazwe kolumny w TEMPLATE_COLUMNS; nazwa kolumny: male litery,
+# Pole wlasne (README, 2.2): dopisz pare tutaj ORAZ ta sama nazwe kolumny w TEMPLATE_COLUMNS; nazwa kolumny: male litery,
 # bez polskich znakow i spacji (zamiast spacji '_'); potem --write-extra-template dodaje kolumne do CSV.
 EXTRA_FIELDS = [("stanowisko", ""), ("telefon", "tel. "), ("pokoj", "pok. "), ("pietro", "piętro ")]
 TEMPLATE_COLUMNS = ["login", "imie_nazwisko", "dzial", "stanowisko", "telefon", "pokoj", "pietro"]
@@ -123,6 +133,22 @@ def pl_key(s: str) -> list:
 
 def norm_header(h: str) -> str:
     return h.strip().lower().translate(_DIACRITICS).replace(" ", "_")
+
+
+# Przyblizone szerokosci znakow w em (krój Inter jak w Elemencie); nieznane znaki = 0.6. Dobrane i sprawdzone na zrzucie
+# ekranu (blad ok. +-10 px); jesli banieczki nadal sie roznia, popraw EM_PX / NBSP_PX / SUMMARY_PX wyzej.
+_EM_GROUPS = [
+    (0.27, "il.,:;'|!"), (0.28, " "), (0.30, "łI"), (0.33, "()"), (0.37, "tfr"), (0.40, "-"), (0.50, "J"),
+    (0.54, "sśzźżcćxkv"), (0.55, "y–"), (0.56, "L"), (0.58, "aąeęF"), (0.60, "hnuńTE"),
+    (0.62, "bdgpqoó0123456789ZŹŻ"), (0.66, "ABCĆKPRSŚVXY"), (0.72, "DHNŃU"), (0.76, "GOQÓ"),
+    (0.83, "w"), (0.86, "M"), (0.90, "m"), (1.00, "W"),
+]
+_EM = {c: w for w, chars in _EM_GROUPS for c in chars}
+
+
+def text_px(s: str) -> float:
+    """Szacowana szerokosc tekstu w pikselach (do wyrownania naglowkow dzialow)."""
+    return sum(_EM.get(c, 0.6) for c in s) * EM_PX
 
 
 def esc(s: str) -> str:
@@ -292,7 +318,8 @@ def person_line(p: dict, extra: dict):
 
 
 def build_dept_content(title: str, items: list, extras: dict, date: str, demo: bool) -> dict:
-    h = [f"<details><summary><b>{esc(title)}</b> ({len(items)})</summary>"]
+    pad = "&nbsp;" * max(0, round((SUMMARY_PX - text_px(f"{title} ({len(items)})")) / NBSP_PX))   # rowna szerokosc zwinietych dzialow
+    h = [f"<details><summary><b>{esc(title)}</b> ({len(items)}){pad}</summary>"]
     lines = [f"{title} ({len(items)})"]
     by_loc = {}
     for p in items:
@@ -381,23 +408,19 @@ def ensure_room(syn: Synapse, spec: dict, dry_run: bool):
     return room_id
 
 
-def link_to_space(syn: Synapse, room_id: str, dry_run: bool):
-    space_id = syn.find_room_by_alias(SPACE_ALIAS)
-    if not space_id:
-        print(f"  Space: nie znaleziono {SPACE_ALIAS} (uruchom najpierw setup_spaces.py, Etap 2.1) -- pomijam podpięcie.")
+def ensure_join_rule(syn: Synapse, room_id: str, rule: str, dry_run: bool):
+    """Regula dolaczania: 'public' (kazdy z serwera moze dolaczyc przez alias; Element nie pokazuje wtedy banera
+    'szyfrowanie nie jest wlaczone' -- DO POTWIERDZENIA W PRAKTYCE) albo 'invite'. Pokoj NIE trafia do publicznego katalogu pokoi."""
+    rule = (rule or DEFAULT_JOIN_RULE).strip().lower()
+    if rule not in ("public", "invite"):
+        raise RuntimeError(f"DIRECTORY_JOIN_RULE musi byc 'public' albo 'invite', jest: '{rule}'")
+    current = (syn.get_state(room_id, "m.room.join_rules") or {}).get("join_rule")
+    if current == rule:
+        print(f"  Reguła dołączania: już '{rule}'.")
         return
-    via = [HOMESERVER_DOMAIN]
-    child = {"via": via, "order": "00"}      # "00" = przed działami (01..07)
-    parent = {"via": via, "canonical": True}
-    if syn.get_state(space_id, "m.space.child", room_id) == child:
-        print("  Space: pokój już podpięty pod Firmę.")
-    else:
-        print("  Space: podpinam pokój pod Firmę (m.space.child).")
-        if not dry_run:
-            syn.put_state(space_id, "m.space.child", child, room_id)
-    if syn.get_state(room_id, "m.space.parent", space_id) != parent:
-        if not dry_run:
-            syn.put_state(room_id, "m.space.parent", parent, space_id)
+    print(f"  Reguła dołączania: ustawiam '{rule}' (była: '{current}').")
+    if not dry_run:
+        syn.put_state(room_id, "m.room.join_rules", {"join_rule": rule})
 
 
 def join_all(syn: Synapse, room_id, mxids: list, rejoin: bool, dry_run: bool):
@@ -462,7 +485,7 @@ def redact(syn: Synapse, room_id: str, event_id: str):
 def main():
     ap = argparse.ArgumentParser(description="Książka adresowa firmy jako wiadomości z linkami matrix.to.")
     ap.add_argument("--dry-run", action="store_true", help="nic nie zapisuj; pokaż plan i rozmiary")
-    ap.add_argument("--alias", help="inny alias pokoju (np. do prób); pokój próbny NIE jest podpinany pod Firmę")
+    ap.add_argument("--alias", help="inny alias pokoju (np. do prób)")
     ap.add_argument("--limit", type=int, help="tylko N osób (próbka z różnych działów) -- do prób")
     ap.add_argument("--extra-file", help=f"CSV z danymi dodatkowymi (domyślnie {DEFAULT_EXTRA_FILE.name})")
     ap.add_argument("--fake-extra", action="store_true", help="SZTUCZNE telefony/pokoje (tylko do oglądania układu)")
@@ -491,9 +514,10 @@ def main():
         "alias": alias,
         "name": cfg("DIRECTORY_ROOM_NAME", "Książka adresowa") + (" (PRÓBA)" if args.alias else ""),
         "topic": cfg("DIRECTORY_ROOM_TOPIC", "Kto jest kim w firmie: rozwiń dział i kliknij osobę (tylko do odczytu)"),
+        "public": cfg("DIRECTORY_JOIN_RULE", DEFAULT_JOIN_RULE).strip().lower() == "public",   # nowy pokoj od razu publiczny
     }
     writers = []
-    for w in (cfg("SPACES_WRITERS") or cfg("MAIN_ROOM_WRITERS")).split(","):
+    for w in (cfg("DIRECTORY_WRITERS") or cfg("MAIN_ROOM_WRITERS")).split(","):
         w = w.strip().lstrip("@")
         if w:
             writers.append(f"@{w}" if ":" in w else f"@{w}:{HOMESERVER_DOMAIN}")
@@ -548,11 +572,8 @@ def main():
     room_id = ensure_room(syn, spec, args.dry_run)
     if room_id:
         ensure_name_topic(syn, room_id, spec, args.dry_run)
-        ensure_power_levels(syn, room_id, True, writers, args.dry_run)
-        if args.alias:
-            print("  Space: pokój próbny (--alias) -- nie podpinam pod Firmę.")
-        else:
-            link_to_space(syn, room_id, args.dry_run)
+        ensure_power_levels(syn, room_id, True, writers, args.dry_run, allow_reactions=False)   # bez reakcji emoji
+        ensure_join_rule(syn, room_id, cfg("DIRECTORY_JOIN_RULE", DEFAULT_JOIN_RULE), args.dry_run)
         if args.skip_join:
             print("  Członkowie: pominięto (--skip-join).")
         else:
@@ -622,7 +643,7 @@ def main():
 
     print("\n=== GOTOWE ===")
     print(f"Pokój: \"{spec['name']}\" (#{alias}:{HOMESERVER_DOMAIN}). Sprawdź na koncie zwykłego pracownika:")
-    print("  1. czy pokój jest na liście (dla właściwego pokoju: w space Firma),")
+    print("  1. czy pokój jest na liście (dołączyli wszyscy),")
     print("  2. czy działy się rozwijają, a nazwiska są pigułkami z danymi obok,")
     print("  3. co robi klik w pigułkę (profil osoby; czy stamtąd łatwo zacząć rozmowę 1:1 -- niesprawdzone),")
     print("  4. czy wpisy 'X dołączył' są zwinięte w jedną linię.")
