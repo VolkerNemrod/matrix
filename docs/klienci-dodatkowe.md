@@ -25,7 +25,8 @@ sudo tailscale cert <PELNA-NAZWA-TS>
 Wynik: `Wrote public cert to ...crt` i `Wrote private key to ...key`. Nazwy plików muszą być takie same
 jak w `nginx/conf.d/matrix.conf`.
 
-**3. Nginx** – w `nginx/conf.d/matrix.conf` zamień wszystkie wystąpienia `matrix-test.TWOJ-TAILNET.ts.net`
+**3. Nginx** – w `nginx/conf.d/matrix.conf` **odkomentuj** dwa ostatnie bloki `server` (usuń `# ` z początku ich linii;
+domyślnie są zakomentowane) i zamień wszystkie wystąpienia `matrix-test.TWOJ-TAILNET.ts.net`
 na `<PELNA-NAZWA-TS>` (pięć miejsc: dwa `server_name`, dwie ścieżki certyfikatu i adres w
 `.well-known`). Drugi blok `server` ma **własny** `/.well-known/matrix/client` wskazujący na tę nazwę – to
 ważne, bo ten z `matrix.local` jest dla telefonu nieosiągalny.

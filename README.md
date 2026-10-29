@@ -386,11 +386,11 @@ starcie, więc późniejsza zmiana samego `.env` może ich nie zmienić (patrz
 
 ### 5.2 Adresy dla dostępu z telefonu (opcjonalnie)
 
-Jeśli **nie** będziesz łączyć się z telefonu, usuń z `nginx/conf.d/matrix.conf` dwa ostatnie bloki `server`
-(te z nazwą `matrix-test.TWOJ-TAILNET.ts.net`) i zostaw w `homeserver.yaml` wartość
-`public_baseurl: "https://matrix.local/"`.
+W `nginx/conf.d/matrix.conf` dwa ostatnie bloki `server` (z nazwą `matrix-test.TWOJ-TAILNET.ts.net`) są **domyślnie
+zakomentowane** – bez certyfikatu Tailscale Nginx w ogóle by się nie uruchomił. Jeśli **nie** łączysz się z telefonu,
+nie robisz tu nic i zostawiasz w `homeserver.yaml` wartość `public_baseurl: "https://matrix.local/"`.
 
-Jeśli będziesz – robisz to w kroku 9.2 (potrzebna jest `<PELNA-NAZWA-TS>`).
+Jeśli łączysz – robisz to w kroku 9.2 (potrzebna jest `<PELNA-NAZWA-TS>`; tam też instrukcja odkomentowania bloków).
 
 **Sprawdzenie:** `grep -n CHANGE_ME .env synapse/homeserver.yaml` nic nie wypisuje (wszystkie placeholdery podmienione).
 
