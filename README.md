@@ -426,6 +426,22 @@ bash pki/generate-pki.sh
 
 ## Krok 7 – Uruchomienie usług
 
+**Najpierw uprawnienia katalogu Synapse.** Synapse w kontenerze działa jako użytkownik o UID 991, a katalog `synapse/`
+jest podmontowany jako `/data`. Jeśli należy do Ciebie, Synapse nie zapisze w nim klucza podpisu i kontener będzie się
+w kółko restartował (`PermissionError: ... /data/matrix.local.signing.key`). Zmieniasz właściciela samego katalogu
+(bez `-R`, żeby `homeserver.yaml` został Twój):
+
+🐧 **VM**:
+
+```bash
+cd /opt/matrix
+sudo chown 991:991 synapse
+```
+
+Plik `synapse/homeserver.yaml` musi pozostać czytelny dla innych użytkowników (`chmod 644 synapse/homeserver.yaml`).
+
+Teraz uruchom usługi:
+
 🐧 **VM**:
 
 ```bash
@@ -593,8 +609,8 @@ rotacja słabych haseł PoC – wszystkie punkty plus zebrane ramki 🏭 Produkc
 ## Rozwiązywanie problemów
 
 **Pełna lista przeniesiona do [docs/rozwiazywanie-problemow.md](docs/rozwiazywanie-problemow.md)** – zweryfikowane
-problemy 1-5 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, telefon wisi na synchronizacji,
-HTTP 429, Admin API 404) i niesprawdzone 6-10.
+problemy 1-6 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, telefon wisi na synchronizacji,
+HTTP 429, Admin API 404, `Permission denied` na kluczu podpisu Synapse) i niesprawdzone 7-10.
 
 ---
 

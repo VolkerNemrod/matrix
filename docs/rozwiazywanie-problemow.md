@@ -42,21 +42,27 @@
 - **Przyczyna:** nginx nie przepuszcza `/_synapse/admin` (stary `matrix.conf` na VM).
 - **Rozwiązanie:** patrz [Etap 0](administrowanie.md#etap-0), punkt 2 (dopisać `|/_synapse/admin` do regexu i przeładować nginx).
 
+**6. Synapse restartuje się w kółko: `PermissionError: [Errno 13] Permission denied: '/data/matrix.local.signing.key'`** (potwierdzone 2026-10-29)
+- **Przyczyna:** Synapse działa w kontenerze jako użytkownik `991`, a katalog `synapse/` (zamontowany jako `/data`) należy do Ciebie, więc
+  Synapse nie może zapisać klucza podpisu. `matrix-proxy` też się wtedy restartuje (nie widzi upstreamu `synapse`) – po naprawie
+  Synapse'a podniesie się sam.
+- **Rozwiązanie** (to samo jest w [README – krok 7](../README.md#krok-7--uruchomienie-usług) przed pierwszym startem):
+
+  ```bash
+  cd /opt/matrix
+  sudo chown 991:991 synapse
+  docker compose restart synapse
+  sleep 15
+  docker compose restart proxy
+  docker compose ps
+  ```
+
+  Plik `synapse/homeserver.yaml` musi zostać czytelny dla innych (`chmod 644`).
+
 ## ⚠️ Możliwe, niesprawdzone (zajrzyj tu dopiero, jeśli zobaczysz taki objaw)
 
-**6. Błędy `\r` przy uruchamianiu skryptu** – windowsowe końce linii; naprawa:
+**7. Błędy `\r` przy uruchamianiu skryptu** – windowsowe końce linii; naprawa:
 `sed -i 's/\r$//' pki/generate-pki.sh pki/v3.ext`.
-
-**7. Synapse restartuje się, w logach brak klucza podpisu (`signing key`) lub brak uprawnień do `/data`**
-Obraz Synapse nie zawsze sam tworzy klucz, a działa jako użytkownik `991`, który może nie mieć prawa zapisu
-w zamontowanym katalogu. Rozwiązanie (do potwierdzenia po zobaczeniu logów):
-
-```bash
-cd /opt/matrix
-sudo chown -R 991:991 synapse
-docker compose run --rm --entrypoint python synapse -m synapse.app.homeserver --config-path /data/homeserver.yaml --generate-keys
-docker compose up -d
-```
 
 **8. Nginx (`matrix-proxy`) nie startuje** – zwykle brakuje certyfikatów w `/opt/matrix/certs`. Sprawdź
 `ls certs` i powtórz [README – krok 6](../README.md#krok-6--certyfikaty-pki). Po dodaniu bloków dla Tailscale brakujące pliki
