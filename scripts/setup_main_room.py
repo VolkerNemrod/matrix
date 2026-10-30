@@ -80,7 +80,22 @@ import requests
 # KONFIGURACJA
 # ============================================================
 
-MATRIX_BASE_URL = "https://matrix.local"
+def _env_value(name):
+    """Wartosc ze zmiennej srodowiskowej albo z pliku .env w katalogu projektu (bez zaleznosci od dalszych funkcji)."""
+    value = os.environ.get(name, "")
+    if not value:
+        _p = Path(__file__).resolve().parent.parent / ".env"
+        if _p.exists():
+            for _l in _p.read_text(encoding="utf-8").splitlines():
+                _l = _l.strip()
+                if _l.startswith(name + "="):
+                    value = _l.split("=", 1)[1].strip().strip('"')
+    return value
+
+
+# Domena serwera: MATRIX_DOMAIN z .env (domyslnie matrix.local) -- ta sama co w README, krok 5.
+MATRIX_DOMAIN = _env_value("MATRIX_DOMAIN") or "matrix.local"
+MATRIX_BASE_URL = f"https://{MATRIX_DOMAIN}"
 ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 
 # Konto administratora Synapse -- to samo co w provision_synapse_users.py (PoC).
@@ -97,7 +112,7 @@ if not ADMIN_LOGIN:
                 ADMIN_LOGIN = _line.split("=", 1)[1].strip()
 if not ADMIN_LOGIN or ADMIN_LOGIN.startswith("CHANGE_ME"):
     sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, Etap 0).")
-HOMESERVER_DOMAIN = "matrix.local"
+HOMESERVER_DOMAIN = MATRIX_DOMAIN
 
 # Pokoje -- WARTOSCI DOMYSLNE; nadpisywane z .env (MAIN_ROOM_* dla ogloszen, ORG_ROOM_* dla struktury).
 DEFAULT_ROOMS = {
@@ -515,8 +530,8 @@ def main():
         if not widget_url.startswith("https://"):
             print("BLAD: WIDGET_URL musi zaczynac sie od https:// (Element zablokuje http jako mixed content).")
             sys.exit(1)
-        if "matrix.local" in widget_url:
-            print("UWAGA: WIDGET_URL wskazuje na matrix.local -- ten adres rozwiaza tylko komputer z wpisem")
+        if MATRIX_DOMAIN in widget_url:
+            print(f"UWAGA: WIDGET_URL wskazuje na {MATRIX_DOMAIN} -- ten adres rozwiaza tylko komputer z wpisem")
             print("       w hosts i zaufanym rootCA (nie telefon). Szczegoly w README.\n")
 
     if not ROOT_CA_PATH.exists():

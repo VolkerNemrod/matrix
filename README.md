@@ -153,6 +153,7 @@ synapse/homeserver.yaml.example     wzór konfiguracji Synapse (federacja wyłą
 synapse/matrix.local.log.config     konfiguracja logowania Synapse
 nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL (+ blok panelu Synapse Admin na porcie 8080)
 pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.local
+scripts/render-config.sh            Krok 5: tworzy homeserver.yaml i matrix.conf ze wzorów, podstawiając MATRIX_DOMAIN z .env
 scripts/seed_test_employees.py      Przygotowanie B0: testowe konta i grupy-działy w LLDAP (też --reassign)
 scripts/provision_synapse_users.py  Etap 1: zakładanie kont w Synapse z nazwą „Imię Nazwisko – Dział”
 scripts/setup_directory.py          Etap 2.1: książka adresowa jako wiadomości w pokoju tylko do odczytu (✅ uruchomiony przez użytkownika 2026-10-20)
@@ -198,6 +199,7 @@ logujesz się z Elementa kontem z LLDAP. Gdy to działa, przechodzisz do [Częś
 | Placeholder | Co wpisać |
 |---|---|
 | `<IP_VM>` | adres VM w sieci lokalnej |
+| `<DOMENA>` | nazwa domeny z `MATRIX_DOMAIN` w `.env` (domyślnie `matrix.local`; w tej instrukcji przykłady z `matrix.local` czytaj z Twoją domeną) |
 | `<UZYTKOWNIK>` | użytkownik Linuksa na VM |
 | `<IP_TAILSCALE>` | adres Tailscale serwera (`tailscale ip -4` na VM) |
 | `<PELNA-NAZWA-TS>` | pełna nazwa serwera w Tailscale, np. `matrix-test.nazwa-tailnetu.ts.net` (panel Tailscale albo `tailscale status`) |
@@ -331,9 +333,22 @@ W repozytorium są wzory z placeholderami `CHANGE_ME_...`. Tworzysz z nich prawd
 ```bash
 cd /opt/matrix
 cp .env.example .env
-cp synapse/homeserver.yaml.example synapse/homeserver.yaml
-cp nginx/conf.d/matrix.conf.example nginx/conf.d/matrix.conf
+nano .env
 ```
+
+Na samej górze `.env` ustaw **`MATRIX_DOMAIN`** – nazwę domeny serwera (domyślnie `matrix.local`). **Wybierz ją teraz i potem
+nie zmieniaj**: Synapse zapisuje ją w bazie na stałe. Unikaj końcówki `.local` (zarezerwowana dla mDNS, na części systemów
+powoduje opóźnienia); lepsze są np. `matrix.lab`, `matrix.home.arpa` albo prawdziwa domena. Gdy stawiasz drugie środowisko
+obok istniejącego (te same komputery klienckie), **użyj innej domeny**, bo dwa środowiska z tą samą nazwą kończą się konfliktem
+wpisu w `hosts` i dwóch Root CA o tej samej nazwie.
+
+Potem wygeneruj z wzorów pliki konfiguracyjne z Twoją domeną (skrypt nie nadpisuje istniejących plików):
+
+```bash
+bash scripts/render-config.sh
+```
+
+Powstaną `synapse/homeserver.yaml` i `nginx/conf.d/matrix.conf`. (Pliki `*.example` zostają w repozytorium bez zmian.)
 
 ### 5.1 Hasła
 
@@ -398,7 +413,7 @@ Jeśli łączysz – robisz to w kroku 9.2 (potrzebna jest `<PELNA-NAZWA-TS>`; t
 
 ## Krok 6 – Certyfikaty (PKI)
 
-Skrypt tworzy własny „urząd certyfikacji" (Root CA) i certyfikat dla `matrix.local`, dzięki czemu
+Skrypt tworzy własny „urząd certyfikacji" (Root CA) i certyfikat dla Twojej domeny (`MATRIX_DOMAIN` z `.env`, domyślnie `matrix.local`), dzięki czemu
 komputery łączą się przez HTTPS bez ostrzeżeń (po zainstalowaniu Root CA).
 
 🐧 **VM**:
@@ -497,9 +512,10 @@ Robisz **na każdym komputerze** testowym.
 2. Plik → Otwórz → `C:\Windows\System32\drivers\etc\hosts` (filtr: „Wszystkie pliki").
 3. Dopisz na końcu (z adresem Tailscale serwera; w sieci lokalnej możesz użyć `<IP_VM>`):
    ```
-   <IP_TAILSCALE>   matrix.local
+   <IP_TAILSCALE>   <DOMENA>
    ```
-4. **Zapisz plik (Ctrl+S)** – niezapisany plik to najczęstsza przyczyna, że `matrix.local` się nie rozwiązuje.
+4. **Zapisz plik (Ctrl+S)** – niezapisany plik to najczęstsza przyczyna, że domena się nie rozwiązuje.
+   Jeśli masz tu stary wpis z innego środowiska o tej samej nazwie, usuń go albo zakomentuj (`#`) i wykonaj `ipconfig /flushdns`.
 
 **Certyfikat `rootCA.pem`** – pobierz go z serwera (🪟 **PC**):
 
@@ -519,11 +535,13 @@ Instalacja w systemie:
 3. **Umieść wszystkie certyfikaty w następującym magazynie** → Przeglądaj → **Zaufane główne urzędy certyfikacji**.
 4. Dalej → Zakończ → potwierdź ostrzeżenie „Tak".
 
-Test: w przeglądarce otwórz `https://matrix.local/_matrix/client/versions` – ma pokazać tekst JSON
-**bez** ostrzeżenia o certyfikacie.
+Test: w przeglądarce otwórz `https://<DOMENA>/_matrix/client/versions` – ma pokazać tekst JSON
+**bez** ostrzeżenia o certyfikacie. Ostrzeżenie mimo zainstalowanego certyfikatu zwykle znaczy, że w magazynie jest jeszcze
+stary Root CA z innego środowiska – usuń go w `certmgr.msc` (Zaufane główne urzędy certyfikacji; nazwa zawiera domenę)
+i uruchom przeglądarkę od nowa.
 
 **Element Desktop:** zainstaluj (element.io/download), przy logowaniu kliknij **Edytuj** przy serwerze
-domowym i wpisz `https://matrix.local`. Zaloguj się loginem i hasłem z LLDAP (np. `j.kowalski`).
+domowym i wpisz `https://<DOMENA>`. Zaloguj się loginem i hasłem z LLDAP (np. `j.kowalski`).
 
 ### 9.2 Android (Element przez nazwę z Tailscale)
 

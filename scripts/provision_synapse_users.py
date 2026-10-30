@@ -45,7 +45,22 @@ import requests
 
 # Adres, pod ktorym klienci (i ten skrypt) rozmawiaja z Synapse -- ten sam,
 # ktorego uzywa Element Desktop (wymaga wpisu w hosts + zaufanego rootCA).
-MATRIX_BASE_URL = "https://matrix.local"
+def _env_value(name):
+    """Wartosc ze zmiennej srodowiskowej albo z pliku .env w katalogu projektu (bez zaleznosci od dalszych funkcji)."""
+    value = os.environ.get(name, "")
+    if not value:
+        _p = Path(__file__).resolve().parent.parent / ".env"
+        if _p.exists():
+            for _l in _p.read_text(encoding="utf-8").splitlines():
+                _l = _l.strip()
+                if _l.startswith(name + "="):
+                    value = _l.split("=", 1)[1].strip().strip('"')
+    return value
+
+
+# Domena serwera: MATRIX_DOMAIN z .env (domyslnie matrix.local) -- ta sama co w README, krok 5.
+MATRIX_DOMAIN = _env_value("MATRIX_DOMAIN") or "matrix.local"
+MATRIX_BASE_URL = f"https://{MATRIX_DOMAIN}"
 
 # Sciezka do certyfikatu CA projektu (do poprawnej weryfikacji TLS, bez -k/verify=False).
 ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
@@ -55,7 +70,7 @@ ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 # z .env (albo zmiennej srodowiskowej) -- patrz ADMIN_PASSWORD nizej, za load_dotenv_value().
 # ADMIN_LOGIN (SYNAPSE_ADMIN_LOGIN z .env) jest wczytywany nizej, za load_dotenv_value().
 
-HOMESERVER_DOMAIN = "matrix.local"  # czesc MXID po dwukropku, np. @login:matrix.local
+HOMESERVER_DOMAIN = MATRIX_DOMAIN  # czesc MXID po dwukropku, np. @login:<domena>
 
 # Ilu userow z LLDAP przetworzyc w TYM uruchomieniu. USTAW MALA WARTOSC NA TEST.
 LIMIT = None     # np. 3 na start -> sprawdz czy dziala -> potem None = wszyscy

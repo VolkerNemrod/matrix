@@ -69,7 +69,16 @@ ADMIN_USERNAME = "admin"
 
 # WSPOLNE haslo testowe kont (TYLKO PoC, nigdy na produkcji) NIE jest w kodzie ani w wygenerowanym
 # set_test_passwords.sh: skrypt na VM czyta je z TEST_PASSWORD w .env NA VM (patrz .env.example).
-EMAIL_DOMAIN = "matrix.local"
+# Domena adresow e-mail kont testowych = MATRIX_DOMAIN z .env (domyslnie matrix.local).
+EMAIL_DOMAIN = os.environ.get("MATRIX_DOMAIN", "")
+if not EMAIL_DOMAIN:
+    _env_path = Path(__file__).resolve().parent.parent / ".env"
+    if _env_path.exists():
+        for _line in _env_path.read_text(encoding="utf-8").splitlines():
+            _line = _line.strip()
+            if _line.startswith("MATRIX_DOMAIN="):
+                EMAIL_DOMAIN = _line.split("=", 1)[1].strip().strip('"')
+EMAIL_DOMAIN = EMAIL_DOMAIN or "matrix.local"
 
 # Ile kont utworzyc w TYM uruchomieniu. USTAW MALA WARTOSC NA PIERWSZY TEST.
 LIMIT = None            # np. 3 na start -> sprawdz czy dziala -> potem None = wszyscy

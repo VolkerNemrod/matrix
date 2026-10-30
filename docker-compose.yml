@@ -3,7 +3,7 @@ name: matrix-poc
 # PoC komunikatora Matrix – 6 usług. Sekrety w pliku .env (wzór: .env.example).
 
 services:
-  # 1. Reverse proxy – terminacja SSL (matrix.local)
+  # 1. Reverse proxy – terminacja SSL (domena z MATRIX_DOMAIN, domyślnie matrix.local)
   proxy:
     image: nginx:stable-alpine
     container_name: matrix-proxy
@@ -65,7 +65,7 @@ services:
     command:
       - "-n"
       - "--log-file=stdout"
-      - "--realm=matrix.local"
+      - "--realm=${MATRIX_DOMAIN:-matrix.local}"
       - "--listening-port=3478"
       - "--min-port=49160"
       - "--max-port=49200"
