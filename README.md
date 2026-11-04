@@ -70,8 +70,8 @@ sequenceDiagram
 6. [Certyfikaty (PKI)](#krok-6--certyfikaty-pki)
 7. [Uruchomienie usług](#krok-7--uruchomienie-usług)
 8. [Konta w LLDAP](#krok-8--konta-w-lldap)
-9. [Klienci: Windows i Android](#krok-9--klienci)
-    - [Komputer w innej lokalizacji (u kolegi)](#93-komputer-w-innej-lokalizacji-u-kolegi)
+9. [Klienci: Windows i komputer w innej lokalizacji](#krok-9--klienci)
+    - [Komputer w innej lokalizacji (u kolegi)](#92-komputer-w-innej-lokalizacji-u-kolegi)
 10. [Testy](#krok-10--testy)
     - [Drugie konto w Elemencie bez zamykania pierwszego](#drugie-konto-w-elemencie-bez-zamykania-pierwszego-przydatne-w-testach)
 
@@ -170,7 +170,7 @@ docs/administrowanie.md             Etap 3: konto admina, Admin API, kopie, logi
 docs/rozwiazywanie-problemow.md     problemy 1-10 z diagnozą
 docs/produkcja.md                   lista kontrolna przed produkcją, ramki 🏭, znane ograniczenia PoC
 docs/wyglad-element.md              motywy i logo Element Desktop (opcjonalnie)
-docs/klienci-dodatkowe.md           Android i komputer w innej lokalizacji (opcjonalnie)
+docs/klienci-dodatkowe.md           komputer w innej lokalizacji i konfiguracja serwera pod dostęp przez nazwę Tailscale (opcjonalnie)
 docs/szkic-coturn-webrtc.md         szkic konfiguracji Coturn/WebRTC
 element-layout/                     config.json, logo i motywy Element Desktop (opcjonalnie)
 ```
@@ -216,7 +216,7 @@ logujesz się z Elementa kontem z LLDAP. Gdy to działa, przechodzisz do [Częś
    w pliku `hosts` (krok 9).
 
 **Wymagania:** VM z Debianem 12 lub Ubuntu 24.04 (min. 4 GB RAM, 2 vCPU – dla testu wystarczy; dla kilkuset
-użytkowników rozmiar niesprawdzony), konto w Tailscale, komputery klienckie z Windows lub telefon z Androidem.
+użytkowników rozmiar niesprawdzony), konto w Tailscale, komputery klienckie z Windows.
 
 ### Checklista postępu (Część 1)
 
@@ -286,7 +286,7 @@ tailscale ip -4
 
 Wynik (np. `100.64.12.34`) to **`<IP_TAILSCALE>`**. Zapisz go – wpiszesz go w pliku `.env` i na klientach.
 
-Pozostałe komputery (i telefon) muszą być w **tym samym tailnecie** (zaproś użytkownika albo udostępnij
+Pozostałe komputery muszą być w **tym samym tailnecie** (zaproś użytkownika albo udostępnij
 mu maszynę w panelu Tailscale).
 
 **Sprawdzenie:** `tailscale ip -4` pokazuje adres `100.x.x.x`, a w panelu Tailscale serwer ma status **Connected**.
@@ -399,13 +399,13 @@ Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień trz
 starcie, więc późniejsza zmiana samego `.env` może ich nie zmienić (patrz
 [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)).
 
-### 5.2 Adresy dla dostępu z telefonu (opcjonalnie)
+### 5.2 Dostęp przez nazwę z Tailscale (opcjonalnie)
 
 W `nginx/conf.d/matrix.conf` dwa ostatnie bloki `server` (z nazwą `matrix-test.TWOJ-TAILNET.ts.net`) są **domyślnie
-zakomentowane** – bez certyfikatu Tailscale Nginx w ogóle by się nie uruchomił. Jeśli **nie** łączysz się z telefonu,
+zakomentowane** – bez certyfikatu Tailscale Nginx w ogóle by się nie uruchomił. Jeśli **nie** testujesz dostępu z drugiej lokalizacji (krok 9.2),
 nie robisz tu nic i zostawiasz w `homeserver.yaml` wartość `public_baseurl: "https://matrix.local/"`.
 
-Jeśli łączysz – robisz to w kroku 9.2 (potrzebna jest `<PELNA-NAZWA-TS>`; tam też instrukcja odkomentowania bloków).
+Jeśli testujesz – robisz to wg [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md) (potrzebna jest `<PELNA-NAZWA-TS>`; tam też instrukcja odkomentowania bloków).
 
 **Sprawdzenie:** `grep -n CHANGE_ME .env synapse/homeserver.yaml` nic nie wypisuje (wszystkie placeholdery podmienione).
 
@@ -492,6 +492,20 @@ na samym początku, końcówka to zwykle tylko wydruk pomocy.
 
 **Sprawdzenie:** w LLDAP (Users) widzisz `j.kowalski` w grupie `Zarzad` i `a.nowak` w grupie `IT`.
 
+#### Skąd konto w Synapse? (LLDAP to nie Synapse)
+
+Konto w LLDAP **samo nie tworzy** konta w Synapse – to dwie osobne bazy. Synapse tylko sprawdza hasło w LLDAP (moduł LDAP,
+sekcja `modules` w `homeserver.yaml`), a własne konto zakłada dopiero w jednym z dwóch momentów:
+
+| Kiedy powstaje konto w Synapse | Jak | Efekt |
+|---|---|---|
+| **Pierwsze logowanie w Elemencie** | automatycznie, loginem i hasłem z LLDAP (bez żadnego dodatkowego kroku) | konto tej jednej osoby; tak działa krok 9 |
+| **`provision_synapse_users.py`** | z PC, [Etap 1](docs/administrowanie.md#etap-1) | konta wszystkich z LLDAP naraz, z nazwą „Imię Nazwisko – Dział”, bez czekania na ich logowania |
+
+Dopóki konta w Synapse nie ma, osoba **nie pojawia się w wyszukiwarce** w Elemencie, a konta nie da się podnieść do
+administratora ([Etap 0](docs/administrowanie.md#etap-0)). Dlatego konto, które ma zostać administratorem, zaloguj raz
+w Elemencie (krok 9) przed Etapem 0.
+
 > Dla większej liczby kont (testy na realnej skali) użyj skryptu `seed_test_employees.py` – patrz
 > [Przygotowanie, B0](docs/administrowanie.md#etap-b0--testowa-struktura-firmy-w-lldap). Książka adresowa
 > w Elemencie powstaje z **grup** LLDAP – patrz [Etap 2](docs/administrowanie.md#etap-2).
@@ -541,18 +555,13 @@ stary Root CA z innego środowiska – usuń go w `certmgr.msc` (Zaufane główn
 i uruchom przeglądarkę od nowa.
 
 **Element Desktop:** zainstaluj (element.io/download), przy logowaniu kliknij **Edytuj** przy serwerze
-domowym i wpisz `https://<DOMENA>`. Zaloguj się loginem i hasłem z LLDAP (np. `j.kowalski`).
+domowym i wpisz `https://<DOMENA>`. Zaloguj się loginem i hasłem z LLDAP (np. `j.kowalski`). Konto w Synapse powstaje przy tym pierwszym logowaniu (patrz [Skąd konto w Synapse?](#skąd-konto-w-synapse-lldap-to-nie-synapse) w kroku 8).
 
-### 9.2 Android (Element przez nazwę z Tailscale)
-
-*Opcjonalne – tylko jeśli chcesz łączyć się z telefonu.* Telefon nie ma pliku `hosts`, więc łączy się przez nazwę MagicDNS z Tailscale
-(`<PELNA-NAZWA-TS>`) i certyfikat z Tailscale (bez instalowania Root CA). Kroki (certyfikat, Nginx, `public_baseurl`, test, logowanie)
-i lista rzeczy niesprawdzonych: [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
-
-### 9.3 Komputer w innej lokalizacji (u kolegi)
+### 9.2 Komputer w innej lokalizacji (u kolegi)
 
 *Opcjonalne – test z drugiej sieci; ⚠️ niesprawdzone w praktyce.* Kolega dołącza do tailnetu i łączy się po `<PELNA-NAZWA-TS>`, bez
-instalowania certyfikatów. Plan krok po kroku i lista testów (w tym A/V przez Coturn): [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
+instalowania certyfikatów. Wymaga wcześniejszej konfiguracji serwera (certyfikat z Tailscale, Nginx, `public_baseurl`). Konfiguracja, plan krok po kroku i lista testów (w tym A/V przez Coturn): [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
+
 ---
 
 ## Krok 10 – Testy
@@ -627,7 +636,7 @@ rotacja słabych haseł PoC – wszystkie punkty plus zebrane ramki 🏭 Produkc
 ## Rozwiązywanie problemów
 
 **Pełna lista przeniesiona do [docs/rozwiazywanie-problemow.md](docs/rozwiazywanie-problemow.md)** – zweryfikowane
-problemy 1-6 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, telefon wisi na synchronizacji,
+problemy 1-6 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, Element wisi na synchronizacji,
 HTTP 429, Admin API 404, `Permission denied` na kluczu podpisu Synapse) i niesprawdzone 7-10.
 
 ---
@@ -635,7 +644,7 @@ HTTP 429, Admin API 404, `Permission denied` na kluczu podpisu Synapse) i niespr
 ## Znane ograniczenia PoC
 
 **Pełna lista przeniesiona do [docs/produkcja.md](docs/produkcja.md)** – m.in. brak automatycznej synchronizacji
-książki adresowej (skrypty trzeba uruchamiać ręcznie), zwijane działy niedziałające na telefonie, wygaśnięcie certyfikatów, wyłączona federacja.
+książki adresowej (skrypty trzeba uruchamiać ręcznie), wygaśnięcie certyfikatów, wyłączona federacja.
 
 ---
 

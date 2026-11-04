@@ -34,8 +34,7 @@
 ## Znane ograniczenia PoC
 
 - Książka adresowa nie synchronizuje się sama – zmiany w LLDAP wymagają ponownego uruchomienia skryptów.
-- Pokój „Książka adresowa” (Etap 2.1): zwijane działy nie działają na telefonie, a wyszukiwanie w treści pokoju
-  nie działa. Z prawdziwymi danymi kontaktowymi nie był jeszcze sprawdzany.
+- Pokój „Książka adresowa” (Etap 2.1): wyszukiwanie w treści pokoju nie działa. Z prawdziwymi danymi kontaktowymi nie był jeszcze sprawdzany.
 - Kto sam wyjdzie z pokoju książki, nie wróci automatycznie (świadoma decyzja skryptu, `--rejoin` to zmienia).
 - Konto trafia do katalogu wyszukiwania dopiero po założeniu w Synapse (`provision_synapse_users.py`) albo
   pierwszym logowaniu.

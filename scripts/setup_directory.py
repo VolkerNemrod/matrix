@@ -4,11 +4,11 @@ setup_directory.py -- Etap 2 (README): ksiazka adresowa firmy jako WIADOMOSCI z 
 "Ksiazka adresowa" (tylko do odczytu, widoczny dla wszystkich, bez szyfrowania).
 
 STATUS (README, Etap 2): --dry-run na 204 kontach i pokoj probny (--fake-extra --alias test-ksiazka-pelna --limit 20)
-dzialaja w Element Desktop (2026-10-18). NIESPRAWDZONE: wyglad na telefonie, prawdziwe dane z directory_extra.csv
+dzialaja w Element Desktop (2026-10-18). NIESPRAWDZONE: prawdziwe dane z directory_extra.csv
 i wlasciwy przebieg bez --alias.
 
 WYNIK: w pokoju jest jedna wiadomosc wstepna i po jednej wiadomosci na dzial. Dzial rozwija sie
-kliknieciem (<details>, dziala w Element Desktop, NIE na telefonie), osoby sa "pigulkami" Elementa
+kliknieciem (<details>, dziala w Element Desktop), osoby sa "pigulkami" Elementa
 (klik = profil osoby), a obok nazwiska stoja opcjonalne dane: stanowisko, telefon, pokoj, pietro.
 
 SKAD DANE:
@@ -39,7 +39,7 @@ OGRANICZENIA:
   - Nowy dzial pojawi sie na DOLE osi czasu (nie alfabetycznie). Kolejnosc naprawia --rebuild
     (usuwa stare wiadomosci i wysyla wszystko od nowa, w porzadku alfabetycznym).
   - Wyszukiwanie w pokoju nie dziala (stwierdzone w tescie); osoby szuka sie w "Rozpocznij rozmowe".
-  - Zwijane dzialy (<details>) nie dzialaja na telefonie (swiadoma decyzja: uklad zostaje).
+  - Zwijane dzialy (<details>) dzialaja w Element Desktop (telefony nie sa obslugiwane).
   - Klik w pigulke otwiera profil osoby; czy stamtad da sie wygodnie zaczac rozmowe 1:1 -- NIESPRAWDZONE.
   - Dane kontaktowe (telefon, pokoj, pietro) widza wszyscy czlonkowie pokoju.
   - NIE wlaczaj szyfrowania w pokoju ksiazki: skrypt wysyla wiadomosci jawnym tekstem, wiec w pokoju szyfrowanym

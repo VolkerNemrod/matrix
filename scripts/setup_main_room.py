@@ -532,7 +532,7 @@ def main():
             sys.exit(1)
         if MATRIX_DOMAIN in widget_url:
             print(f"UWAGA: WIDGET_URL wskazuje na {MATRIX_DOMAIN} -- ten adres rozwiaza tylko komputer z wpisem")
-            print("       w hosts i zaufanym rootCA (nie telefon). Szczegoly w README.\n")
+            print("       w hosts i zaufanym rootCA. Szczegoly w README.\n")
 
     if not ROOT_CA_PATH.exists():
         print(f"BLAD: nie znaleziono {ROOT_CA_PATH} (certyfikat CA projektu).")

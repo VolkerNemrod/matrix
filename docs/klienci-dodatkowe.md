@@ -1,17 +1,16 @@
-# Klienci – warianty dodatkowe (telefon, komputer w innej lokalizacji)
+# Komputer w innej lokalizacji i konfiguracja serwera pod dostęp przez nazwę Tailscale
 
 > Część dokumentacji projektu Matrix PoC. Podstawowa ścieżka klienta (Windows, Element Desktop) jest w
-> [README – krok 9.1](../README.md#91-windows-element-desktop). Tu są dwa warianty, potrzebne tylko jeśli
-> testujesz dostęp z telefonu albo z zupełnie innej sieci.
+> [README – krok 9.1](../README.md#91-windows-element-desktop). Tu jest wariant dodatkowy, potrzebny tylko jeśli
+> testujesz dostęp z zupełnie innej sieci (README, krok 9.2).
 
-## Android (Element przez nazwę z Tailscale)
+## Konfiguracja serwera: dostęp przez nazwę MagicDNS z Tailscale
 
-**Dlaczego inaczej niż na Windows:** telefon nie ma pliku `hosts`, więc nie rozwiąże `matrix.local`.
-Zamiast tego łączymy się przez nazwę MagicDNS z Tailscale (`<PELNA-NAZWA-TS>`) i prawdziwy certyfikat
-z Tailscale – **na telefonie nie instalujesz żadnego Root CA**.
+**Dlaczego inaczej niż na Windows w tej samej sieci:** komputer bez wpisu w `hosts` nie rozwiąże `matrix.local`.
+Zamiast tego klient łączy się przez nazwę MagicDNS z Tailscale (`<PELNA-NAZWA-TS>`) i prawdziwy certyfikat
+z Tailscale – **na kliencie nie instalujesz żadnego Root CA**. Poniższe kroki 1–6 robisz raz, na serwerze.
 
-> Sprawdzone na: Android 16, Element Classic 1.6.66. Telefon musi mieć włączone Tailscale i być w tym samym
-> tailnecie co serwer.
+> Klient musi mieć włączone Tailscale i być w tym samym tailnecie co serwer (albo mieć udostępnioną maszynę serwera).
 
 **1. Panel Tailscale** (login.tailscale.com → zakładka **DNS**): włącz **MagicDNS** i **HTTPS Certificates**.
 
@@ -29,7 +28,7 @@ jak w `nginx/conf.d/matrix.conf`.
 domyślnie są zakomentowane) i zamień wszystkie wystąpienia `matrix-test.TWOJ-TAILNET.ts.net`
 na `<PELNA-NAZWA-TS>` (pięć miejsc: dwa `server_name`, dwie ścieżki certyfikatu i adres w
 `.well-known`). Drugi blok `server` ma **własny** `/.well-known/matrix/client` wskazujący na tę nazwę – to
-ważne, bo ten z `matrix.local` jest dla telefonu nieosiągalny.
+ważne, bo ten z `matrix.local` jest dla klienta bez wpisu w `hosts` nieosiągalny.
 
 **4. Synapse (kluczowe!)** – w `synapse/homeserver.yaml` ustaw:
 
@@ -37,8 +36,8 @@ ważne, bo ten z `matrix.local` jest dla telefonu nieosiągalny.
 public_baseurl: "https://<PELNA-NAZWA-TS>/"
 ```
 
-Synapse dokleja ten adres do odpowiedzi na logowanie, a Element na telefonie przełącza się na niego.
-Przy `https://matrix.local/` telefon loguje się, ale potem wisi na „Wstępna synchronizacja – czekanie
+Synapse dokleja ten adres do odpowiedzi na logowanie, a Element po zalogowaniu przełącza się na niego.
+Przy `https://matrix.local/` klient bez wpisu w `hosts` loguje się, ale potem wisi na „Wstępna synchronizacja – czekanie
 na odpowiedź serwera" (patrz [Rozwiązywanie problemów](rozwiazywanie-problemow.md)). Skutek uboczny: Element na Windowsie przy **nowym**
 logowaniu też przełączy się na tę nazwę (wymaga włączonego Tailscale); zalogowane sesje się nie zmieniają.
 
@@ -54,19 +53,13 @@ docker compose restart synapse
 `nginx -t` musi pokazać `syntax is ok` i `test is successful`. Nginx nie wstanie, jeśli plików z kroku 2
 nie ma w `certs/`.
 
-**6. Test w przeglądarce telefonu** (przed Elementem): otwórz
+**6. Test w przeglądarce klienta** (przed Elementem): otwórz
 `https://<PELNA-NAZWA-TS>/_matrix/client/versions` – ma pokazać JSON, **bez** ostrzeżenia o certyfikacie.
-
-**7. Element na telefonie:** zmień serwer domowy na `https://<PELNA-NAZWA-TS>` i zaloguj się loginem
-z LLDAP (np. `j.kowalski`, bez `@` i bez domeny). Jeśli wcześniej logowałeś się z błędnym `public_baseurl`,
-najpierw wyloguj się albo w ustawieniach Androida wyczyść dane Elementa – inaczej aplikacja zapamięta
-stary adres.
 
 **Jeszcze niesprawdzone:**
 
-- weryfikacja nowego urządzenia w Elemencie (klucz odzyskiwania lub emotikony z drugiej sesji),
-- rozmowy audio/wideo z telefonu – `turn_uris` w `homeserver.yaml` wskazują `matrix.local`, którego telefon
-  nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>` (szkic: [docs/szkic-coturn-webrtc.md](szkic-coturn-webrtc.md)),
+- rozmowy audio/wideo z drugiej lokalizacji – `turn_uris` w `homeserver.yaml` wskazują `matrix.local`, którego klient
+  bez wpisu w `hosts` nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>` (szkic: [docs/szkic-coturn-webrtc.md](szkic-coturn-webrtc.md)),
 - odnawianie certyfikatu z Tailscale (ważny ok. 90 dni) – trzeba powtórzyć `tailscale cert` i zrestartować
   proxy, najlepiej w cronie.
 
@@ -79,8 +72,8 @@ stary adres.
 **Dlaczego to inny przypadek niż Windows w tej samej sieci:** tam komputer łączył się po
 `matrix.local`, co wymagało ręcznego wpisu w pliku `hosts` i zainstalowania **własnego** Root CA (`rootCA.pem`)
 jako zaufanego urzędu – to ma sens na firmowym komputerze, ale instalowanie prywatnego CA na komputerze
-osoby z zewnątrz to niepotrzebne namieszanie w zaufaniu cudzego systemu. Zamiast tego używamy **tej samej
-drogi co telefon wyżej** – adresu `<PELNA-NAZWA-TS>` z certyfikatem wydanym przez Tailscale (publicznie
+osoby z zewnątrz to niepotrzebne namieszanie w zaufaniu cudzego systemu. Zamiast tego używamy **drogi opisanej
+wyżej (konfiguracja serwera)** – adresu `<PELNA-NAZWA-TS>` z certyfikatem wydanym przez Tailscale (publicznie
 zaufanym, przez Let's Encrypt) – **kolega NIE instaluje żadnego certyfikatu ani CA**, dzięki czemu ryzyko
 i kłopot po jego stronie są minimalne.
 

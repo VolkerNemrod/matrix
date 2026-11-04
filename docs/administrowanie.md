@@ -166,6 +166,10 @@ docker compose exec postgres psql -U synapse -d synapse -c "UPDATE users SET adm
 
 Powinno pokazać `UPDATE 1`. To NIE zmienia hasła ani niczego w LLDAP – tylko flagę admina w Synapse.
 
+`UPDATE 0` znaczy, że tego konta jeszcze nie ma w Synapse (konto w LLDAP samo go nie tworzy – patrz
+[README, krok 8](../README.md#skąd-konto-w-synapse-lldap-to-nie-synapse)): zaloguj się nim raz w Elemencie
+(README, krok 9) i powtórz polecenie.
+
 **2. Admin API musi być przepuszczone przez reverse proxy.** Wzór `nginx/conf.d/matrix.conf.example` ma już regułę z
 `/_synapse/admin`. Jeśli Twój `matrix.conf` jej nie ma, wywołania Admin API kończą się `404` od samego nginx i trzeba
 dodać ją ręcznie:
@@ -260,7 +264,7 @@ odczekaj ok. 4 min (HTTP 429) i dalej jak wyżej.
 
 > ✅ **Status:** skrypt uruchomiony przez użytkownika w pełnym przebiegu (2026-10-20); wcześniej (2026-10-18) sprawdzony
 > w Element Desktop: `--dry-run` na 204 kontach i pokój próbny (`--fake-extra --alias test-ksiazka-pelna --limit 20`).
-> **Niesprawdzone:** wygląd na telefonie i prawdziwe dane z `directory_extra.csv`.
+> **Niesprawdzone:** prawdziwe dane z `directory_extra.csv`.
 
 **Po co:** samo wyszukiwanie w katalogu wymaga znajomości nazwiska albo działu. Pokój z wiadomościami daje listę ludzi
 pogrupowaną po działach, do przeglądania bez wyszukiwania, z opcjonalnymi danymi kontaktowymi.
@@ -319,7 +323,7 @@ venv\Scripts\activate
 python setup_directory.py --write-extra-template      # szablon CSV
 python setup_directory.py --dry-run                   # rozmiary wiadomości, podział na działy
 python setup_directory.py --fake-extra --alias test-ksiazka-pelna --limit 20   # próba na pokoju próbnym
-# obejrzyj pokój próbny kontem zwykłego pracownika (druga instancja Elementa, patrz niżej) ORAZ na telefonie
+# obejrzyj pokój próbny kontem zwykłego pracownika (druga instancja Elementa, patrz niżej)
 python setup_directory.py                             # dopiero potem właściwy przebieg
 ```
 
@@ -328,7 +332,7 @@ Druga, niezależna sesja Elementa na tym samym komputerze (flaga `--profile`):
 
 **Znane ograniczenia i otwarte pytania:**
 
-- Zwijane działy (`<details>`) działają w Element Desktop, **nie działają na telefonie** (świadoma decyzja: układ zostaje).
+- Zwijane działy (`<details>`) działają w Element Desktop (telefony nie są obsługiwane).
 - Wyszukiwanie w treści pokoju nie działa (stwierdzone w teście); osoby szuka się przez „Rozpocznij rozmowę”
   (patrz [Przygotowanie, A](#przygotowanie-jednorazowo)).
 - ⚠️ Pigułka osoby otwiera jej profil. Czy z profilu da się wygodnie zacząć rozmowę 1:1 bez dodatkowych zgód

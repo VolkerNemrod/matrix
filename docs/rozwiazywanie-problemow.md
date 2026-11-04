@@ -17,16 +17,16 @@
   `Add-Content C:\Windows\System32\drivers\etc\hosts "`n<IP_TAILSCALE>   matrix.local"`,
   potem `ipconfig /flushdns`.
 
-**3. Element na telefonie loguje się, ale „Wstępna synchronizacja – czekanie na odpowiedź serwera" wisi bez końca**
+**3. Element (na komputerze bez wpisu w `hosts`) loguje się, ale „Wstępna synchronizacja – czekanie na odpowiedź serwera" wisi bez końca**
 - **Objawy:** w logu Nginx (`docker compose logs --tail=60 proxy | grep -E "sync|keys|login"`) są tylko
   dwa wpisy `GET` i `POST /_matrix/client/r0/login` z kodem 200, potem nic – ani `sync`, ani `keys`.
-  Serwer jest bezczynny (`docker stats`), a przeglądarka telefonu ładuje `/_matrix/client/versions`.
+  Serwer jest bezczynny (`docker stats`), a przeglądarka klienta ładuje `/_matrix/client/versions`.
 - **Przyczyna:** w `homeserver.yaml` było `public_baseurl: "https://matrix.local/"`. Synapse dokleja ten adres
-  do odpowiedzi na logowanie, więc Element po zalogowaniu przełączał się na `matrix.local`, którego telefon
+  do odpowiedzi na logowanie, więc Element po zalogowaniu przełączał się na `matrix.local`, którego klient
   nie rozwiązuje – kolejne zapytania nie docierały do serwera.
 - **Rozwiązanie:** `public_baseurl: "https://<PELNA-NAZWA-TS>/"`, `docker compose restart synapse`,
   wylogowanie (albo wyczyszczenie danych Elementa) i ponowne logowanie na `https://<PELNA-NAZWA-TS>`.
-- **Wskazówka:** `sudo ss -tn | grep IP_TELEFONU` na VM **nic nie pokazuje**, bo Nginx działa w kontenerze –
+- **Wskazówka:** `sudo ss -tn | grep IP_KLIENTA` na VM **nic nie pokazuje**, bo Nginx działa w kontenerze –
   do podglądu zapytań użyj logów (`docker compose logs -f --tail=0 proxy`).
 
 **4. Skrypt (`setup_directory.py`, `provision_synapse_users.py`) kończy się `HTTP 429 M_LIMIT_EXCEEDED` przy logowaniu administratora**

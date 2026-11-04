@@ -1,6 +1,6 @@
 # Wzór konfiguracji Nginx. Skopiuj do nginx/conf.d/matrix.conf
 # (cp nginx/conf.d/matrix.conf.example nginx/conf.d/matrix.conf).
-# Dostęp z telefonu (opcjonalny, DOMYŚLNIE WYŁĄCZONY): dwa ostatnie bloki `server` na końcu pliku są
+# Dostęp przez nazwę Tailscale (opcjonalny, DOMYŚLNIE WYŁĄCZONY): dwa ostatnie bloki `server` na końcu pliku są
 # zakomentowane. Nginx nie czyta tu zmiennych z .env, więc włączasz je ręcznie: patrz README 5.2.
 # Prawdziwego matrix.conf nie commituj – jest w .gitignore.
 
@@ -73,8 +73,8 @@ server {
 }
 
 # ---------------------------------------------------------------------------
-# Dostęp z telefonu przez nazwę MagicDNS z Tailscale (certyfikat Let's Encrypt
-# z `tailscale cert`, bez instalowania rootCA na telefonie).
+# Dostęp przez nazwę MagicDNS z Tailscale (certyfikat Let's Encrypt
+# z `tailscale cert`, bez instalowania rootCA na kliencie).
 # DOMYŚLNIE WYŁĄCZONE (zakomentowane), bo bez plików .crt/.key Nginx w ogóle się nie uruchomi.
 # Żeby włączyć: 1) wygeneruj certyfikat w katalogu certs/:
 #   sudo tailscale cert <PELNA-NAZWA-TS>
@@ -107,7 +107,7 @@ server {
 #         proxy_read_timeout 600s;
 #     }
 #
-#     # Autodiscovery wskazuje na TEN adres (nie matrix.local), bo telefon go nie rozwiąże
+#     # Autodiscovery wskazuje na TEN adres (nie matrix.local), bo klient bez wpisu w hosts go nie rozwiąże
 #     location = /.well-known/matrix/client {
 #         default_type application/json;
 #         add_header Access-Control-Allow-Origin * always;
