@@ -47,16 +47,23 @@ server {
 }
 
 # ---------------------------------------------------------------------------
-# Synapse Admin (panel WWW). Port 8080 jest publikowany przez Docker WYŁĄCZNIE na
-# 127.0.0.1 VM (docker-compose.yml), więc panel jest dostępny tylko z samej VM lub
-# przez tunel SSH: ssh -L 8080:127.0.0.1:8080 UZYTKOWNIK@IP_VM -> http://localhost:8080
-# Zwykły HTTP jest tu celowy (ruch idzie loopbackiem/tunelem). Panel i API na tym
-# samym originie, dlatego nie ma problemu z CORS ani z certyfikatem.
-# W polu serwera w panelu wpisz: http://localhost:8080
+# Synapse Admin (panel WWW, HTTPS). Port 8080 publikuje Docker na adresie ADMIN_BIND i porcie
+# ADMIN_PORT z .env (docker-compose.yml; domyślnie tylko 127.0.0.1 VM). Zalecane: ADMIN_BIND =
+# adres Tailscale serwera -> panel widzą tylko urządzenia z tailnetu, bez tunelu SSH.
+# Ten sam certyfikat co port 443 (SAN = domena), więc adres w przeglądarce to https://<DOMENA>:8080
+# (z wpisem <DOMENA> w hosts i zainstalowanym Root CA, tak jak dla Elementa). Przez tunel SSH i
+# localhost przeglądarka pokaże ostrzeżenie o nazwie certyfikatu (SAN nie zawiera localhost).
+# Panel i API na tym samym originie, dlatego nie ma problemu z CORS.
+# W polu serwera w panelu wpisz: https://<DOMENA>:8080
+# Admin API (/_synapse/admin) na tym porcie nie ma ograniczenia po IP - na produkcji dodaj allow/deny.
 # ---------------------------------------------------------------------------
 server {
-    listen 8080;
+    listen 8080 ssl;
     server_name _;
+
+    ssl_certificate     /etc/nginx/certs/matrix.crt;
+    ssl_certificate_key /etc/nginx/certs/matrix.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
 
     location ~ ^(/_matrix|/_synapse/admin) {
         proxy_pass http://synapse:8008;

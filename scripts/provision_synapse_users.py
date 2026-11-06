@@ -12,11 +12,10 @@ osoby. Dla ~200-300 osob oznacza to, ze katalog buduje sie tygodniami. Ten skryp
 zaklada konta z WYPRZEDZENIEM, przez Admin API Synapse, bez potrzeby logowania
 kazdej osoby osobno.
 
-WYMAGANIA WSTEPNE (jednorazowe, patrz README, "Etap 0 – Konto administratora Synapse"):
-  1. Jeden z istniejacych, dzialajacych kont (w PoC: konto testowe z Etapu B0) musi byc
-     oznaczony jako administrator Synapse -- przez bezposredni UPDATE w bazie
-     (na VM): patrz README, Etap 0. Domyslnie ten skrypt zaklada, ze to konto
-     SYNAPSE_ADMIN_LOGIN z .env. Nginx musi przepuszczac /_synapse/admin (README, Etap 0, pkt 2).
+WYMAGANIA WSTEPNE (jednorazowe, patrz README, krok 7.1 "Konto administratora Synapse"):
+  1. Osobne konto lokalne administratora Synapse (SYNAPSE_ADMIN_LOGIN z .env, domyslnie
+     synapse-admin), zalozone na VM poleceniem register_new_matrix_user -a (README, krok 7.1);
+     to NIE jest konto z LLDAP. Nginx musi przepuszczac /_synapse/admin (README, Etap 0, pkt 2).
   2. W .env na PC: SYNAPSE_ADMIN_LOGIN i SYNAPSE_ADMIN_PASSWORD (konto i haslo administratora Synapse), TS_IP oraz
      LLDAP_ADMIN_PASSWORD (wzor: .env.example).
   3. PC, na ktorym uruchamiasz ten skrypt, musi miec dzialajacy dostep do
@@ -65,8 +64,8 @@ MATRIX_BASE_URL = f"https://{MATRIX_DOMAIN}"
 # Sciezka do certyfikatu CA projektu (do poprawnej weryfikacji TLS, bez -k/verify=False).
 ROOT_CA_PATH = Path(__file__).resolve().parent.parent / "rootCA.pem"
 
-# Konto podniesione do roli administratora Synapse (patrz README, Etap 0 --
-# jednorazowy UPDATE w bazie na VM). Haslo NIE jest w kodzie: SYNAPSE_ADMIN_PASSWORD
+# Konto administratora Synapse (osobne konto lokalne, README, krok 7.1).
+# Haslo NIE jest w kodzie: SYNAPSE_ADMIN_PASSWORD
 # z .env (albo zmiennej srodowiskowej) -- patrz ADMIN_PASSWORD nizej, za load_dotenv_value().
 # ADMIN_LOGIN (SYNAPSE_ADMIN_LOGIN z .env) jest wczytywany nizej, za load_dotenv_value().
 
@@ -101,10 +100,10 @@ def load_dotenv_value(key: str) -> str:
 # Haslo administratora Synapse (SYNAPSE_ADMIN_PASSWORD w .env); brak/placeholder wykrywa SynapseAdmin._login().
 ADMIN_PASSWORD = os.environ.get("SYNAPSE_ADMIN_PASSWORD") or load_dotenv_value("SYNAPSE_ADMIN_PASSWORD")
 
-# Login konta administratora Synapse (SYNAPSE_ADMIN_LOGIN w .env) -- dowolne konto z LLDAP podniesione do admina (README, Etap 0).
+# Login konta administratora Synapse (SYNAPSE_ADMIN_LOGIN w .env) -- osobne konto lokalne z README, krok 7.1.
 ADMIN_LOGIN = os.environ.get("SYNAPSE_ADMIN_LOGIN") or load_dotenv_value("SYNAPSE_ADMIN_LOGIN")
 if not ADMIN_LOGIN or ADMIN_LOGIN.startswith("CHANGE_ME"):
-    sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, Etap 0).")
+    sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, krok 7.1).")
 
 
 def resolve_lldap_url() -> str:
@@ -260,7 +259,7 @@ def main():
         )
     except (requests.RequestException, RuntimeError) as e:
         print(f"BLAD polaczenia/logowania do Synapse: {e}")
-        print("Sprawdz: czy konto ADMIN_LOGIN ma ustawione admin=1 w bazie (README, Etap 0),")
+        print("Sprawdz: czy konto ADMIN_LOGIN ma ustawione admin=1 w bazie (README, krok 7.1),")
         print("czy haslo sie zgadza, i czy ten PC ma dzialajacy dostep do matrix.local (jak Element).")
         sys.exit(1)
     print("Zalogowano jako administrator Synapse.\n")

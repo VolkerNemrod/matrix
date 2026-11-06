@@ -49,7 +49,7 @@ im.vector.modular.widgets) i porownaj z tym, co zapisuje skrypt.
 
 WYMAGANIA WSTEPNE:
   - Konta w Synapse istnieja (provision_synapse_users.py) i dziala konto administratora
-    Synapse (README, Etap 1 i Etap 0), a nginx przepuszcza /_synapse/admin.
+    Synapse (README, Etap 1 i krok 7.1), a nginx przepuszcza /_synapse/admin.
   - W .env (wzor: .env.example): SYNAPSE_ADMIN_LOGIN i SYNAPSE_ADMIN_PASSWORD (konto i haslo administratora Synapse),
     WIDGET_URL (adres, ktory MUSI dzialac na KAZDYM kliencie --
     patrz README) oraz opcjonalnie MAIN_ROOM_NAME, MAIN_ROOM_ALIAS, MAIN_ROOM_TOPIC
@@ -111,7 +111,7 @@ if not ADMIN_LOGIN:
             if _line.startswith("SYNAPSE_ADMIN_LOGIN="):
                 ADMIN_LOGIN = _line.split("=", 1)[1].strip()
 if not ADMIN_LOGIN or ADMIN_LOGIN.startswith("CHANGE_ME"):
-    sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, Etap 0).")
+    sys.exit("Brak SYNAPSE_ADMIN_LOGIN w .env (login konta administratora Synapse, patrz README, krok 7.1).")
 HOMESERVER_DOMAIN = MATRIX_DOMAIN
 
 # Pokoje -- WARTOSCI DOMYSLNE; nadpisywane z .env (MAIN_ROOM_* dla ogloszen, ORG_ROOM_* dla struktury).
@@ -563,7 +563,7 @@ def main():
         syn.login(ADMIN_LOGIN, ADMIN_PASSWORD)
     except (requests.RequestException, RuntimeError) as e:
         print(f"BLAD polaczenia/logowania do Synapse: {e}")
-        print("Sprawdz: czy konto ma admin=1 (README, Etap 0), haslo, i dostep do matrix.local jak w Elemencie.")
+        print("Sprawdz: czy konto ma admin=1 (README, krok 7.1), haslo, i dostep do matrix.local jak w Elemencie.")
         sys.exit(1)
     print("Zalogowano.\n")
 

@@ -4,7 +4,7 @@ test_directory_message.py -- EKSPERYMENT ZAKONCZONY (historia): sprawdzal ksiazk
 z linkami matrix.to. Wyniki (README, 2.1): <details> dziala w Element Desktop, nie na telefonie; wyszukiwanie
 w tresci pokoju nie dziala; pigulka otwiera profil osoby (czy stamtad wygodnie zaczac DM -- niesprawdzone).
 PRODUKCYJNIE sluzy do tego setup_directory.py (Etap 2.1); ten plik zostaje do prob ukladu i pomiaru rozmiaru
-(--measure). Wymaga SYNAPSE_ADMIN_PASSWORD w .env na PC i konta administratora (README, Etap 0).
+(--measure). Wymaga SYNAPSE_ADMIN_PASSWORD w .env na PC i konta administratora (README, krok 7.1).
 
 CO SPRAWDZAL (checklista, na DRUGIM koncie zwyklego pracownika):
   1. Czy linki do osob renderuja sie jako "pigulki" z nazwa osoby (a nie surowy URL).

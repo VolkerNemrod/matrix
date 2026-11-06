@@ -11,8 +11,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      # Panel Synapse Admin: tylko loopback VM (dostep z PC przez tunel SSH, patrz README)
-      - "127.0.0.1:8080:8080"
+      # Panel Synapse Admin (HTTPS). Adres i port z .env: ADMIN_BIND (domyslnie tylko loopback VM,
+      # dostep przez tunel SSH) i ADMIN_PORT. Zalecane: ADMIN_BIND = adres Tailscale serwera (README, krok 7).
+      - "${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8080}:8080"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certs:/etc/nginx/certs:ro
@@ -92,7 +93,7 @@ services:
       - lldap_data:/data
 
   # 6. Synapse Admin - webowy panel administracyjny. BEZ publikowanych portow:
-  #    dostepny tylko przez proxy (blok nginx na 127.0.0.1:8080). Tag przypiety.
+  #    dostepny tylko przez proxy (blok nginx na porcie 8080, HTTPS). Tag przypiety.
   synapse-admin:
     image: awesometechnologies/synapse-admin:0.11.4
     container_name: matrix-synapse-admin

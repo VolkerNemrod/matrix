@@ -20,7 +20,9 @@
 6. Rozmiar VM (4 GB / 2 vCPU) dla kilkuset użytkowników jest **niesprawdzony**.
 7. **Domena i `server_name`:** wybierz docelową domenę przed założeniem kont – `server_name` jest wpisany
    w każdy identyfikator użytkownika i nie da się go zmienić (szczegóły: sekcja „Domena, konto administratora, limity skryptów” niżej).
-8. **Konto administratora Synapse:** osobne konto serwisowe zamiast testowego, hasło poza kodem skryptów;
+8. **Konto administratora Synapse:** w PoC to osobne konto lokalne `synapse-admin`
+   ([README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)), a nie konto z LLDAP/AD. Na produkcji
+   zostaw to podejście: hasło poza kodem (menedżer sekretów), `registration_shared_secret` usunięty z `homeserver.yaml` po założeniu konta,
    `/_synapse/admin` ograniczone po IP.
 9. **Słabe hasła PoC** w danych testowych i w historii gita (hasło administratora – od 2026-10-17 w `.env`, ale stara wartość jest w commitach; wspólne hasło testowe
    kont z Etapu B0) – zmień przed udostępnieniem środowiska komukolwiek. Checklista:
@@ -28,8 +30,9 @@
 10. **Kopie zapasowe** (baza, wolumen LLDAP, `synapse/`, media) – opisane, ale nieprzetestowane (patrz
     [docs/administrowanie.md](administrowanie.md)).
 11. **Książka adresowa:** źródło danych (AD zamiast CSV) i cykliczne uruchamianie skryptów – sekcja niżej.
-12. **Synapse Admin (panel):** zostaw port 8080 tylko na loopbacku VM (nie otwieraj go w zaporze), użyj osobnego konta
-    administratora zamiast testowego i ustal procedurę aktualizacji przypiętego obrazu (sekcja niżej).
+12. **Synapse Admin (panel):** w PoC działa pod HTTPS na adresie `ADMIN_BIND` z `.env` (zalecany adres Tailscale). Na produkcji ogranicz
+    zasięg portu do sieci administratorów (VPN) albo daj panelowi własną nazwę z zaufanym certyfikatem i ograniczeniem po IP, nie wystawiaj
+    go publicznie i ustal procedurę aktualizacji przypiętego obrazu (sekcja niżej).
 
 ## Znane ograniczenia PoC
 
@@ -40,8 +43,10 @@
   pierwszym logowaniu.
 - Certyfikat serwera jest ważny 825 dni, Root CA 10 lat; certyfikat z Tailscale ok. 90 dni.
 - Federacja jest wyłączona (`federation_domain_whitelist: []`) – serwer nie łączy się z innymi serwerami Matrix.
-- Panel Synapse Admin jest dostępny tylko z VM albo przez tunel SSH z PC (świadoma decyzja – brak wygodnego adresu dla
-  innych administratorów). Konta i hasła nadal prowadzi LLDAP, nie panel.
+- Panel Synapse Admin działa pod HTTPS na adresie z `ADMIN_BIND` (domyślnie tylko VM; zalecany adres Tailscale). Certyfikat jest z własnego
+  Root CA, więc klient musi go mieć zainstalowanego i wpis `<DOMENA>` w `hosts`. HTTPS chroni tylko przed podsłuchem hasła: `/_synapse/admin`
+  na porcie panelu nie ma ograniczenia po IP, a logowanie chroni samo hasło (bez drugiego składnika). Konta i hasła nadal prowadzi LLDAP,
+  nie panel (wyjątek: lokalne konto `synapse-admin`).
 
 ## Domena, konto administratora, limity skryptów
 
@@ -49,10 +54,12 @@
   (`@login:matrix.local`) i Synapse nie pozwala go zmienić po fakcie. Docelową domenę wybierz **przed** założeniem
   kont produkcyjnych. `matrix.local` odpada (`.local` jest zarezerwowane dla mDNS, na PoC wymaga wpisu w `hosts`
   i ręcznie zainstalowanego rootCA); na produkcji prawdziwa domena i certyfikat zaufany bez ręcznej instalacji.
-- **Konto administratora.** W PoC: dowolne konto testowe (`SYNAPSE_ADMIN_LOGIN` w `.env`), hasło w `.env` (`SYNAPSE_ADMIN_PASSWORD`) i flaga `admin` ustawiona
-  `UPDATE`-em w bazie. Na produkcji: osobne konto serwisowe (nie osoba z działu), założone przez
-  `register_new_matrix_user -a` (wymaga `registration_shared_secret`), z hasłem lub tokenem poza kodem
-  (`.env` albo menedżer sekretów).
+- **Konto administratora.** W PoC: osobne konto lokalne `synapse-admin` (`SYNAPSE_ADMIN_LOGIN` w `.env`), założone przez
+  `register_new_matrix_user -a` ([README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)), hasło w `.env`
+  (`SYNAPSE_ADMIN_PASSWORD`). Jego hasło istnieje tylko w bazie Synapse, więc wyciek nie zagraża domenie, a konta z AD domyślnie nie mają flagi
+  `admin`. Na produkcji to samo, z hasłem lub tokenem poza kodem (`.env` albo menedżer sekretów); po założeniu konta usuń
+  `registration_shared_secret` z `homeserver.yaml` i zrestartuj Synapse. Logowanie konta lokalnego obok modułu LDAP: ⚠️ niesprawdzone
+  (login nie może istnieć w LLDAP).
 - **Admin API.** `/_synapse/admin` jest w PoC wystawione przez to samo proxy co klienci. Na produkcji ogranicz je
   po adresie IP albo uruchamiaj skrypty na serwerze przez localhost.
 - **Limit logowania (`rc_login`).** Każde uruchomienie skryptu loguje konto administratora, a Synapse ogranicza
@@ -72,10 +79,11 @@
 
 ## Synapse Admin (panel)
 
-- **Dostęp.** Albo nadal tylko loopback + tunel SSH/VPN (najprostsze), albo panel pod własną nazwą (np.
-  `admin.<domena>`) z prawdziwym certyfikatem i ograniczeniem po adresie IP / VPN. Nie wystawiaj panelu publicznie.
-- **Osobne konto administratora** (`register_new_matrix_user -a`, wymaga `registration_shared_secret`) zamiast konta
-  testowego `<LOGIN_ADMINA>`; hasło poza kodem.
+- **Dostęp.** `ADMIN_BIND` = adres sieci administratorów (VPN/Tailscale) albo panel pod własną nazwą (np. `admin.<domena>`) z prawdziwym
+  certyfikatem i ograniczeniem po adresie IP / VPN. Nie używaj `0.0.0.0` i nie wystawiaj panelu publicznie. HTTPS chroni przed podsłuchem
+  hasła, ale nie przed zgadywaniem haseł ani przed przejętym kontem.
+- **Osobne konto administratora** (`synapse-admin`, README krok 7.1), hasło poza kodem; kolejni administratorzy jako osobne konta lokalne,
+  nie konta z AD ([Etap 0](administrowanie.md#etap-0), punkt 3).
 - **Aktualizacje.** Tag obrazu jest przypięty – ustal, kto i jak często go podnosi, oraz sprawdzaj zgodność panelu
   z wersją Synapse.
 - **Kopia zapasowa** (baza, wolumen LLDAP, `synapse/`, media) **przed** operacjami destrukcyjnymi.

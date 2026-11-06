@@ -44,6 +44,12 @@ report_stats: false
 
 enable_registration: false
 
+# Wspólny sekret do założenia konta administratora z wiersza poleceń (README, krok 7:
+# register_new_matrix_user). Wpisz losową wartość (openssl rand -hex 24); w .env jej nie ma.
+# PO założeniu konta admina USUŃ tę linię z homeserver.yaml i zrestartuj Synapse
+# (docker compose restart synapse): kto zna sekret, może zakładać konta administratorów przez API.
+registration_shared_secret: "CHANGE_ME_registration"
+
 # Nowe konta (zalozone przez Admin API albo przy pierwszym logowaniu przez LDAP) same dolaczaja do tych pokoi.
 # Pokoje musza byc publiczne (tak ustawiaja je setup_directory.py i setup_announcements.py) i istniec przed
 # zalozeniem konta. Dotyczy tylko NOWYCH kont; istniejacych nie rusza, a kto sam wyszedl, nie wraca.

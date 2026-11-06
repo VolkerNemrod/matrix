@@ -59,7 +59,7 @@ Ustawienia w .env (opcjonalne): DIRECTORY_ROOM_ALIAS, DIRECTORY_ROOM_NAME, DIREC
 DIRECTORY_EXCLUDE (loginy po przecinku), DIRECTORY_WRITERS (domyslnie MAIN_ROOM_WRITERS),
 DIRECTORY_JOIN_RULE (public | invite; domyslnie public).
 
-WYMAGANIA WSTEPNE: konto administratora Synapse (README, Etap 0), konta w Synapse (provision_synapse_users.py,
+WYMAGANIA WSTEPNE: konto administratora Synapse (README, krok 7.1), konta w Synapse (provision_synapse_users.py,
 Etap 1) oraz SYNAPSE_ADMIN_PASSWORD w .env na PC.
 Nie puszczaj skryptow pod rzad bez przerw (HTTP 429, README, Rozwiazywanie
 problemow, pkt 4).

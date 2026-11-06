@@ -7,6 +7,7 @@
 
 Szybkie odsyłacze:
 
+- na co dzień, w skrócie: [Ściąga dla Administratora](../README.md#sciaga-administratora) w README,
 - zmiana kont i działów (nowy pracownik, odejście): [Typowe zadania administratora](#typowe-zadania-administratora-kolejność-skryptów),
 - zmiana danych w książce adresowej: [Etap 2](#etap-2), tabela „2.3 Aktualizacja książki”,
 - gdy coś nie działa: [Rozwiązywanie problemów](rozwiazywanie-problemow.md).
@@ -20,6 +21,8 @@ więc skrypty i wywołania z PowerShella nadal działają równolegle.
 
 > Oznaczenia: ✅ = użyte w naszych skryptach albo sprawdzone u nas; ⚠️ = przykład z dokumentacji Synapse,
 > niesprawdzony na tym PoC. Przy ⚠️ najpierw spróbuj na koncie testowym.
+>
+> `<DOMENA>` to wartość `MATRIX_DOMAIN` z `.env` (domyślnie `matrix.local`) – podstaw własną, tak jak w [README](../README.md#0-oznaczenia-i-zasady).
 
 ## Wdrożenie: konta i książka adresowa (Etapy 0–2)
 
@@ -30,7 +33,7 @@ są konta i grupy-działy. Ta sekcja prowadzi od kont do działającej książki
 | Etap | Co robisz | Powtarzasz, gdy… |
 |---|---|---|
 | [Przygotowanie](#przygotowanie-jednorazowo) | jednorazowa konfiguracja katalogu, dane w LLDAP | – |
-| [Etap 0](#etap-0) | konto administratora Synapse | – (raz) |
+| [Etap 0](#etap-0) | opcjonalnie: kolejny administrator Synapse (pierwszy powstaje w [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)) | – |
 | [Etap 1](#etap-1) | konta w Synapse na podstawie LLDAP | nowy pracownik, zmiana działu lub nazwiska, odejście |
 | [Etap 2](#etap-2) | książka adresowa: pokój, dane dodatkowe; pokój „Ogłoszenia” | j.w. oraz zmiana telefonu, pokoju, piętra |
 | [Etap 3](#bieżąca-praca-etap-3) | bieżąca praca | na bieżąco |
@@ -149,28 +152,16 @@ z testowych kont (login z listy, hasło = `TEST_PASSWORD`).
 > Rozwiązanie: 🐧 **VM** `docker compose restart synapse` (czyści licznik), potem spróbuj **raz**.
 
 <a id="etap-0"></a>
-### Etap 0 – Konto administratora Synapse
+### Etap 0 – Admin API i kolejny administrator (opcjonalnie)
 
-Skrypty z Etapów 1 i 2 logują się do Synapse jako administrator i wywołują Admin API. Przygotowujesz to **raz**,
-przed pierwszym uruchomieniem jakiegokolwiek skryptu.
+Skrypty z Etapów 1 i 2 logują się do Synapse jako administrator i wywołują Admin API. Pierwszego administratora, osobne konto lokalne
+`synapse-admin`, założyłeś już w [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) – upewnij się tylko,
+że `.env` na PC (skąd uruchamiasz skrypty) ma te same `SYNAPSE_ADMIN_LOGIN` i `SYNAPSE_ADMIN_PASSWORD`. Ten etap to teraz sprawdzenie dostępu
+do Admin API i opcjonalnie dodanie kolejnych administratorów.
 
-**1. Konto administratora.** Zamiast zakładać nowe (co wymagałoby `registration_shared_secret`, którego nie mamy
-skonfigurowanego), podnosimy uprawnienia jednemu z istniejących kont testowych z B0 (dowolnemu – jego login oznaczamy dalej `<LOGIN_ADMINA>`; wpisujesz go w `.env` jako `SYNAPSE_ADMIN_LOGIN`) bezpośrednim
-wpisem w bazie.
+Żadnemu kontu z LLDAP/AD nie podnosisz uprawnień: pierwszy administrator to osobne konto lokalne `synapse-admin` (README, krok 7.1).
 
-🐧 **VM**, w `/opt/matrix` (koniecznie w tym katalogu – inaczej `docker compose` zwróci `no configuration file provided`):
-
-```bash
-docker compose exec postgres psql -U synapse -d synapse -c "UPDATE users SET admin = 1 WHERE name = '@<LOGIN_ADMINA>:matrix.local';"
-```
-
-Powinno pokazać `UPDATE 1`. To NIE zmienia hasła ani niczego w LLDAP – tylko flagę admina w Synapse.
-
-`UPDATE 0` znaczy, że tego konta jeszcze nie ma w Synapse (konto w LLDAP samo go nie tworzy – patrz
-[README, krok 8](../README.md#skąd-konto-w-synapse-lldap-to-nie-synapse)): zaloguj się nim raz w Elemencie
-(README, krok 9) i powtórz polecenie.
-
-**2. Admin API musi być przepuszczone przez reverse proxy.** Wzór `nginx/conf.d/matrix.conf.example` ma już regułę z
+**1. Admin API musi być przepuszczone przez reverse proxy.** Wzór `nginx/conf.d/matrix.conf.example` ma już regułę z
 `/_synapse/admin`. Jeśli Twój `matrix.conf` jej nie ma, wywołania Admin API kończą się `404` od samego nginx i trzeba
 dodać ją ręcznie:
 
@@ -192,6 +183,23 @@ docker compose exec proxy nginx -s reload
 > Admin API jest w ten sposób wystawione przez to samo proxy co klienci – wciąż chronione tokenem administratora, ale na
 > produkcji warto rozważyć dodatkowe ograniczenie (np. po adresie IP).
 
+**2. Opcjonalnie: kolejny administrator.** Zwykle wystarczy `synapse-admin`. Jeśli administratorów ma być więcej, najlepiej każdemu założyć osobne
+konto lokalne tak jak w [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) (na chwilę z
+`registration_shared_secret` w `homeserver.yaml`; po założeniu konta usuń ją i zrestartuj Synapse, jak w kroku 7.1). Szybszy wariant to nadanie flagi administratora istniejącemu kontu z LLDAP/AD – pamiętaj wtedy,
+że jego hasło (domenowe) daje dostęp do panelu i Admin API, więc wybieraj do tego tylko konta z mocnym hasłem.
+
+🐧 **VM**, w `/opt/matrix` (koniecznie w tym katalogu – inaczej `docker compose` zwróci `no configuration file provided`):
+
+```bash
+docker compose exec postgres psql -U synapse -d synapse -c "UPDATE users SET admin = 1 WHERE name = '@<LOGIN>:<DOMENA>';"
+```
+
+Powinno pokazać `UPDATE 1`. To NIE zmienia hasła ani niczego w LLDAP – tylko flagę admina w Synapse. `UPDATE 0` znaczy, że tego konta jeszcze nie ma
+w Synapse (konto w LLDAP samo go nie tworzy – patrz [README, krok 8](../README.md#skąd-konto-w-synapse-lldap-to-nie-synapse)): zaloguj się nim raz
+w Elemencie (README, krok 9) i powtórz polecenie.
+
+> ⚠️ Niesprawdzone: panel Synapse Admin (0.11.4) może mieć przełącznik administratora przy koncie użytkownika – jeśli jest, możesz go użyć zamiast SQL.
+
 <a id="etap-1"></a>
 ### Etap 1 – Konta w Synapse na podstawie LLDAP ✅
 
@@ -202,7 +210,8 @@ dopiero przy **pierwszym logowaniu** przez LDAP. Skrypt zakłada konta z wyprzed
 potrzeby logowania każdej osoby osobno, i ustawia nazwę wyświetlaną.
 
 - **Plik:** `scripts/provision_synapse_users.py` (uruchamiany na PC).
-- **Warunki:** gotowy [Etap 0](#etap-0) i dane w LLDAP (konto + grupa-dział dla każdego pracownika).
+- **Warunki:** konto administratora z [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) (w `.env` na PC),
+  przepuszczone Admin API ([Etap 0](#etap-0)) i dane w LLDAP (konto + grupa-dział dla każdego pracownika).
 - **Format nazwy wyświetlanej:** `Imię Nazwisko – Dział`; konta bez grupy-działu dostają samo imię i nazwisko.
 
 #### Pierwsze uruchomienie
@@ -216,7 +225,7 @@ python provision_synapse_users.py
 
 Skrypt: (1) czyta wszystkich użytkowników z LLDAP razem z ich grupami (dział) przez GraphQL, (2) loguje się do Synapse jako
 administrator (`SYNAPSE_ADMIN_LOGIN`, hasło z `SYNAPSE_ADMIN_PASSWORD` w `.env`) przez zwykłe `/login`, (3) dla każdego usera
-woła `PUT /_synapse/admin/v2/users/@login:matrix.local` z `displayname` (bez pola `password` – logowanie i tak idzie przez
+woła `PUT /_synapse/admin/v2/users/@login:<DOMENA>` z `displayname` (bez pola `password` – logowanie i tak idzie przez
 LDAP). Jak w B0: **`LIMIT`** na górze pliku – zacznij od małej wartości, sprawdź, dopiero potem `LIMIT = None`.
 
 **Jak sprawdzić, czy zadziałało:** w Elemencie (kontem, którym normalnie pracujesz) wyszukaj jedną z przetworzonych osób po
@@ -269,7 +278,7 @@ odczekaj ok. 4 min (HTTP 429) i dalej jak wyżej.
 **Po co:** samo wyszukiwanie w katalogu wymaga znajomości nazwiska albo działu. Pokój z wiadomościami daje listę ludzi
 pogrupowaną po działach, do przeglądania bez wyszukiwania, z opcjonalnymi danymi kontaktowymi.
 
-**Jak wygląda wynik:** pokój `#ksiazka-adresowa:matrix.local` (alias domyślny `ksiazka-adresowa`), tylko do odczytu
+**Jak wygląda wynik:** pokój `#ksiazka-adresowa:<DOMENA>` (alias domyślny `ksiazka-adresowa`), tylko do odczytu
 (piszą administrator i osoby z `DIRECTORY_WRITERS`; reakcje emoji są zablokowane). W pokoju jest jedna wiadomość wstępna
 i po jednej wiadomości na dział. Dział rozwija się kliknięciem (znacznik `<details>`), osoby są „pigułkami” Elementa, a obok
 nazwiska stoją opcjonalnie: stanowisko, telefon, pokój, piętro.
@@ -390,7 +399,7 @@ wartości zostają), uzupełnij ją i uruchom `setup_directory.py`.
 **Plik:** `scripts/setup_announcements.py` (uruchamiany na PC; korzysta z biblioteki `setup_main_room.py` i funkcji
 z `setup_directory.py`).
 
-**Jak wygląda wynik:** pokój `#ogloszenia:matrix.local` (alias domyślny `ogloszenia`), **publiczny** (każdy z serwera może
+**Jak wygląda wynik:** pokój `#ogloszenia:<DOMENA>` (alias domyślny `ogloszenia`), **publiczny** (każdy z serwera może
 dołączyć przez alias, ale pokoju nie ma w publicznym katalogu), **tylko do odczytu** (piszą administrator i osoby
 z `ANNOUNCE_WRITERS`; reakcje emoji zablokowane, chyba że `--reactions`), bez szyfrowania. Skrypt **nie wysyła żadnych
 wiadomości** – ogłoszenia piszesz ręcznie w Elemencie.
@@ -426,7 +435,7 @@ Ustawienia w `.env` (opcjonalne): `ANNOUNCE_ROOM_ALIAS` (domyślnie `ogloszenia`
 <a id="etap-d--klienci-do-sprawdzenia-przy-produkcji"></a>
 ### Wdrożenie klientów (D, do sprawdzenia przy produkcji)
 
-- `config.json` Element Desktop z domyślnym serwerem `matrix.local`, żeby pracownik nie wpisywał adresu – ⚠️ w Element Desktop 1.12.32
+- `config.json` Element Desktop z domyślnym serwerem `<DOMENA>`, żeby pracownik nie wpisywał adresu – ⚠️ w Element Desktop 1.12.32
   kopiowanie do `%APPDATA%\Element\` **nie działa** (klient bierze `config.json` z `webapp.asar`); patrz
   [wyglad-element.md](wyglad-element.md) (teraz: ręczne ustawienia konta, wersja b; podmiana w `webapp.asar` – na kiedyś, wersja a),
 - `rootCA.pem` na stanowiskach (docelowo przez GPO),
@@ -443,29 +452,29 @@ Codzienna obsługa serwera po wdrożeniu: konto administratora, Admin API, pokoj
 
 ### Konto administratora ✅
 
-Administrator to zwykłe konto Matrix z flagą `admin`. W PoC jest to `<LOGIN_ADMINA>` (konto testowe z LLDAP,
-flaga ustawiona w bazie – patrz [Etap 0](#etap-0)).
+Administrator to zwykłe konto Matrix z flagą `admin`. Pierwszy administrator to `synapse-admin` – osobne konto lokalne założone w
+[README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) (kolejni: [Etap 0](#etap-0), punkt 2).
 Lista administratorów w bazie (🐧 **VM**, `/opt/matrix`):
 
 ```bash
 docker compose exec postgres psql -U synapse -d synapse -c "select name, admin, deactivated from users where admin = 1;"
 ```
 
-⚠️ Na produkcji załóż osobne konto serwisowe (patrz [docs/produkcja.md](produkcja.md)).
+Osobne konto serwisowe zamiast konta z AD masz już od kroku 7.1; dalsze zalecenia na produkcję: [docs/produkcja.md](produkcja.md).
 
 ### Token administratora i wywołania Admin API
 
 Admin API wymaga tokenu (`access_token`) konta z flagą `admin`. Token dostajesz przez zwykłe logowanie
 (`POST /_matrix/client/v3/login`) – tak robią nasze skrypty ✅. Przykład z PowerShell (⚠️ składnia nieprzetestowana
-w całości; `matrix.local` musi być rozwiązywalne i rootCA zaufane, jak dla Elementa):
+w całości; `<DOMENA>` musi być rozwiązywalna i rootCA zaufane, jak dla Elementa):
 
 🪟 **PC**, PowerShell:
 
 ```powershell
-$base = "https://matrix.local"
+$base = "https://<DOMENA>"
 $login = @{
   type = "m.login.password"
-  identifier = @{ type = "m.id.user"; user = "<LOGIN_ADMINA>" }
+  identifier = @{ type = "m.id.user"; user = "synapse-admin" }   # login z SYNAPSE_ADMIN_LOGIN
   password = (Read-Host "Hasło administratora")
 } | ConvertTo-Json
 $token = (Invoke-RestMethod -Method Post -Uri "$base/_matrix/client/v3/login" -ContentType "application/json" -Body $login).access_token
@@ -475,7 +484,7 @@ $h = @{ Authorization = "Bearer $token" }
 Token działa jak hasło – nie zapisuj go w plikach ani w repozytorium. Każde logowanie administratora wlicza się
 do limitu prób (HTTP 429 – patrz [Rozwiązywanie problemów](rozwiazywanie-problemow.md), punkt 4).
 
-> `/_synapse/admin` musi być przepuszczone przez nginx – patrz [Etap 0](#etap-0), punkt 2.
+> `/_synapse/admin` musi być przepuszczone przez nginx – patrz [Etap 0](#etap-0), punkt 1.
 > Bez tego każde wywołanie kończy się `404` od nginx.
 
 ### Typowe operacje
@@ -484,10 +493,10 @@ Wszystkie przykłady zakładają zmienne `$base` i `$h` z poprzedniego bloku.
 
 | Co zrobić | Jak | Status |
 |---|---|---|
-| **Utworzyć/zaktualizować konto i nazwę wyświetlaną** | `PUT /_synapse/admin/v2/users/@login:matrix.local` z `displayname` (robi to `provision_synapse_users.py`) | ✅ |
-| **Dołączyć użytkownika do pokoju bez zaproszenia** | `POST /_synapse/admin/v1/join/<pokój>` z ciałem `{"user_id": "@login:matrix.local"}` (robi to `setup_directory.py`; pokój podajesz jako identyfikator `!abc:matrix.local`) | ✅ |
+| **Utworzyć/zaktualizować konto i nazwę wyświetlaną** | `PUT /_synapse/admin/v2/users/@login:<DOMENA>` z `displayname` (robi to `provision_synapse_users.py`) | ✅ |
+| **Dołączyć użytkownika do pokoju bez zaproszenia** | `POST /_synapse/admin/v1/join/<pokój>` z ciałem `{"user_id": "@login:<DOMENA>"}` (robi to `setup_directory.py`; pokój podajesz jako identyfikator `!abc:matrix.local`) | ✅ |
 | **Lista użytkowników** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v2/users?limit=50&name=kowal"` | ⚠️ |
-| **Dezaktywować konto** (np. odejście pracownika) | `POST /_synapse/admin/v1/deactivate/@login:matrix.local`; osobno usuń/zablokuj konto w LLDAP, bo inaczej logowanie przez LDAP założy je znowu | ⚠️ |
+| **Dezaktywować konto** (np. odejście pracownika) | `POST /_synapse/admin/v1/deactivate/@login:<DOMENA>`; osobno usuń/zablokuj konto w LLDAP, bo inaczej logowanie przez LDAP założy je znowu | ⚠️ |
 | **Lista pokoi** | `Invoke-RestMethod -Headers $h -Uri "$base/_synapse/admin/v1/rooms?limit=100&search_term=ksiazka"` – w wyniku `room_id`, `name`, `canonical_alias`, `joined_members` | ⚠️ |
 | **Usunąć pokój** (wszyscy lokalni użytkownicy zostaną usunięci, dane skasowane) | patrz niżej albo panel Synapse Admin (✅ usunięcie z `purge` przez panel – test F4 pkt 6; ⚠️ wywołanie z PowerShella) | ✅/⚠️ |
 | **Wyczyścić licznik prób logowania** (po HTTP 429 / `M_LIMIT_EXCEEDED`) | 🐧 **VM** `docker compose restart synapse` | ✅ |
@@ -501,7 +510,7 @@ Wszystkie przykłady zakładają zmienne `$base` i `$h` z poprzedniego bloku.
   Select-Object room_id, name, canonical_alias, joined_members
 
 # 2) usuń (purge = skasuj też dane pokoju z bazy); identyfikator ma w adresie wykrzyknik i dwukropek -> koduj
-$room = [uri]::EscapeDataString('!abcDEF:matrix.local')
+$room = [uri]::EscapeDataString('!abcDEF:<DOMENA>')
 Invoke-RestMethod -Method Delete -Headers $h -Uri "$base/_synapse/admin/v2/rooms/$room" `
   -ContentType "application/json" -Body '{"purge": true}'
 
@@ -541,6 +550,8 @@ nie było testowane.
 
 **Status:** ✅ wdrożony na VM 2026-10-15 (kontener działa, izolacja do loopbacku potwierdzona);
 ✅ wszystkie 9 testów funkcjonalnych panelu (checklista F4 poniżej) przeszły.
+⚠️ Dostęp zmieniony 2026-11-04 (HTTPS na porcie z `.env`, `ADMIN_BIND` zamiast stałego loopbacku, konto `synapse-admin`):
+nieprzetestowany, patrz [checklista F4](#checklista-testów-panelu-f4).
 
 [Synapse Admin](https://github.com/Awesome-Technologies/synapse-admin) (Awesome-Technologies, osobny projekt
 społecznościowy) to webowe GUI, które łączy się z serwerem przez to samo Admin API (`/_synapse/admin`) i pozwala
@@ -552,65 +563,43 @@ z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarz
 - Usługa `synapse-admin` w `docker-compose.yml`: obraz `awesometechnologies/synapse-admin` z **przypiętym tagiem**
   (`0.11.4`, nie `latest`), **bez publikowanych portów**. ✅ Sprawdzone 2026-10-17: `0.11.4` jest oznaczone jako najnowsze wydanie („Latest”) na stronie wydań projektu i jest
   najwyższym numerowanym tagiem w zewnętrznym zestawieniu tagów obrazu z Docker Huba; przypięty tag zmieniasz świadomie, nie przy `up -d`.
-- Nginx dostał osobny blok `server { listen 8080; }` (w `matrix.conf.example`): `/` → panel, a
-  `/_matrix` i `/_synapse/admin` → Synapse. Panel i API są pod **tym samym adresem**, więc nie ma problemu z CORS ani
-  z certyfikatem (certyfikat serwera ma tylko `matrix.local`). Zwykły HTTP jest tu celowy – ruch idzie po loopbacku
-  i tunelu SSH.
-- Port 8080 jest publikowany przez Docker **wyłącznie na `127.0.0.1` VM** (`127.0.0.1:8080:8080` w usłudze `proxy`).
-  Dostęp „tylko z VM” zapewnia więc sam bind na loopback, a nie reguła `allow/deny` po adresie IP (która w Dockerze
-  bywa zawodna: połączenia przez loopback lub tunel mogą być widziane jako adres bramy mostu Dockera).
+- Nginx ma osobny blok `server { listen 8080 ssl; }` (w `matrix.conf.example`): `/` → panel, a
+  `/_matrix` i `/_synapse/admin` → Synapse. Panel i API są pod **tym samym adresem**, więc nie ma problemu z CORS. Blok używa tego samego
+  certyfikatu co port 443 (SAN = domena), więc adres to `https://<DOMENA>:8080`. (Do 2026-11-04 był tu zwykły HTTP po loopbacku i tunelu SSH.)
+- Port publikuje Docker na adresie `ADMIN_BIND` i porcie `ADMIN_PORT` z `.env` (`"${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8080}:8080"`
+  w usłudze `proxy`). Domyślnie loopback VM; zalecany adres Tailscale ([README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
+  Zasięg ogranicza więc sam bind, a nie reguła `allow/deny` po adresie IP (która w Dockerze bywa zawodna: połączenia przez loopback
+  lub tunel mogą być widziane jako adres bramy mostu Dockera). Docker publikuje porty z pominięciem reguł `ufw`, więc o zasięgu decyduje bind, nie zapora.
 - Panel **nie** jest w blokach 80/443 ani w bloku Tailscale.
 
-**Adres VM w konfiguracji:** w plikach konfiguracyjnych panelu **nie ma żadnego adresu VM**. W dokumentacji pojawia się
-tylko jako placeholder `<IP_VM>` w komendzie tunelu. Przy przepięciu serwerów do innej sieci zmieniasz więc tylko
-to, co i tak zależy od adresu: wpis w `hosts` na PC (`<IP_VM>   matrix.local`) i polecenie tunelu SSH.
+**Adres w konfiguracji:** w plikach konfiguracyjnych w repozytorium nie ma żadnego adresu VM; adres Tailscale jest tylko w `.env`
+(`ADMIN_BIND`). Przy przepięciu serwerów do innej sieci zmieniasz więc `ADMIN_BIND` w `.env`, wpis w `hosts` na PC (musi wskazywać ten sam
+adres) i ewentualnie polecenie tunelu SSH.
 
-#### Wdrożenie na istniejącej VM
+#### Zmiana istniejącej instalacji (HTTP/loopback → HTTPS i `ADMIN_BIND`; od 2026-11-04) ⚠️
 
-🐧 **VM**, w `/opt/matrix` – kopie zapasowe (rollback) i sprawdzenie, że port 8080 jest wolny:
+Nowe instalacje dostają to z repozytorium (README, krok 7.1). Na VM, która już działa, `matrix.conf` i `homeserver.yaml` są w `.gitignore`,
+więc **zmieniasz je ręcznie**. 🐧 **VM**, w `/opt/matrix`:
 
-```bash
-cp docker-compose.yml docker-compose.yml.bak
-cp nginx/conf.d/matrix.conf nginx/conf.d/matrix.conf.bak
-ss -tlnp | grep 8080          # nic nie powinno być wypisane
-```
+1. Kopie zapasowe (rollback): `cp docker-compose.yml docker-compose.yml.bak` i `cp nginx/conf.d/matrix.conf nginx/conf.d/matrix.conf.bak`; `ss -tlnp | grep 8080` nie powinno nic wypisać. Potem `git pull` (docker-compose.yml i wzory `*.example`).
+2. `nano nginx/conf.d/matrix.conf` – w bloku `server` z `listen 8080;` zmień na `listen 8080 ssl;` i dopisz pod `server_name _;` trzy linie
+   (jak w `matrix.conf.example`): `ssl_certificate /etc/nginx/certs/matrix.crt;`, `ssl_certificate_key /etc/nginx/certs/matrix.key;`,
+   `ssl_protocols TLSv1.2 TLSv1.3;`.
+3. `nano .env` – dopisz `ADMIN_BIND=<IP_TAILSCALE>` i `ADMIN_PORT=8080` (zamiast domyślnego loopbacku) oraz `SYNAPSE_ADMIN_LOGIN=synapse-admin` i `SYNAPSE_ADMIN_PASSWORD` (hasło: `openssl rand -hex 24`, [README, krok 5.1](../README.md#51-hasła)).
+4. `nano synapse/homeserver.yaml` – dopisz `registration_shared_secret: "<losowa wartość>"` (wzór: `homeserver.yaml.example`), `docker compose restart synapse`, potem załóż konto administratora wg [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)
+   – punkty 2–3 (hasło masz już w `.env`; na końcu usuń sekret z `homeserver.yaml` i zrestartuj Synapse). Kolejni administratorzy: [Etap 0](#etap-0), punkt 2.
+5. `docker compose up -d`, potem `docker compose logs --tail=50 proxy`.
 
-🪟 **PC** – wyślij dwa zmienione pliki (VM dostaje pliki przez `scp`, nie przez `git pull`; `matrix.conf` jest w
-`.gitignore`, więc to **Twój** lokalny plik, wyrównany z tym z VM, nie wzór z repozytorium):
-
-```powershell
-scp "<KATALOG_PROJEKTU>\docker-compose.yml" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/
-scp "<KATALOG_PROJEKTU>\nginx\conf.d\matrix.conf" <UZYTKOWNIK>@<IP_VM>:/opt/matrix/nginx/conf.d/
-```
-
-🐧 **VM** – porównaj z kopią (powinny być tylko oczekiwane zmiany: port 8080, `depends_on`, usługa panelu, blok
-`listen 8080`), potem **jedno** uruchomienie:
-
-```bash
-diff docker-compose.yml.bak docker-compose.yml
-diff nginx/conf.d/matrix.conf.bak nginx/conf.d/matrix.conf
-docker compose up -d
-docker compose ps                                   # cel: 6 kontenerów Up
-docker compose logs --tail=50 proxy synapse-admin   # bez błędów
-```
-
-> `nginx -t` uruchomiony **przed** startem zgłosi `host not found in upstream "synapse-admin"` (kontener jeszcze nie
-> istnieje) – testuj dopiero po `up`. Dlatego `proxy` ma w `docker-compose.yml` `depends_on: synapse-admin`.
-
-✅ **Sprawdzone 2026-10-15:** `diff` względem kopii pokazał wyłącznie oczekiwane zmiany; `docker compose up -d` OK,
-6 kontenerów `Up` (coturn, lldap, postgres, proxy, synapse, synapse-admin), logi `proxy` i `synapse-admin` bez
-błędów; `ss -tlnp | grep 8080` pokazuje wyłącznie `127.0.0.1:8080`.
+Wpis `<DOMENA>` w `hosts` na PC musi wskazywać adres z `ADMIN_BIND`.
 
 #### Użycie
 
-🪟 **PC** – tunel SSH (okno z tunelem zostaw otwarte):
+Adres w przeglądarce: **`https://<DOMENA>:<ADMIN_PORT>`** (domyślnie `8080`; wymaga wpisu `<DOMENA>` w `hosts`, wskazującego adres z `ADMIN_BIND`,
+i zainstalowanego Root CA, jak dla Elementa). W polu serwera wpisz **ten sam adres**, zaloguj się jako `synapse-admin` (hasło: `SYNAPSE_ADMIN_PASSWORD`
+z `.env`). Konto bez flagi `admin` nie wejdzie do panelu.
 
-```powershell
-ssh -L 8080:127.0.0.1:8080 <UZYTKOWNIK>@<IP_VM>
-```
-
-Przeglądarka na PC: `http://localhost:8080`. W polu serwera wpisz **`http://localhost:8080`**, zaloguj się kontem
-administratora (w PoC `<LOGIN_ADMINA>`, hasło z LLDAP). Konto bez flagi `admin` nie wejdzie do panelu.
+Przy `ADMIN_BIND=127.0.0.1` panel jest dostępny tylko z VM albo z PC przez tunel SSH (komenda tunelu i uwaga o ostrzeżeniu certyfikatu:
+[README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin), tabela `ADMIN_BIND`). ⚠️ niesprawdzone.
 
 > ⚠️ Logowanie administratora wlicza się do limitu prób Synapse (HTTP 429 – [Rozwiązywanie problemów](rozwiazywanie-problemow.md) pkt 4), więc nie
 > loguj się w panelu i skryptach pod rząd wiele razy.
@@ -618,7 +607,8 @@ administratora (w PoC `<LOGIN_ADMINA>`, hasło z LLDAP). Konto bez flagi `admin`
 #### Zasady pracy z panelem (LLDAP)
 
 1. **Konta zakłada i hasła zmienia LLDAP, nie panel.** Konto założone w panelu to lokalne konto Synapse z hasłem poza
-   LDAP; reset hasła użytkownikowi z LDAP nic nie daje (logowanie i tak idzie przez LLDAP).
+   LDAP; reset hasła użytkownikowi z LDAP nic nie daje (logowanie i tak idzie przez LLDAP). Wyjątek: `synapse-admin` to konto lokalne
+   (krok 7.1) – jego hasło zmienisz w panelu i wtedy zaktualizuj `SYNAPSE_ADMIN_PASSWORD` w `.env` na VM i na PC.
 2. **Nazwy wyświetlane** edytowane ręcznie w panelu nadpisze następne uruchomienie `provision_synapse_users.py`.
 3. **Pokój „Książka adresowa”** usunięty w panelu odtworzy `setup_directory.py` (po aliasie; alias zwalnia się dopiero
    po `purge`).
@@ -632,15 +622,15 @@ administratora (w PoC `<LOGIN_ADMINA>`, hasło z LLDAP). Konto bez flagi `admin`
 
 | # | Test | Status |
 |---|---|---|
-| 1 | Tunel SSH, `http://localhost:8080` ładuje panel | ✅ |
-| 2 | Logowanie `<LOGIN_ADMINA>` (pole serwera `http://localhost:8080`) | ✅ |
+| 1 | `https://<DOMENA>:8080` ładuje panel (wcześniej: tunel SSH i `http://localhost:8080` ✅) | ⚠️ |
+| 2 | Logowanie `synapse-admin` (pole serwera `https://<DOMENA>:8080`; wcześniej: konto z LLDAP ✅) | ⚠️ |
 | 3 | Lista użytkowników (ok. 204), wyszukiwanie, szczegóły konta, urządzenia | ✅ |
 | 4 | Lista pokoi i ich członkowie (wtedy: „Firma” + 7 działów, Spaces wycofane 2026-10-19) | ✅ |
 | 5 | Konto bez flagi `admin` (np. `a.nowak`) nie wejdzie do panelu | ✅ |
 | 6 | Zapis na koncie/pokoju **testowym**: dezaktywacja konta, usunięcie pokoju z `purge` (zamyka też niesprawdzony punkt w tabeli „Typowe operacje” wyżej) | ✅ |
 | 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py` (skrypt nie ma trybu `--dry-run`; uruchomienie jest idempotentne) (nie pod rząd – HTTP 429) | ✅ |
-| 8 | Bez tunelu: `Test-NetConnection <IP_VM> -Port 8080` z PC → `TcpTestSucceeded : False` | ✅ |
-| 9 | Zapora na VM (`ufw`): port 8080 nie jest otwarty | ✅ |
+| 8 | Z urządzenia spoza tailnetu (przy `ADMIN_BIND` = adres Tailscale) albo przy `127.0.0.1`: `Test-NetConnection <IP_VM> -Port 8080` → `TcpTestSucceeded : False` (wcześniej ✅ dla loopbacku) | ⚠️ |
+| 9 | Zasięg portu zgodny z `ADMIN_BIND`: `ss -tlnp` pokazuje port 8080 tylko na adresie z `ADMIN_BIND` (wcześniej: `ufw` ✅) | ⚠️ |
 
 **Rollback:** przywróć `docker-compose.yml.bak` i `nginx/conf.d/matrix.conf.bak` na VM, potem
 `docker compose up -d --remove-orphans` (usuwa kontener panelu; dane Synapse i LLDAP nie są ruszane).
@@ -673,7 +663,7 @@ Kolejne razy – tylko `venv\Scripts\activate`, bez ponownego tworzenia środowi
 | `seed_test_employees.py` | Tworzy testowe konta w LLDAP (7 grup-działów, wspólne hasło testowe); `--reassign` przepina istniejące konta do aktualnych grup | Potrzebujesz testowej masy pracowników do testów na realnej skali |
 | `provision_synapse_users.py` | Zakłada/aktualizuje konta w **Synapse** przez Admin API, bez logowania każdego z osobna, z nazwą `Imię Nazwisko – Dział` | Żeby cała firma była od razu widoczna w katalogu Synapse; po zmianie działów w LLDAP |
 | `setup_directory.py` | Buduje pokój „Książka adresowa”: wiadomość wstępna + po jednej na dział, osoby jako pigułki, dane dodatkowe z `directory_extra.csv`; idempotentny (nowe / edycja / bez zmian / usunięcie) | ✅ (pełny przebieg wykonany 2026-10-20) Po dodaniu pracownika lub zmianie działu (po `provision_synapse_users.py`) |
-| `setup_announcements.py` | Zakłada pokój „Ogłoszenia” (`#ogloszenia:matrix.local`): publiczny, tylko do odczytu dla zwykłych użytkowników, dołącza wszystkich; skrypt nie wysyła żadnych wiadomości; idempotentny; opcje `--dry-run`, `--alias`, `--skip-join`, `--rejoin`, `--reactions`, `--exclude`; ustawienia `ANNOUNCE_*` w `.env` | Pierwsze założenie pokoju ogłoszeń; po `provision_synapse_users.py`, żeby nowe konta też dołączyły (✅ uruchomiony 2026-10-20) |
+| `setup_announcements.py` | Zakłada pokój „Ogłoszenia” (`#ogloszenia:<DOMENA>`): publiczny, tylko do odczytu dla zwykłych użytkowników, dołącza wszystkich; skrypt nie wysyła żadnych wiadomości; idempotentny; opcje `--dry-run`, `--alias`, `--skip-join`, `--rejoin`, `--reactions`, `--exclude`; ustawienia `ANNOUNCE_*` w `.env` | Pierwsze założenie pokoju ogłoszeń; po `provision_synapse_users.py`, żeby nowe konta też dołączyły (✅ uruchomiony 2026-10-20) |
 | `cleanup_spaces.py` | **Jednorazowe** sprzątanie po wycofaniu Matrix Spaces: usuwa z `purge` pokoje-przestrzenie (`#space-*` lub typ `m.space`) i – bez `--keep-book` – pokój „Książka adresowa”; `--dry-run`, `--yes`, `--keep-book` | Tylko na instalacji, która kiedyś miała Spaces; ⚠️ nieodwracalne, zawsze najpierw `--dry-run` (✅ wykonany 2026-10-20) |
 | `deactivate_orphans.py` | Dezaktywuje w Synapse konta, których nie ma już w LLDAP (pomija administratorów, konta techniczne i loginy z `--keep` / `DEACTIVATE_KEEP` w `.env`; nic nie robi przy pustej liście z LLDAP lub gdy do dezaktywacji byłaby ponad połowa kont, chyba że `--force`); `--dry-run`, `--yes`, `--erase` | Po odejściu pracownika (usunięty/zablokowany w LLDAP), żeby zniknął z wyszukiwarki i książki adresowej; ⚠️ nieodwracalne, zawsze najpierw `--dry-run` (✅ wykonany 2026-10-20) |
 | `test_directory_message.py` | Eksperyment układu wiadomości (zwijane `<details>` vs nagłówki), `--measure` sprawdza rozmiar | Tylko do prób układu; nie jest częścią normalnego przepływu |

@@ -72,7 +72,19 @@
 (4 konta testowe nie mają: `j.kowalski`, `a.nowak`, `t.perlik`, `p.wisniewski`); potem
 `provision_synapse_users.py` i `setup_directory.py`.
 
-**10. Panel Synapse Admin nie otwiera się pod `http://localhost:8080`** – sprawdź po kolei: czy okno z tunelem SSH jest
-otwarte, czy na VM `docker compose ps` pokazuje `matrix-proxy` i `matrix-synapse-admin` jako `Up`, czy
-`ss -tlnp | grep 8080` pokazuje `127.0.0.1:8080`, oraz `docker compose logs --tail=50 proxy synapse-admin`.
+**10. Panel Synapse Admin nie otwiera się pod `https://<DOMENA>:<ADMIN_PORT>`** – sprawdź po kolei: czy na VM `docker compose ps` pokazuje
+`matrix-proxy` i `matrix-synapse-admin` jako `Up`; czy `ss -tlnp | grep 8080` pokazuje adres z `ADMIN_BIND` z `.env`; czy wpis `<DOMENA>` w `hosts`
+na PC wskazuje ten sam adres; czy blok `listen 8080 ssl;` w `nginx/conf.d/matrix.conf` ma `ssl_certificate` i `ssl_certificate_key`
+(przy `listen 8080;` bez `ssl` przeglądarka zgłosi błąd protokołu); oraz `docker compose logs --tail=50 proxy synapse-admin`.
 Po błędzie `host not found in upstream "synapse-admin"` uruchom `docker compose up -d` (kontener panelu musi istnieć).
+Przy `ADMIN_BIND=127.0.0.1` panel jest dostępny tylko z VM albo przez tunel SSH (`https://localhost:8080`; ostrzeżenie o nazwie certyfikatu jest wtedy normalne).
+
+**11. `matrix-proxy` w kółko się restartuje po starcie VM, w logach `cannot assign requested address` albo `Bind for ...:8080 failed`** –
+przy `ADMIN_BIND` = adres Tailscale Docker próbuje zająć ten adres, zanim Tailscale go uruchomi. Sprawdź `tailscale ip -4` (czy adres jest
+ten sam co w `.env`) i po chwili powtórz `docker compose up -d`. Jeśli adres się zmienił, popraw `ADMIN_BIND` w `.env`.
+
+**12. `synapse-admin` nie może się zalogować (panel, Element albo skrypty)** – sprawdź, czy hasło w `.env` (`SYNAPSE_ADMIN_PASSWORD`) jest tym
+samym, którym założono konto w [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) (przy panelu i skryptach
+login jest bez `@` i bez domeny); czy login nie istnieje też w LLDAP (konto lokalne obok modułu LDAP – ⚠️ niesprawdzone); `M_LIMIT_EXCEEDED` to limit
+prób, patrz punkt 4. Gdy samo założenie konta kończy się błędem, sprawdź, czy `registration_shared_secret` jest w `synapse/homeserver.yaml`
+i czy po jego dopisaniu zrestartowano Synapse (`docker compose restart synapse`).
