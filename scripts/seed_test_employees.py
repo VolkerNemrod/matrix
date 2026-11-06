@@ -40,7 +40,8 @@ Dyrekcja, IT, Sprzedaz (siedziba) albo Oddzial A Obsluga / Oddzial B Obsluga
 Ksiazke adresowa (wszystkie dzialy, jeden plaski pokoj) buduje setup_directory.py (Etap 2).
 
 HASLO TESTOWE: TEST_PASSWORD w .env NA VM (README, krok 5.1) -- czyta je wygenerowany set_test_passwords.sh.
-DALEJ: konta w Synapse -- provision_synapse_users.py (README, Etap 1); wymaga Etapu 0 (konto administratora).
+DALEJ: konta w Synapse -- provision_synapse_users.py (README, Etap 1); wymaga konta administratora Synapse
+zalozonego wczesniej (README, krok 7.1).
 """
 
 import argparse

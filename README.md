@@ -11,8 +11,9 @@ Proof of Concept zamkniętego komunikatora firmowego opartego na Matrix:
 - **Coturn** – STUN/TURN dla rozmów audio/wideo 1:1 (WebRTC),
 - **Nginx** – reverse proxy z SSL,
 - **PostgreSQL** – baza Synapse,
-- **Synapse Admin** – webowy panel administracyjny (konta, pokoje), dostępny tylko z VM / przez tunel SSH
-  (patrz [Synapse Admin](docs/administrowanie.md#synapse-admin--panel-www-do-administrowania-serwerem)),
+- **Synapse Admin** – webowy panel administracyjny (konta, pokoje) pod HTTPS; adres i port ustawiasz w `.env` (domyślnie tylko VM / tunel SSH,
+  zalecane: adres Tailscale; patrz [krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) i
+  [Synapse Admin](docs/administrowanie.md#synapse-admin--panel-www-do-administrowania-serwerem)),
 - **Pokój „Książka adresowa”** – lista pracowników z działami jako wiadomości w pokoju tylko do odczytu, widoczny dla
   wszystkich (budowany skryptem z grup LLDAP; patrz [Etap 2](docs/administrowanie.md#etap-2)),
 - **Pokój „Ogłoszenia”** – publiczny pokój tylko do odczytu, w którym ogłoszenia firmowe publikują wskazane osoby
@@ -57,7 +58,7 @@ sequenceDiagram
 
 ## Spis treści
 
-**Mapa etapów: [co uruchomić po zmianie](#mapa-etapów-i-co-uruchomić-po-zmianie)**
+[![Ściąga dla Administratora](https://img.shields.io/badge/-Ściąga%20dla%20Administratora-orange?style=for-the-badge)](#sciaga-administratora) *(gdy serwer już działa — dodawanie ludzi, działy, odejścia)*
 
 **Część 1 – Przygotowanie środowiska** ([opis](#czesc-1))
 
@@ -69,13 +70,14 @@ sequenceDiagram
 5. [Sekrety i pliki lokalne](#krok-5--sekrety-i-pliki-lokalne)
 6. [Certyfikaty (PKI)](#krok-6--certyfikaty-pki)
 7. [Uruchomienie usług](#krok-7--uruchomienie-usług)
+    - [Konto administratora Synapse i zabezpieczony panel Synapse Admin](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)
 8. [Konta w LLDAP](#krok-8--konta-w-lldap)
 9. [Klienci: Windows i komputer w innej lokalizacji](#krok-9--klienci)
     - [Komputer w innej lokalizacji (u kolegi)](#92-komputer-w-innej-lokalizacji-u-kolegi)
 10. [Testy](#krok-10--testy)
     - [Drugie konto w Elemencie bez zamykania pierwszego](#drugie-konto-w-elemencie-bez-zamykania-pierwszego-przydatne-w-testach)
 
-**Część 2 – Konta i książka adresowa** ([opis](#czesc-2)): Przygotowanie, Etap 0 (konto administratora), Etap 1 (konta w Synapse),
+**Część 2 – Konta i książka adresowa** ([opis](#czesc-2)): Przygotowanie, Etap 0 (opcjonalnie: kolejny administrator), Etap 1 (konta w Synapse),
 Etap 2 (książka adresowa: pokój, dane dodatkowe; pokój „Ogłoszenia”), Etap 3 (bieżąca praca)
 
 11. [Konta i książka adresowa](#czesc-2)
@@ -91,55 +93,45 @@ Etap 2 (książka adresowa: pokój, dane dodatkowe; pokój „Ogłoszenia”), E
 
 ---
 
-## Mapa etapów i co uruchomić po zmianie
+<a id="sciaga-administratora"></a>
+## Ściąga dla Administratora (serwer już działa)
 
-Instrukcja ma **dwie części**:
+> Skrócona wersja dla kogoś, kto ma tylko obsługiwać gotowy komunikator na co dzień – dodawać ludzi, zmieniać działy,
+> zamykać konta po odejściu – bez znajomości całego projektu. Pełny opis każdego skryptu i etapu:
+> [Bieżąca praca (Etap 3)](docs/administrowanie.md#bieżąca-praca-etap-3) i
+> [Typowe zadania administratora](docs/administrowanie.md#typowe-zadania-administratora-kolejność-skryptów).
 
-- **Część 1 – Przygotowanie środowiska** (kroki 1–10): VM, Docker, Tailscale, certyfikaty, uruchomienie usług, LLDAP, klienci.
-- **Część 2 – Konta i książka adresowa** (etapy 0–3): na działającym już komunikatorze budujesz konta, strukturę firmy
-  i książkę adresową, a potem prowadzisz bieżącą pracę.
+**Zanim zaczniesz:** 🪟 **PC**, w `scripts`, z aktywnym `venv`:
 
-Dane płyną **w jedną stronę**: LLDAP (w firmie: Active Directory) → konta w Synapse → książka adresowa.
-Zmiany robisz **zawsze na początku łańcucha** i uruchamiasz skrypty po kolei od tego miejsca do końca. Ręczne poprawki
-w Elemencie albo w panelu Synapse Admin (nazwy, członkostwo) nadpisze następne uruchomienie skryptu.
-
-```mermaid
-flowchart LR
-    C1[CZESC 1 Srodowisko kroki 1-10] --> E0[ETAP 0 Konto admina]
-    E0 --> E1[ETAP 1 Konta w Synapse z LLDAP]
-    E1 --> E2[ETAP 2 Ksiazka adresowa]
-    E2 --> E3[ETAP 3 Biezaca praca]
+```powershell
+cd "<KATALOG_PROJEKTU>\scripts"
+venv\Scripts\activate
 ```
 
-| Część / etap | Co | Czym | Gdzie |
-|---|---|---|---|
-| **Część 1** | VM, Docker, Tailscale, certyfikaty, 6 kontenerów, LLDAP, klienci | kroki 1–10 (ręcznie) | [Część 1](#czesc-1) |
-| **Przygotowanie** | wyszukiwanie wszystkich użytkowników (A); konta i grupy-działy w LLDAP (w firmie: AD; w PoC testowa masa, B0) | `homeserver.yaml`; `seed_test_employees.py` | [Przygotowanie](docs/administrowanie.md#przygotowanie-jednorazowo) |
-| **Etap 0** | Konto administratora Synapse | jedno polecenie SQL (raz) | [Etap 0](docs/administrowanie.md#etap-0) |
-| **Etap 1** | Konta w Synapse z nazwą „Imię Nazwisko – Dział” | `provision_synapse_users.py` | [Etap 1](docs/administrowanie.md#etap-1) |
-| **Etap 2** | Książka adresowa: 2.1 pokój z wiadomościami, 2.2 dane dodatkowe; 2.4 pokój „Ogłoszenia” | `setup_directory.py`, `directory_extra.csv`; `setup_announcements.py` | [Etap 2](docs/administrowanie.md#etap-2) |
-| **Etap 3** | Bieżąca praca: usuwanie pokoi, konta, panel, logi, kopie | Admin API, Synapse Admin, komendy | [Etap 3](docs/administrowanie.md#bieżąca-praca-etap-3) |
+Potrzebujesz dostępu do: **LLDAP** (konta i działy pracowników), pliku **`directory_extra.csv`** (telefony, stanowiska –
+w Excelu), **Elementa** (sprawdzanie wyniku) i panelu **Synapse Admin** (`https://<DOMENA>:<ADMIN_PORT>`).
 
-### Zmieniłem X – co uruchomić
+**Dwie zasady:** każdy skrypt najpierw z `--dry-run`, dopiero potem bez tej flagi; nie uruchamiaj skryptów logujących
+administratora pod rząd – odczekaj ok. 4 minuty między nimi (HTTP 429, patrz
+[Rozwiązywanie problemów](docs/rozwiazywanie-problemow.md), pkt 4).
 
-Wszystkie skrypty: 🪟 **PC**, `cd scripts`, `venv\Scripts\activate`, najpierw `--dry-run`. Każdy loguje administratora Synapse,
-więc **nie puszczaj ich pod rząd bez przerw** (HTTP 429, ok. 4 min – [Rozwiązywanie problemów](#rozwiązywanie-problemów), pkt 4).
+| Sytuacja | Co zrobić |
+|---|---|
+| 🆕 **Nowy pracownik** | 1) LLDAP: konto + **jeden** dział. 2) `provision_synapse_users.py`. 3) *(czekaj ~4 min)* 4) `setup_directory.py --dry-run`, potem `setup_directory.py`. 5) `setup_announcements.py` |
+| 📞 **Telefon / stanowisko / pokój** | 1) `setup_directory.py --write-extra-template`. 2) uzupełnij `directory_extra.csv` w Excelu (zapisz jako CSV UTF-8). 3) `setup_directory.py --dry-run`, potem `setup_directory.py` |
+| 🔁 **Zmiana działu / nazwiska** | 1) LLDAP: zmień grupę-dział albo imię/nazwisko. 2) `provision_synapse_users.py`. 3) *(czekaj ~4 min)* 4) `setup_directory.py --dry-run`, potem `setup_directory.py` |
+| 🚪 **Odejście pracownika** | 1) LLDAP: usuń/zablokuj konto (**najważniejszy krok** – inaczej LDAP założy je od nowa). 2) `deactivate_orphans.py --dry-run`, sprawdź listę, potem bez `--dry-run`. 3) *(czekaj ~4 min)* 4) `setup_directory.py --dry-run`, potem `setup_directory.py` |
 
-| Co zmieniasz | Gdzie | Uruchom po kolei |
-|---|---|---|
-| **Nowy pracownik** | LLDAP: konto + grupa-dział | `provision_synapse_users.py` → `setup_directory.py` → `setup_announcements.py` (skrypty dołączają wszystkich do swoich pokoi) |
-| **Konto bez działu** (np. `a.nowak`, `j.kowalski`) albo zła nazwa/dział | LLDAP: dodaj do grupy-działu (lub popraw imię i nazwisko) | `provision_synapse_users.py` → `setup_directory.py` → `setup_announcements.py` |
-| **Przeniesienie do innego działu** | LLDAP: zmień grupę | `provision_synapse_users.py` → `setup_directory.py` |
-| **Odejście pracownika** | LLDAP: usuń/zablokuj | `deactivate_orphans.py` (albo ręcznie: panel Synapse Admin / Admin API) → `setup_directory.py` (nieaktywne konta znikają z listy) |
-| **Nowy dział** | LLDAP: nowa grupa; nowa pozycja w `DEPARTMENTS` w `provision_synapse_users.py` (bez niej dział nie trafi do nazwy wyświetlanej) | `provision_synapse_users.py` → `setup_directory.py --rebuild` (kolejność alfabetyczna) |
-| **Telefon, pokój, piętro, stanowisko** | `scripts/directory_extra.csv` (nowe osoby: `setup_directory.py --write-extra-template`) | tylko `setup_directory.py` |
-| **Ukryć konto techniczne w książce** | `DIRECTORY_EXCLUDE` w `.env` albo `--exclude login1,login2` | tylko `setup_directory.py` |
-| **Nazwa lub temat pokoju książki** | `DIRECTORY_ROOM_NAME`, `DIRECTORY_ROOM_TOPIC` w `.env` | tylko `setup_directory.py` |
-| **Nazwa, temat lub autorzy ogłoszeń** | `ANNOUNCE_ROOM_NAME`, `ANNOUNCE_ROOM_TOPIC`, `ANNOUNCE_WRITERS` w `.env` | tylko `setup_announcements.py` |
-| **Hasło użytkownika** | tylko LLDAP (logowanie idzie przez LDAP) | nic z powyższych |
+**🏢 Nowy dział w firmie** – jedyna sytuacja wymagająca zmiany w kodzie: listę działów trzyma `DEPARTMENTS`
+w `provision_synapse_users.py`:
 
-Zasada kciuka: zmiana **kto i w jakim dziale** zaczyna się w LLDAP i przechodzi przez wszystkie skrypty; zmiana **danych
-kontaktowych** dotyczy tylko `setup_directory.py`.
+```python
+DEPARTMENTS = ["Księgowość", "Projekty", "Dyrekcja", "IT", "Sprzedaż",
+               "Oddział A Obsługa", "Oddział B Obsługa"]
+```
+
+Dopisz nowy dział tutaj (dokładnie taka sama nazwa jak grupa w LLDAP), potem: `provision_synapse_users.py` →
+`setup_directory.py --rebuild`.
 
 ---
 
@@ -151,7 +143,7 @@ docker-compose.yml                  6 usług: proxy, synapse, postgres, coturn, 
 docker/synapse/Dockerfile           Synapse + moduł matrix-synapse-ldap3
 synapse/homeserver.yaml.example     wzór konfiguracji Synapse (federacja wyłączona, Postgres, LDAP, Coturn)
 synapse/matrix.local.log.config     konfiguracja logowania Synapse
-nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL (+ blok panelu Synapse Admin na porcie 8080)
+nginx/conf.d/matrix.conf.example    wzór konfiguracji reverse proxy z SSL (+ blok panelu Synapse Admin, HTTPS, port 8080)
 pki/generate-pki.sh, pki/v3.ext     Root CA + certyfikat serwera dla matrix.local
 scripts/render-config.sh            Krok 5: tworzy homeserver.yaml i matrix.conf ze wzorów, podstawiając MATRIX_DOMAIN z .env
 scripts/seed_test_employees.py      Przygotowanie B0: testowe konta i grupy-działy w LLDAP (też --reassign)
@@ -166,7 +158,7 @@ scripts/cleanup_spaces.py           jednorazowo: usuwa stare pokoje-przestrzenie
 scripts/deactivate_orphans.py       odejście pracownika: dezaktywuje w Synapse konta, których nie ma już w LLDAP (--dry-run; ✅ uruchomiony 2026-10-20)
 scripts/requirements.txt            zależności Pythona dla skryptów (requests)
 docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków)
-docs/administrowanie.md             Etap 3: konto admina, Admin API, kopie, logi, panel Synapse Admin, skrypty, komendy
+docs/administrowanie.md             Etap 0 (kolejny admin) i Etap 3: Admin API, kopie, logi, panel Synapse Admin, skrypty, komendy
 docs/rozwiazywanie-problemow.md     problemy 1-10 z diagnozą
 docs/produkcja.md                   lista kontrolna przed produkcją, ramki 🏭, znane ograniczenia PoC
 docs/wyglad-element.md              motywy i logo Element Desktop (opcjonalnie)
@@ -183,7 +175,8 @@ Prawdziwe pliki z hasłami, certyfikaty i klucze tworzysz u siebie na podstawie 
 # CZĘŚĆ 1 – Przygotowanie środowiska
 
 Kroki 1–10: od pustej VM do działającego komunikatora (Synapse, LLDAP, Coturn, Nginx, Postgres, panel Synapse Admin), do którego
-logujesz się z Elementa kontem z LLDAP. Gdy to działa, przechodzisz do [Części 2](#czesc-2).
+logujesz się z Elementa kontem z LLDAP. W kroku 7.1 zakładasz osobne konto administratora i zabezpieczasz panel, więc Część 1
+kończy się działającym i zabezpieczonym stackiem. Gdy to działa, przechodzisz do [Części 2](#czesc-2).
 
 ## 0. Oznaczenia i zasady
 
@@ -217,23 +210,6 @@ logujesz się z Elementa kontem z LLDAP. Gdy to działa, przechodzisz do [Częś
 
 **Wymagania:** VM z Debianem 12 lub Ubuntu 24.04 (min. 4 GB RAM, 2 vCPU – dla testu wystarczy; dla kilkuset
 użytkowników rozmiar niesprawdzony), konto w Tailscale, komputery klienckie z Windows.
-
-### Checklista postępu (Część 1)
-
-Odhaczaj w swojej kopii na bieżąco; każdy krok ma na końcu własne sprawdzenie.
-
-- [ ] [Krok 1 – Połącz się z VM](#krok-1--połącz-się-z-vm)
-- [ ] [Krok 2 – Docker i Docker Compose](#krok-2--docker-i-docker-compose)
-- [ ] [Krok 3 – Tailscale na serwerze](#krok-3--tailscale-na-serwerze)
-- [ ] [Krok 4 – Pliki projektu na serwerze](#krok-4--pliki-projektu-na-serwerze)
-- [ ] [Krok 5 – Sekrety i pliki lokalne](#krok-5--sekrety-i-pliki-lokalne)
-- [ ] [Krok 6 – Certyfikaty (PKI)](#krok-6--certyfikaty-pki)
-- [ ] [Krok 7 – Uruchomienie usług](#krok-7--uruchomienie-usług)
-- [ ] [Krok 8 – Konta w LLDAP](#krok-8--konta-w-lldap)
-- [ ] [Krok 9 – Klienci](#krok-9--klienci)
-- [ ] [Krok 10 – Testy](#krok-10--testy)
-
-Potem [Część 2](#czesc-2): Przygotowanie, Etap 0 (konto admina), Etap 1 (konta w Synapse), Etap 2 (książka adresowa).
 
 ---
 
@@ -353,7 +329,7 @@ Powstaną `synapse/homeserver.yaml` i `nginx/conf.d/matrix.conf`. (Pliki `*.exam
 ### 5.1 Hasła
 
 Wygeneruj osobne, losowe wartości (bez znaków specjalnych, bezpieczne dla `.env` i YAML) – po jednej dla
-każdego z pięciu sekretów:
+każdego z sześciu sekretów:
 
 ```bash
 openssl rand -hex 24
@@ -363,12 +339,18 @@ Wpisz je w `.env` (`nano .env`; w `nano`: `Ctrl+O`, `Enter` – zapis, `Ctrl+X` 
 
 ```
 TS_IP=<IP_TAILSCALE>
+ADMIN_BIND=<IP_TAILSCALE>
 POSTGRES_PASSWORD=...
 TURN_SECRET=...
 LLDAP_ADMIN_PASSWORD=...
 LLDAP_JWT_SECRET=...
 LLDAP_KEY_SEED=...
+SYNAPSE_ADMIN_PASSWORD=...
 ```
+
+`ADMIN_BIND` to adres, na którym nasłuchuje panel Synapse Admin ([krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
+Adres Tailscale = panel widoczny tylko z urządzeń w Twoim tailnecie; domyślne `127.0.0.1` = tylko z samej VM albo przez tunel SSH.
+`SYNAPSE_ADMIN_PASSWORD` to hasło osobnego konta administratora, które założysz w kroku 7.1 (login zostaje `synapse-admin`).
 
 > ### ⚠️ Trzy hasła muszą być w DWÓCH plikach: `.env` ORAZ `synapse/homeserver.yaml`
 >
@@ -387,13 +369,15 @@ LLDAP_KEY_SEED=...
 **Hasła używane przez skrypty (od 2026-10-17, ⚠️ zmiana nieprzetestowana):** skrypty z `scripts/` nie mają haseł
 w kodzie. Dopisz do `.env`:
 
-- na **PC** (skąd uruchamiasz skrypty): `SYNAPSE_ADMIN_LOGIN` i `SYNAPSE_ADMIN_PASSWORD` – login i hasło konta administratora Synapse (dowolne konto z LLDAP,
-  które w [Etapie 0](docs/administrowanie.md#etap-0) dostaje flagę `admin`; hasło takie jak w LLDAP),
+- na **PC** (skąd uruchamiasz skrypty): `SYNAPSE_ADMIN_LOGIN` i `SYNAPSE_ADMIN_PASSWORD` – login i hasło osobnego konta administratora Synapse,
+  założonego w [kroku 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) (te same wartości co w `.env` na VM),
 - na **VM**: `TEST_PASSWORD` – wspólne hasło kont testowych z Etapu B0; czyta je `set_test_passwords.sh`.
 
 Brak wartości albo placeholder `CHANGE_ME...` kończy skrypt czytelnym komunikatem. Wzór: `.env.example`.
 
-Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień trzy wartości `CHANGE_ME_...`.
+Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień trzy wartości `CHANGE_ME_...` z tabeli powyżej. Czwarta wartość,
+`registration_shared_secret`, nie ma odpowiednika w `.env`: wpisz tam osobną losową wartość (`openssl rand -hex 24`). Służy tylko do założenia
+konta administratora w kroku 7.1 i wtedy ją usuniesz.
 
 **Ustaw hasła przed pierwszym uruchomieniem.** Postgres i LLDAP zapisują je w wolumenie przy pierwszym
 starcie, więc późniejsza zmiana samego `.env` może ich nie zmienić (patrz
@@ -479,6 +463,72 @@ docker compose logs --tail=50 synapse
 który ciągle się restartuje, czytaj **początek** logu (`docker compose logs NAZWA | head -15`) – przyczyna jest
 na samym początku, końcówka to zwykle tylko wydruk pomocy.
 
+### 7.1 Konto administratora Synapse i zabezpieczony panel Synapse Admin
+
+Pierwszy administrator to **osobne konto lokalne w Synapse** (login `synapse-admin`), a nie konto z LLDAP/AD. Jego hasło istnieje tylko
+w bazie Synapse, więc jego wyciek nie zagraża domenie, a próby zgadywania hasła nie trafiają do AD. Konta z LLDAP/AD nie mają uprawnień
+administratora, więc przejęcie zwykłego konta pracownika nie daje dostępu do panelu.
+
+**1. Hasło.** 🐧 **VM** – wygeneruj hasło i wpisz je w `.env` jako `SYNAPSE_ADMIN_PASSWORD` (login `SYNAPSE_ADMIN_LOGIN=synapse-admin` zostaw):
+
+```bash
+openssl rand -hex 24
+nano .env
+```
+
+**2. Założenie konta.** 🐧 **VM**:
+
+```bash
+cd /opt/matrix
+set -a; . ./.env; set +a
+docker compose exec synapse register_new_matrix_user -u "$SYNAPSE_ADMIN_LOGIN" -p "$SYNAPSE_ADMIN_PASSWORD" -a -c /data/homeserver.yaml http://localhost:8008
+```
+
+Polecenie kończy się komunikatem `Success!` (`-a` = administrator). Jeśli `. ./.env` zgłosi błąd (wartość ze spacjami w `.env`), pomiń
+wiersz `set -a ...` oraz `-p ...`; polecenie samo zapyta o hasło:
+`docker compose exec synapse register_new_matrix_user -u synapse-admin -a -c /data/homeserver.yaml http://localhost:8008`.
+
+**3. Usuń sekret rejestracji.** Kto zna `registration_shared_secret`, może przez API zakładać konta administratorów, więc po założeniu konta
+usuń z `synapse/homeserver.yaml` tę linię razem z komentarzem nad nią i zrestartuj Synapse:
+
+```bash
+nano synapse/homeserver.yaml
+docker compose restart synapse
+```
+
+**4. Panel Synapse Admin.** Panel działa pod HTTPS (ten sam certyfikat co Element), na adresie `ADMIN_BIND` i porcie `ADMIN_PORT` z `.env`
+(domyślnie `127.0.0.1:8080`). `ADMIN_BIND` decyduje, kto w ogóle może się połączyć:
+
+| `ADMIN_BIND` | Kto dotrze do panelu | Uwagi |
+|---|---|---|
+| adres Tailscale (**zalecane**) | tylko urządzenia w Twoim tailnecie | ruch szyfrowany przez Tailscale, bez tunelu SSH |
+| `127.0.0.1` (domyślnie) | tylko VM albo tunel SSH | przez tunel (`ssh -L 8080:127.0.0.1:8080 <UZYTKOWNIK>@<IP_VM>`, adres `https://localhost:8080`) przeglądarka pokaże ostrzeżenie o nazwie certyfikatu, bo jest on wystawiony na `<DOMENA>` |
+| `0.0.0.0` | cała sieć lokalna | niezalecane |
+
+Po zmianie `ADMIN_BIND` w `.env`: `docker compose up -d`. Jeśli kontener `proxy` nie startuje po restarcie VM (adres Tailscale jeszcze nie
+istnieje), powtórz po chwili `docker compose up -d`.
+
+**Sprawdzenie** (🐧 **VM**; ⚠️ niesprawdzone):
+
+```bash
+set -a; . ./.env; set +a
+curl -ksI "https://${ADMIN_BIND}:${ADMIN_PORT:-8080}/" | head -1
+```
+
+Wynik `HTTP/1.1 200 OK` = panel odpowiada. W przeglądarce wejdziesz na `https://<DOMENA>:8080` dopiero po kroku 9.1 (wpis `<DOMENA>`
+w `hosts` i Root CA); wpis w `hosts` musi wskazywać adres z `ADMIN_BIND` (przy adresie Tailscale: adres Tailscale, nie adres LAN).
+W polu serwera w panelu wpisz ten sam adres, loguj się jako `synapse-admin` z hasłem z `.env`.
+
+**Dla skryptów (🪟 PC):** w `.env` na PC ustaw te same `SYNAPSE_ADMIN_LOGIN` i `SYNAPSE_ADMIN_PASSWORD` (Część 2).
+
+> ⚠️ **Niesprawdzone (zmiana z 2026-11-04):** założenie konta poleceniem z punktu 2, logowanie konta lokalnego obok modułu LDAP
+> (oczekiwane: Synapse po nieudanym LDAP sprawdza lokalną bazę) oraz HTTPS na porcie panelu. Jeśli `synapse-admin` nie zaloguje się w panelu,
+> sprawdź to w pierwszej kolejności (`docker compose logs --tail=50 synapse proxy`).
+>
+> 🏭 **Produkcja:** HTTPS chroni tylko przed podsłuchem hasła. Admin API (`/_synapse/admin`) na porcie panelu nie ma ograniczenia po adresie IP –
+> dodaj `allow`/`deny` w bloku `server` na porcie 8080 albo zostaw panel tylko na `127.0.0.1` / w odseparowanym segmencie sieci.
+> Szczegóły: [docs/produkcja.md](docs/produkcja.md).
+
 ---
 
 ## Krok 8 – Konta w LLDAP
@@ -502,9 +552,8 @@ sekcja `modules` w `homeserver.yaml`), a własne konto zakłada dopiero w jednym
 | **Pierwsze logowanie w Elemencie** | automatycznie, loginem i hasłem z LLDAP (bez żadnego dodatkowego kroku) | konto tej jednej osoby; tak działa krok 9 |
 | **`provision_synapse_users.py`** | z PC, [Etap 1](docs/administrowanie.md#etap-1) | konta wszystkich z LLDAP naraz, z nazwą „Imię Nazwisko – Dział”, bez czekania na ich logowania |
 
-Dopóki konta w Synapse nie ma, osoba **nie pojawia się w wyszukiwarce** w Elemencie, a konta nie da się podnieść do
-administratora ([Etap 0](docs/administrowanie.md#etap-0)). Dlatego konto, które ma zostać administratorem, zaloguj raz
-w Elemencie (krok 9) przed Etapem 0.
+Dopóki konta w Synapse nie ma, osoba **nie pojawia się w wyszukiwarce** w Elemencie, a kolejnego administratora z LLDAP/AD nie da się
+wyznaczyć ([Etap 0](docs/administrowanie.md#etap-0), opcjonalny). Taką osobę zaloguj więc raz w Elemencie (krok 9).
 
 > Dla większej liczby kont (testy na realnej skali) użyj skryptu `seed_test_employees.py` – patrz
 > [Przygotowanie, B0](docs/administrowanie.md#etap-b0--testowa-struktura-firmy-w-lldap). Książka adresowa
@@ -524,7 +573,8 @@ Robisz **na każdym komputerze** testowym.
 
 1. Menu Start → `Notatnik` → prawy przycisk → **Uruchom jako administrator**.
 2. Plik → Otwórz → `C:\Windows\System32\drivers\etc\hosts` (filtr: „Wszystkie pliki").
-3. Dopisz na końcu (z adresem Tailscale serwera; w sieci lokalnej możesz użyć `<IP_VM>`):
+3. Dopisz na końcu (z adresem Tailscale serwera; w sieci lokalnej możesz użyć `<IP_VM>`, ale wtedy panel Synapse Admin, jeśli `ADMIN_BIND`
+   to adres Tailscale, będzie pod tą nazwą niedostępny):
    ```
    <IP_TAILSCALE>   <DOMENA>
    ```
@@ -575,6 +625,9 @@ instalowania certyfikatów. Wymaga wcześniejszej konfiguracji serwera (certyfik
    był w Tailscale (adres zewnętrzny Coturn to `TS_IP`). Jeśli nie ma dźwięku lub obrazu, zajrzyj w logi:
    `docker compose logs --tail=50 coturn`. Porty: 3478 oraz 49160–49200 na IP Tailscale. Test A/V
    **niepotwierdzony**.
+5. **Panel Synapse Admin** – w przeglądarce `https://<DOMENA>:8080` (wpis w `hosts` i Root CA jak w kroku 9.1; port z `ADMIN_PORT`).
+   Zaloguj się jako `synapse-admin` (hasło z `.env`, pole serwera: ten sam adres) – widzisz listę użytkowników. ⚠️ niesprawdzone
+   (patrz [krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
 
 Kolejność testów: najpierw w sieci lokalnej, potem przez Tailscale.
 
@@ -613,12 +666,13 @@ instancję – inna nazwa profilu (`--profile testowy3`). ✅ (użyte w testach 
 
 Cała Część 2 (konta w Synapse, książka adresowa, pokój „Ogłoszenia”, bieżąca praca administratora) jest w osobnym pliku:
 **[docs/administrowanie.md](docs/administrowanie.md)**. Zakłada, że [Część 1](#czesc-1) jest gotowa: komunikator działa,
+konto administratora Synapse i panel są zabezpieczone ([krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)),
 a w LLDAP (w firmie: Active Directory) są konta i grupy-działy.
 
 | Etap | Co robisz | Opis |
 |---|---|---|
 | Przygotowanie | jednorazowa konfiguracja katalogu, dane w LLDAP | [Przygotowanie](docs/administrowanie.md#przygotowanie-jednorazowo) |
-| Etap 0 | konto administratora Synapse (raz) | [Etap 0](docs/administrowanie.md#etap-0) |
+| Etap 0 | opcjonalnie: kolejny administrator Synapse (pierwszy powstał w [kroku 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)) | [Etap 0](docs/administrowanie.md#etap-0) |
 | Etap 1 | konta w Synapse na podstawie LLDAP | [Etap 1](docs/administrowanie.md#etap-1) |
 | Etap 2 | książka adresowa: pokój, dane dodatkowe; pokój „Ogłoszenia” | [Etap 2](docs/administrowanie.md#etap-2) |
 | Etap 3 | bieżąca praca, panel Synapse Admin, skrypty | [Bieżąca praca](docs/administrowanie.md#bieżąca-praca-etap-3) |
