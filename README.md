@@ -329,7 +329,7 @@ Powstaną `synapse/homeserver.yaml` i `nginx/conf.d/matrix.conf`. (Pliki `*.exam
 ### 5.1 Hasła
 
 Wygeneruj osobne, losowe wartości (bez znaków specjalnych, bezpieczne dla `.env` i YAML) – po jednej dla
-każdego z sześciu sekretów:
+każdego z sześciu sekretów do `.env` (siódmy, `registration_shared_secret`, generujesz osobno i wpisujesz tylko do `homeserver.yaml` – patrz ramka niżej):
 
 ```bash
 openssl rand -hex 24
@@ -366,6 +366,24 @@ Adres Tailscale = panel widoczny tylko z urządzeń w Twoim tailnecie; domyślne
 >
 > Tylko w `.env`: `LLDAP_JWT_SECRET`, `LLDAP_KEY_SEED`, `TS_IP`.
 
+> ### 🆕 Ściąga: co GENERUJESZ nowe, a co tylko PRZEPISUJESZ
+>
+> **Wszystkie sekrety generujesz sam, każdy osobnym `openssl rand -hex 24`** – nic nie ma gotowych wartości. Różnica jest tylko w tym,
+> gdzie je potem wpisujesz. **Przepisujesz tylko trzy** (z `.env` do `homeserver.yaml`); **jeden sekret jest tylko w `homeserver.yaml`**.
+>
+> | Wartość | 🆕 Generujesz nową | Wpisz w `.env` | ✏️ Przepisz do `synapse/homeserver.yaml` |
+> |---|---|---|---|
+> | `POSTGRES_PASSWORD` | tak | tak | **tak** → `database.args.password` |
+> | `TURN_SECRET` | tak | tak | **tak** → `turn_shared_secret` |
+> | `LLDAP_ADMIN_PASSWORD` | tak | tak | **tak** → `modules[].config.bind_password` |
+> | `LLDAP_JWT_SECRET` | tak | tak | nie |
+> | `LLDAP_KEY_SEED` | tak | tak | nie |
+> | `SYNAPSE_ADMIN_PASSWORD` | tak | tak | nie (użyjesz go w [kroku 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)) |
+> | `registration_shared_secret` | tak | **nie, nie ma go w `.env`** | **wpisujesz tylko tu** (nie ma skąd przepisać); usuniesz go w kroku 7.1 |
+> | `TEST_PASSWORD` | opcjonalnie | tylko na VM, tylko PoC | nie |
+>
+> Do czasu ustawienia `TEST_PASSWORD` komenda `grep CHANGE_ME` z sekcji 5.2 będzie go jeszcze wypisywać – jeśli nie używasz kont testowych, to normalne.
+
 **Hasła używane przez skrypty (od 2026-10-17, ⚠️ zmiana nieprzetestowana):** skrypty z `scripts/` nie mają haseł
 w kodzie. Dopisz do `.env`:
 
@@ -375,9 +393,11 @@ w kodzie. Dopisz do `.env`:
 
 Brak wartości albo placeholder `CHANGE_ME...` kończy skrypt czytelnym komunikatem. Wzór: `.env.example`.
 
-Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień trzy wartości `CHANGE_ME_...` z tabeli powyżej. Czwarta wartość,
-`registration_shared_secret`, nie ma odpowiednika w `.env`: wpisz tam osobną losową wartość (`openssl rand -hex 24`). Służy tylko do założenia
-konta administratora w kroku 7.1 i wtedy ją usuniesz.
+Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień w nim **cztery** wartości `CHANGE_ME_...`:
+
+- **trzy PRZEPISUJESZ z `.env`** (hasło Postgres, `TURN_SECRET`, hasło admina LLDAP – identyczne jak w `.env`),
+- **czwartą GENERUJESZ NOWĄ**: `registration_shared_secret` nie ma odpowiednika w `.env`, więc nie ma czego przepisywać. Wygeneruj ją osobnym
+  `openssl rand -hex 24` i wpisz tylko tutaj. Służy wyłącznie do założenia konta administratora w kroku 7.1 i wtedy ją usuniesz.
 
 **Ustaw hasła przed pierwszym uruchomieniem.** Postgres i LLDAP zapisują je w wolumenie przy pierwszym
 starcie, więc późniejsza zmiana samego `.env` może ich nie zmienić (patrz
@@ -508,21 +528,34 @@ docker compose restart synapse
 Po zmianie `ADMIN_BIND` w `.env`: `docker compose up -d`. Jeśli kontener `proxy` nie startuje po restarcie VM (adres Tailscale jeszcze nie
 istnieje), powtórz po chwili `docker compose up -d`.
 
-**Sprawdzenie** (🐧 **VM**; ⚠️ niesprawdzone):
+**Sprawdzenie** (🐧 **VM**; ✅ sprawdzone w praktyce):
 
 ```bash
 set -a; . ./.env; set +a
 curl -ksI "https://${ADMIN_BIND}:${ADMIN_PORT:-8080}/" | head -1
 ```
 
-Wynik `HTTP/1.1 200 OK` = panel odpowiada. W przeglądarce wejdziesz na `https://<DOMENA>:8080` dopiero po kroku 9.1 (wpis `<DOMENA>`
-w `hosts` i Root CA); wpis w `hosts` musi wskazywać adres z `ADMIN_BIND` (przy adresie Tailscale: adres Tailscale, nie adres LAN).
-W polu serwera w panelu wpisz ten sam adres, loguj się jako `synapse-admin` z hasłem z `.env`.
+Wynik `HTTP/1.1 200 OK` = panel odpowiada (✅ sprawdzone: komenda zwraca `200 OK`).
+
+> ### ⛔ Ten test sprawdza tylko serwer – NIE oznacza, że już się zalogujesz
+>
+> `200 OK` z `curl` mówi tylko, że panel działa **na VM**. **Do panelu (ani do Elementa) nie zalogujesz się z komputera,
+> dopóki nie ogarniesz pliku `hosts` i Root CA – to [krok 9.1](#91-windows-element-desktop).** Bez tego przeglądarka
+> nie rozwiąże `<DOMENA>` i adres `https://<DOMENA>:8080` po prostu się nie otworzy.
+>
+> Co musisz mieć, zanim spróbujesz się zalogować:
+>
+> 1. wpis w `hosts` (na komputerze, z którego wchodzisz): `<IP_TAILSCALE>   <DOMENA>` – **zapisany** (Ctrl+S),
+> 2. zainstalowany Root CA (`rootCA.pem`) w Zaufanych głównych urzędach certyfikacji,
+> 3. wpis w `hosts` musi wskazywać adres z `ADMIN_BIND` (przy adresie Tailscale: adres Tailscale, nie adres LAN).
+>
+> Dopiero potem wejdź na `https://<DOMENA>:8080`, w polu serwera wpisz ten sam adres i zaloguj się jako `synapse-admin`
+> z hasłem z `.env`.
 
 **Dla skryptów (🪟 PC):** w `.env` na PC ustaw te same `SYNAPSE_ADMIN_LOGIN` i `SYNAPSE_ADMIN_PASSWORD` (Część 2).
 
 > ⚠️ **Niesprawdzone (zmiana z 2026-11-04):** założenie konta poleceniem z punktu 2, logowanie konta lokalnego obok modułu LDAP
-> (oczekiwane: Synapse po nieudanym LDAP sprawdza lokalną bazę) oraz HTTPS na porcie panelu. Jeśli `synapse-admin` nie zaloguje się w panelu,
+> (oczekiwane: Synapse po nieudanym LDAP sprawdza lokalną bazę) oraz logowanie w panelu przez HTTPS (✅ sam port 8080 odpowiada `200 OK` – sprawdzone `curl`-em, patrz wyżej). Jeśli `synapse-admin` nie zaloguje się w panelu,
 > sprawdź to w pierwszej kolejności (`docker compose logs --tail=50 synapse proxy`).
 >
 > 🏭 **Produkcja:** HTTPS chroni tylko przed podsłuchem hasła. Admin API (`/_synapse/admin`) na porcie panelu nie ma ograniczenia po adresie IP –

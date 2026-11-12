@@ -1,7 +1,8 @@
 # Synapse – wzór konfiguracji PoC dla matrix.local
 #
 # Skopiuj do synapse/homeserver.yaml (cp synapse/homeserver.yaml.example synapse/homeserver.yaml)
-# i podmień WSZYSTKIE wartości CHANGE_ME_... na te same, które wpisałeś w .env.
+# i podmień wartości CHANGE_ME_...: trzy (postgres, turn, lldap_admin) na TE SAME, które wpisałeś w .env (przepisujesz),
+# a CHANGE_ME_registration na NOWY, osobny sekret (openssl rand -hex 24) – jego w .env nie ma (README, krok 5.1).
 # Prawdziwego homeserver.yaml NIGDY nie commituj – jest w .gitignore.
 server_name: "matrix.local"
 
@@ -44,7 +45,7 @@ report_stats: false
 
 enable_registration: false
 
-# Wspólny sekret do założenia konta administratora z wiersza poleceń (README, krok 7:
+# Wspólny sekret do założenia konta administratora z wiersza poleceń (README, krok 7.1:
 # register_new_matrix_user). Wpisz losową wartość (openssl rand -hex 24); w .env jej nie ma.
 # PO założeniu konta admina USUŃ tę linię z homeserver.yaml i zrestartuj Synapse
 # (docker compose restart synapse): kto zna sekret, może zakładać konta administratorów przez API.
