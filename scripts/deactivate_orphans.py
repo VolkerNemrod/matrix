@@ -29,7 +29,7 @@ Potem (przerwa ok. 4 min -- limit logowania, HTTP 429):
   python setup_directory.py --dry-run
   python setup_directory.py
 
-Wymaga: pip install requests (scripts/requirements.txt); w .env na PC: SYNAPSE_ADMIN_PASSWORD, TS_IP,
+Wymaga: pip install requests (scripts/requirements.txt); w .env na PC: SYNAPSE_ADMIN_PASSWORD, SERVER_IP,
 LLDAP_ADMIN_PASSWORD. Korzysta z kodu provision_synapse_users.py (odczyt LLDAP) i setup_main_room.py
 (Synapse).
 """

@@ -524,7 +524,7 @@ def main():
     if need_widget:
         if not widget_url or "<" in widget_url:
             print("BLAD: brak WIDGET_URL w .env. Dopisz np.:")
-            print("  WIDGET_URL=https://<PELNA-NAZWA-TS>/widget/")
+            print("  WIDGET_URL=https://<DOMENA>/widget/")
             print("(adres widgetu, ktory dziala na KAZDYM kliencie -- patrz README)")
             sys.exit(1)
         if not widget_url.startswith("https://"):

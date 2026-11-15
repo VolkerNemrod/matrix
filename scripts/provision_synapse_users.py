@@ -16,7 +16,7 @@ WYMAGANIA WSTEPNE (jednorazowe, patrz README, krok 7.1 "Konto administratora Syn
   1. Osobne konto lokalne administratora Synapse (SYNAPSE_ADMIN_LOGIN z .env, domyslnie
      synapse-admin), zalozone na VM poleceniem register_new_matrix_user -a (README, krok 7.1);
      to NIE jest konto z LLDAP. Nginx musi przepuszczac /_synapse/admin (README, Etap 0, pkt 2).
-  2. W .env na PC: SYNAPSE_ADMIN_LOGIN i SYNAPSE_ADMIN_PASSWORD (konto i haslo administratora Synapse), TS_IP oraz
+  2. W .env na PC: SYNAPSE_ADMIN_LOGIN i SYNAPSE_ADMIN_PASSWORD (konto i haslo administratora Synapse), SERVER_IP oraz
      LLDAP_ADMIN_PASSWORD (wzor: .env.example).
   3. PC, na ktorym uruchamiasz ten skrypt, musi miec dzialajacy dostep do
      https://matrix.local (wpis w hosts + zaufany rootCA) -- dokladnie to
@@ -107,9 +107,10 @@ if not ADMIN_LOGIN or ADMIN_LOGIN.startswith("CHANGE_ME"):
 
 
 def resolve_lldap_url() -> str:
-    ts_ip = os.environ.get("TS_IP") or load_dotenv_value("TS_IP")
+    ts_ip = (os.environ.get("SERVER_IP") or load_dotenv_value("SERVER_IP")
+             or os.environ.get("TS_IP") or load_dotenv_value("TS_IP"))  # TS_IP: stara nazwa
     if not ts_ip or "x.x" in ts_ip:
-        print("BLAD: nie udalo sie ustalic adresu LLDAP (brak TS_IP w .env).")
+        print("BLAD: nie udalo sie ustalic adresu LLDAP (brak SERVER_IP w .env).")
         sys.exit(1)
     return f"http://{ts_ip}:17170"
 

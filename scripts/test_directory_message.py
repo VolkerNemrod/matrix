@@ -26,7 +26,7 @@ serwera dziala tylko w pokojach nieszyfrowanych -- pokoj tworzony przez API taki
 Do pokoju dolaczane sa tylko osoby uzyte w tescie (+ opcjonalnie --join login1,login2),
 zeby mozna bylo zalogowac sie na jedno z tych kont i obejrzec wiadomosc oczami zwyklego usera.
 
-Uzycie (PC, cd scripts, Tailscale/hosts jak przy setup_directory.py):
+Uzycie (PC, cd scripts, hosts/VPN jak przy setup_directory.py):
   .\\venv\\Scripts\\python.exe test_directory_message.py --dry-run
   .\\venv\\Scripts\\python.exe test_directory_message.py
   .\\venv\\Scripts\\python.exe test_directory_message.py --limit 20 --join j.kowalski

@@ -57,9 +57,9 @@ import requests
 # KONFIGURACJA -- edytuj wedle potrzeb
 # ============================================================
 
-# Adres panelu/API LLDAP. Domyslnie puste -- skrypt sam zbuduje go z TS_IP
-# w Twoim .env (http://<TS_IP>:17170). Wpisz tu cos recznie TYLKO jesli
-# chcesz uzyc innego adresu (np. LAN zamiast Tailscale) -- ale wtedy NIE
+# Adres panelu/API LLDAP. Domyslnie puste -- skrypt sam zbuduje go z SERVER_IP
+# w Twoim .env (http://<SERVER_IP>:17170). Wpisz tu cos recznie TYLKO jesli
+# chcesz uzyc innego adresu (np. adres w LAN) -- ale wtedy NIE
 # commituj tej zmiany do gita (to pole celowo zostaje puste w repozytorium).
 LLDAP_URL = ""
 
@@ -355,13 +355,14 @@ echo "Gotowe. Sprobuj zalogowac sie do Elementa jednym z tych kont haslem z TEST
 
 def resolve_lldap_url() -> str:
     """LLDAP_URL recznie wpisany u gory pliku ma pierwszenstwo; w przeciwnym razie
-    budujemy adres automatycznie z TS_IP w .env (ten sam wzorzec co haslo admina)."""
+    budujemy adres automatycznie z SERVER_IP w .env (ten sam wzorzec co haslo admina)."""
     if LLDAP_URL.strip():
         return LLDAP_URL.strip()
-    ts_ip = os.environ.get("TS_IP") or load_dotenv_value("TS_IP")
+    ts_ip = (os.environ.get("SERVER_IP") or load_dotenv_value("SERVER_IP")
+             or os.environ.get("TS_IP") or load_dotenv_value("TS_IP"))  # TS_IP: stara nazwa
     if not ts_ip or "x.x" in ts_ip:
         print("BLAD: nie udalo sie ustalic adresu LLDAP.")
-        print("Uzupelnij TS_IP w pliku .env (adres Tailscale VM), albo wpisz adres")
+        print("Uzupelnij SERVER_IP w pliku .env (adres serwera w VPN), albo wpisz adres")
         print("recznie w zmiennej LLDAP_URL u gory tego pliku (wtedy NIE commituj tej zmiany).")
         sys.exit(1)
     return f"http://{ts_ip}:17170"

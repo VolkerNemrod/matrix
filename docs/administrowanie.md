@@ -116,7 +116,7 @@ venv\Scripts\activate
 python seed_test_employees.py
 ```
 
-Skrypt sam czyta adres serwera (`TS_IP`) i hasło admina (`LLDAP_ADMIN_PASSWORD`) z Twojego `.env`. Na górze pliku jest `LIMIT` –
+Skrypt sam czyta adres serwera (`SERVER_IP`) i hasło admina (`LLDAP_ADMIN_PASSWORD`) z Twojego `.env`. Na górze pliku jest `LIMIT` –
 **zacznij od małej wartości (np. 3)**, sprawdź, czy działa, dopiero potem ustaw `LIMIT = None` (wszyscy, do `TOTAL_TARGET`).
 Skrypt jest idempotentny – pomija już istniejące konta. Dla istniejących kont:
 
@@ -589,6 +589,8 @@ więc **zmieniasz je ręcznie**. 🐧 **VM**, w `/opt/matrix`:
 4. `nano synapse/homeserver.yaml` – dopisz `registration_shared_secret: "<losowa wartość>"` (wzór: `homeserver.yaml.example`), `docker compose restart synapse`, potem załóż konto administratora wg [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)
    – punkty 2–3 (hasło masz już w `.env`; na końcu usuń sekret z `homeserver.yaml` i zrestartuj Synapse). Kolejni administratorzy: [Etap 0](#etap-0), punkt 2.
 5. `docker compose up -d`, potem `docker compose logs --tail=50 proxy`.
+
+**Zmiana nazwy `TS_IP` → `SERVER_IP` (od 2026-11-15):** w istniejącym `.env` (na VM i na PC) zmień nazwę zmiennej `TS_IP` na `SERVER_IP` (ta sama wartość: adres serwera widziany przez klientów w VPN). Używa jej Coturn (`--external-ip`) oraz skrypty z `scripts/` (przez jakiś czas akceptują jeszcze starą nazwę `TS_IP`). Na VM po zmianie: `docker compose up -d`.
 
 Wpis `<DOMENA>` w `hosts` na PC musi wskazywać adres z `ADMIN_BIND`.
 
