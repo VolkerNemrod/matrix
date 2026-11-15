@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">Architektura Matrix PoC</title>
-  <desc id="d">Klienci Element (Windows, Android) łączą się przez sieć VPN z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin (panel dostępny tylko z VM / przez tunel SSH). Skrypty z PC administratora (provision_synapse_users, setup_directory) łączą się z Admin API Synapse i z LLDAP. W Synapse działa pokój książki adresowej.</desc>
+  <desc id="d">Klienci Element (Windows) łączą się przez sieć VPN z maszyną wirtualną, na której działa sześć kontenerów: Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin (panel dostępny tylko z VM / przez tunel SSH). Skrypty z PC administratora (provision_synapse_users, setup_directory) łączą się z Admin API Synapse i z LLDAP. W Synapse działa pokój książki adresowej.</desc>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
@@ -27,9 +27,9 @@
   <text x="165" y="213" text-anchor="middle" font-size="13" fill="#9bd6b3">+ VPN</text>
 
   <rect x="60" y="260" width="210" height="100" rx="10" fill="#16382a" stroke="#3fa56b"/>
-  <text x="165" y="298" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">Element (Android)</text>
-  <text x="165" y="323" text-anchor="middle" font-size="13" fill="#9bd6b3">cert z własnego Root CA</text>
-  <text x="165" y="343" text-anchor="middle" font-size="13" fill="#9bd6b3">+ VPN</text>
+  <text x="165" y="298" text-anchor="middle" font-size="17" font-weight="700" fill="#e8fff1">Element Desktop</text>
+  <text x="165" y="323" text-anchor="middle" font-size="13" fill="#9bd6b3">inna lokalizacja (test)</text>
+  <text x="165" y="343" text-anchor="middle" font-size="13" fill="#9bd6b3">hosts + rootCA.pem + VPN</text>
 
   <text x="165" y="472" text-anchor="middle" font-size="13" fill="#7fa893">Logowanie kontem z LLDAP</text>
   <text x="165" y="492" text-anchor="middle" font-size="13" fill="#7fa893">(np. j.kowalski)</text>
