@@ -42,4 +42,4 @@ render nginx/conf.d/matrix.conf.example nginx/conf.d/matrix.conf
 
 echo
 echo "Gotowe. Dalej: wpisz hasla (README, krok 5.1) w .env i synapse/homeserver.yaml."
-echo "Na kazdym kliencie dopisz do pliku hosts:  <IP_VM_lub_TAILSCALE>   ${MATRIX_DOMAIN}"
+echo "Na kazdym kliencie dopisz do pliku hosts:  <IP_SERWERA>   ${MATRIX_DOMAIN}"

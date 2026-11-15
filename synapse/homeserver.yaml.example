@@ -8,8 +8,8 @@ server_name: "matrix.local"
 
 # Adres, pod którym klienci łączą się z serwerem. Synapse dokleja go do odpowiedzi na logowanie,
 # a klient się na niego przełącza – musi być rozwiązywalny na każdym kliencie.
-# Z komputerów z wpisem w hosts wystarczy matrix.local; dla klienta bez wpisu w hosts wpisz nazwę
-# MagicDNS z Tailscale, np. "https://matrix-test.TWOJ-TAILNET.ts.net/".
+# Z komputerów z wpisem w hosts wystarczy matrix.local. Każdy klient (też test u kolegi przez Tailscale lub inny VPN)
+# rozwiązuje tę nazwę wpisem w hosts, więc zostaw domenę serwera.
 public_baseurl: "https://matrix.local/"
 pid_file: /data/homeserver.pid
 
@@ -65,7 +65,7 @@ auto_join_rooms:
 user_directory:
   search_all_users: true
 
-# Coturn (WebRTC) – host rozwiązywany przez wpis w hosts na klientach -> IP Tailscale
+# Coturn (WebRTC) – host rozwiązywany przez wpis w hosts na klientach -> adres serwera w VPN (SERVER_IP)
 turn_uris:
   - "turn:matrix.local:3478?transport=udp"
   - "turn:matrix.local:3478?transport=tcp"

@@ -1,7 +1,8 @@
 # Wzór konfiguracji Nginx. Skopiuj do nginx/conf.d/matrix.conf
-# (cp nginx/conf.d/matrix.conf.example nginx/conf.d/matrix.conf).
-# Dostęp przez nazwę Tailscale (opcjonalny, DOMYŚLNIE WYŁĄCZONY): dwa ostatnie bloki `server` na końcu pliku są
-# zakomentowane. Nginx nie czyta tu zmiennych z .env, więc włączasz je ręcznie: patrz README 5.2.
+# (cp nginx/conf.d/matrix.conf.example nginx/conf.d/matrix.conf) albo wygeneruj: bash scripts/render-config.sh
+# (README, krok 5). Domenę (matrix.local) skrypt podmienia na MATRIX_DOMAIN z .env.
+# Dostęp z innej lokalizacji (np. test u kolegi przez Tailscale albo firmowy VPN) nie wymaga dodatkowych bloków:
+# klient używa tej samej domeny, wpisu w hosts i zainstalowanego rootCA.pem (README, krok 9).
 # Prawdziwego matrix.conf nie commituj – jest w .gitignore.
 
 server {
@@ -49,7 +50,7 @@ server {
 # ---------------------------------------------------------------------------
 # Synapse Admin (panel WWW, HTTPS). Port 8080 publikuje Docker na adresie ADMIN_BIND i porcie
 # ADMIN_PORT z .env (docker-compose.yml; domyślnie tylko 127.0.0.1 VM). Zalecane: ADMIN_BIND =
-# adres Tailscale serwera -> panel widzą tylko urządzenia z tailnetu, bez tunelu SSH.
+# adres serwera w sieci VPN -> panel widzą tylko urządzenia podłączone do VPN, bez tunelu SSH.
 # Ten sam certyfikat co port 443 (SAN = domena), więc adres w przeglądarce to https://<DOMENA>:8080
 # (z wpisem <DOMENA> w hosts i zainstalowanym Root CA, tak jak dla Elementa). Przez tunel SSH i
 # localhost przeglądarka pokaże ostrzeżenie o nazwie certyfikatu (SAN nie zawiera localhost).
@@ -78,50 +79,3 @@ server {
         proxy_set_header Host $host;
     }
 }
-
-# ---------------------------------------------------------------------------
-# Dostęp przez nazwę MagicDNS z Tailscale (certyfikat Let's Encrypt
-# z `tailscale cert`, bez instalowania rootCA na kliencie).
-# DOMYŚLNIE WYŁĄCZONE (zakomentowane), bo bez plików .crt/.key Nginx w ogóle się nie uruchomi.
-# Żeby włączyć: 1) wygeneruj certyfikat w katalogu certs/:
-#   sudo tailscale cert <PELNA-NAZWA-TS>
-# 2) odkomentuj poniższe dwa bloki (usuń "# " z początku ich linii, komentarze nad nimi zostaw),
-# 3) zamień wszędzie matrix-test.TWOJ-TAILNET.ts.net na <PELNA-NAZWA-TS>
-# (server_name, ścieżki certyfikatu, base_url), 4) docker compose restart proxy.
-# server_name Synapse nadal = matrix.local; zmienia się tylko adres klienta.
-# ---------------------------------------------------------------------------
-# server {
-#     listen 80;
-#     server_name matrix-test.TWOJ-TAILNET.ts.net;
-#     return 301 https://$host$request_uri;
-# }
-#
-# server {
-#     listen 443 ssl;
-#     server_name matrix-test.TWOJ-TAILNET.ts.net;
-#
-#     ssl_certificate     /etc/nginx/certs/matrix-test.TWOJ-TAILNET.ts.net.crt;
-#     ssl_certificate_key /etc/nginx/certs/matrix-test.TWOJ-TAILNET.ts.net.key;
-#     ssl_protocols       TLSv1.2 TLSv1.3;
-#
-#     client_max_body_size 50M;
-#
-#     location ~ ^(/_matrix|/_synapse/client) {
-#         proxy_pass http://synapse:8008;
-#         proxy_set_header Host $host;
-#         proxy_set_header X-Forwarded-For $remote_addr;
-#         proxy_set_header X-Forwarded-Proto $scheme;
-#         proxy_read_timeout 600s;
-#     }
-#
-#     # Autodiscovery wskazuje na TEN adres (nie matrix.local), bo klient bez wpisu w hosts go nie rozwiąże
-#     location = /.well-known/matrix/client {
-#         default_type application/json;
-#         add_header Access-Control-Allow-Origin * always;
-#         return 200 '{"m.homeserver":{"base_url":"https://matrix-test.TWOJ-TAILNET.ts.net"}}';
-#     }
-#
-#     location / {
-#         return 404;
-#     }
-# }

@@ -12,7 +12,7 @@ services:
       - "80:80"
       - "443:443"
       # Panel Synapse Admin (HTTPS). Adres i port z .env: ADMIN_BIND (domyslnie tylko loopback VM,
-      # dostep przez tunel SSH) i ADMIN_PORT. Zalecane: ADMIN_BIND = adres Tailscale serwera (README, krok 7).
+      # dostep przez tunel SSH) i ADMIN_PORT. Zalecane: ADMIN_BIND = adres serwera w sieci VPN (README, krok 7).
       - "${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8080}:8080"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
@@ -57,7 +57,7 @@ services:
       retries: 10
 
   # 4. Coturn – STUN/TURN dla WebRTC. Tryb host, bo potrzebuje zakresu portów relay;
-  #    external-ip = adres Tailscale serwera (TS_IP z .env).
+  #    external-ip = adres serwera widziany przez klientow w VPN (SERVER_IP z .env).
   coturn:
     image: coturn/coturn:latest
     container_name: matrix-coturn
@@ -72,7 +72,7 @@ services:
       - "--max-port=49200"
       - "--use-auth-secret"
       - "--static-auth-secret=${TURN_SECRET}"
-      - "--external-ip=${TS_IP}"
+      - "--external-ip=${SERVER_IP}"
       - "--fingerprint"
       - "--no-tls"
       - "--no-cli"
