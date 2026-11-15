@@ -12,13 +12,13 @@ Proof of Concept zamkniętego komunikatora firmowego opartego na Matrix:
 - **Nginx** – reverse proxy z SSL,
 - **PostgreSQL** – baza Synapse,
 - **Synapse Admin** – webowy panel administracyjny (konta, pokoje) pod HTTPS; adres i port ustawiasz w `.env` (domyślnie tylko VM / tunel SSH,
-  zalecane: adres Tailscale; patrz [krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) i
+  zalecane: adres serwera w VPN; patrz [krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin) i
   [Synapse Admin](docs/administrowanie.md#synapse-admin--panel-www-do-administrowania-serwerem)),
 - **Pokój „Książka adresowa”** – lista pracowników z działami jako wiadomości w pokoju tylko do odczytu, widoczny dla
   wszystkich (budowany skryptem z grup LLDAP; patrz [Etap 2](docs/administrowanie.md#etap-2)),
 - **Pokój „Ogłoszenia”** – publiczny pokój tylko do odczytu, w którym ogłoszenia firmowe publikują wskazane osoby
   (tworzony skryptem `setup_announcements.py`; patrz [Etap 2](docs/administrowanie.md#etap-2)),
-- **Tailscale** – prywatna sieć, która symuluje izolowaną sieć firmową między lokalizacjami.
+- **VPN** – prywatna sieć między lokalizacjami (w testach Tailscale, docelowo VPN firmy); projekt nie zależy od konkretnego dostawcy.
 
 Instrukcja jest napisana tak, żeby dało się ją odtworzyć od zera – krok po kroku, z komendami do wklejenia.
 Domena testowa to `matrix.local`, reverse proxy to Nginx.
@@ -36,7 +36,7 @@ Domena testowa to `matrix.local`, reverse proxy to Nginx.
 ## Architektura
 
 <p align="center">
-  <img src="docs/img/architecture.svg" alt="Schemat architektury: klienci Element, PC administratora ze skryptami, Tailscale, VM z kontenerami Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin" width="100%">
+  <img src="docs/img/architecture.svg" alt="Schemat architektury: klienci Element, PC administratora ze skryptami, sieć VPN, VM z kontenerami Nginx, Synapse, PostgreSQL, LLDAP, Coturn i Synapse Admin" width="100%">
 </p>
 
 Jak wygląda logowanie (uproszczony schemat):
@@ -65,7 +65,7 @@ sequenceDiagram
 0. [Oznaczenia i zasady](#0-oznaczenia-i-zasady)
 1. [Połącz się z VM](#krok-1--połącz-się-z-vm)
 2. [Docker i Docker Compose](#krok-2--docker-i-docker-compose)
-3. [Tailscale na serwerze](#krok-3--tailscale-na-serwerze)
+3. [VPN i Tailscale (opcjonalnie)](#krok-3--vpn-i-tailscale-opcjonalnie)
 4. [Pliki projektu na serwerze](#krok-4--pliki-projektu-na-serwerze)
 5. [Sekrety i pliki lokalne](#krok-5--sekrety-i-pliki-lokalne)
 6. [Certyfikaty (PKI)](#krok-6--certyfikaty-pki)
@@ -159,10 +159,10 @@ scripts/deactivate_orphans.py       odejście pracownika: dezaktywuje w Synapse 
 scripts/requirements.txt            zależności Pythona dla skryptów (requests)
 docs/img/*.svg                      grafiki do README (baner, architektura, mapa kroków)
 docs/administrowanie.md             Etap 0 (kolejny admin) i Etap 3: Admin API, kopie, logi, panel Synapse Admin, skrypty, komendy
-docs/rozwiazywanie-problemow.md     problemy 1-10 z diagnozą
+docs/rozwiazywanie-problemow.md     problemy 1-13 z diagnozą
 docs/produkcja.md                   lista kontrolna przed produkcją, ramki 🏭, znane ograniczenia PoC
 docs/wyglad-element.md              motywy i logo Element Desktop (opcjonalnie)
-docs/klienci-dodatkowe.md           komputer w innej lokalizacji i konfiguracja serwera pod dostęp przez nazwę Tailscale (opcjonalnie)
+docs/klienci-dodatkowe.md           test u kolegi (komputer w innej lokalizacji): hosts + rootCA.pem, Tailscale lub inny VPN (opcjonalnie)
 docs/szkic-coturn-webrtc.md         szkic konfiguracji Coturn/WebRTC
 element-layout/                     config.json, logo i motywy Element Desktop (opcjonalnie)
 ```
@@ -194,8 +194,8 @@ kończy się działającym i zabezpieczonym stackiem. Gdy to działa, przechodzi
 | `<IP_VM>` | adres VM w sieci lokalnej |
 | `<DOMENA>` | nazwa domeny z `MATRIX_DOMAIN` w `.env` (domyślnie `matrix.local`; w tej instrukcji przykłady z `matrix.local` czytaj z Twoją domeną) |
 | `<UZYTKOWNIK>` | użytkownik Linuksa na VM |
-| `<IP_TAILSCALE>` | adres Tailscale serwera (`tailscale ip -4` na VM) |
-| `<PELNA-NAZWA-TS>` | pełna nazwa serwera w Tailscale, np. `matrix-test.nazwa-tailnetu.ts.net` (panel Tailscale albo `tailscale status`) |
+| `<IP_SERWERA>` | adres serwera widziany przez klientów w sieci VPN (przy Tailscale: `tailscale ip -4` na VM; w sieci lokalnej adres LAN) |
+
 
 **Najważniejsze zasady:**
 
@@ -209,7 +209,7 @@ kończy się działającym i zabezpieczonym stackiem. Gdy to działa, przechodzi
    w pliku `hosts` (krok 9).
 
 **Wymagania:** VM z Debianem 12 lub Ubuntu 24.04 (min. 4 GB RAM, 2 vCPU – dla testu wystarczy; dla kilkuset
-użytkowników rozmiar niesprawdzony), konto w Tailscale, komputery klienckie z Windows.
+użytkowników rozmiar niesprawdzony), dostęp klientów do VM przez VPN albo sieć lokalną (Tailscale tylko opcjonalnie, do testu u kolegi), komputery klienckie z Windows.
 
 ---
 
@@ -243,9 +243,9 @@ Oba polecenia muszą pokazać numer wersji.
 
 ---
 
-## Krok 3 – Tailscale na serwerze
+## Krok 3 – VPN i Tailscale (opcjonalnie)
 
-Tailscale to prywatna sieć VPN. Dzięki niej komputery klienckie „widzą" serwer, jakby były w jednej sieci.
+**Ten krok jest opcjonalny.** Projekt nie wymaga Tailscale: komputery klienckie muszą tylko dotrzeć do serwera (sieć lokalna albo dowolny VPN, np. firmowy) i mieć wpis w `hosts` oraz `rootCA.pem` (krok 9). Jeśli nie używasz Tailscale, przejdź do kroku 4, a jako `<IP_SERWERA>` używaj adresu serwera w swoim VPN-ie lub w sieci lokalnej. Tailscale przydaje się do szybkiego testu z innej lokalizacji (np. u kolegi) bez konfigurowania VPN. Tailscale to prywatna sieć VPN. Dzięki niej komputery klienckie „widzą" serwer, jakby były w jednej sieci.
 
 🐧 **VM**:
 
@@ -260,7 +260,7 @@ Komenda `tailscale up` wypisze **link** – otwórz go w przeglądarce i zaloguj
 tailscale ip -4
 ```
 
-Wynik (np. `100.64.12.34`) to **`<IP_TAILSCALE>`**. Zapisz go – wpiszesz go w pliku `.env` i na klientach.
+Wynik (np. `100.64.12.34`) to adres serwera w tym VPN (**`<IP_SERWERA>`**). Zapisz go – wpiszesz go w pliku `.env` (`SERVER_IP`, `ADMIN_BIND`) i na klientach (`hosts`).
 
 Pozostałe komputery muszą być w **tym samym tailnecie** (zaproś użytkownika albo udostępnij
 mu maszynę w panelu Tailscale).
@@ -343,8 +343,8 @@ openssl rand -hex 24
 Wpisz je w `.env` (`nano .env`; w `nano`: `Ctrl+O`, `Enter` – zapis, `Ctrl+X` – wyjście):
 
 ```
-TS_IP=<IP_TAILSCALE>
-ADMIN_BIND=<IP_TAILSCALE>
+SERVER_IP=<IP_SERWERA>
+ADMIN_BIND=<IP_SERWERA>
 POSTGRES_PASSWORD=...
 TURN_SECRET=...
 LLDAP_ADMIN_PASSWORD=...
@@ -354,7 +354,7 @@ SYNAPSE_ADMIN_PASSWORD=...
 ```
 
 `ADMIN_BIND` to adres, na którym nasłuchuje panel Synapse Admin ([krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
-Adres Tailscale = panel widoczny tylko z urządzeń w Twoim tailnecie; domyślne `127.0.0.1` = tylko z samej VM albo przez tunel SSH.
+Adres serwera w VPN = panel widoczny tylko z urządzeń podłączonych do VPN; domyślne `127.0.0.1` = tylko z samej VM albo przez tunel SSH.
 `SYNAPSE_ADMIN_PASSWORD` to hasło osobnego konta administratora, które założysz w kroku 7.1 (login zostaje `synapse-admin`).
 
 > ### ⚠️ Trzy hasła muszą być w DWÓCH plikach: `.env` ORAZ `synapse/homeserver.yaml`
@@ -369,7 +369,7 @@ Adres Tailscale = panel widoczny tylko z urządzeń w Twoim tailnecie; domyślne
 > | Sekret TURN | `TURN_SECRET` | `turn_shared_secret` | Synapse ↔ Coturn (rozmowy A/V) |
 > | Hasło admina LLDAP | `LLDAP_ADMIN_PASSWORD` | `modules[].config.bind_password` | Synapse → LDAP (logowanie) |
 >
-> Tylko w `.env`: `LLDAP_JWT_SECRET`, `LLDAP_KEY_SEED`, `TS_IP`.
+> Tylko w `.env`: `LLDAP_JWT_SECRET`, `LLDAP_KEY_SEED`, `SERVER_IP`.
 
 > ### 🆕 Ściąga: co GENERUJESZ nowe, a co tylko PRZEPISUJESZ
 >
@@ -408,13 +408,13 @@ Edytuj `synapse/homeserver.yaml` (`nano synapse/homeserver.yaml`) i podmień w n
 starcie, więc późniejsza zmiana samego `.env` może ich nie zmienić (patrz
 [Przed wdrożeniem produkcyjnym](#przed-wdrożeniem-produkcyjnym)).
 
-### 5.2 Dostęp przez nazwę z Tailscale (opcjonalnie)
+### 5.2 Sprawdzenie
 
-W `nginx/conf.d/matrix.conf` dwa ostatnie bloki `server` (z nazwą `matrix-test.TWOJ-TAILNET.ts.net`) są **domyślnie
-zakomentowane** – bez certyfikatu Tailscale Nginx w ogóle by się nie uruchomił. Jeśli **nie** testujesz dostępu z drugiej lokalizacji (krok 9.2),
-nie robisz tu nic i zostawiasz w `homeserver.yaml` wartość `public_baseurl: "https://matrix.local/"`.
+Dostęp z innej lokalizacji (np. test u kolegi, krok 9.2) nie wymaga żadnej dodatkowej konfiguracji serwera: klient używa tej samej domeny, wpisu w `hosts` i `rootCA.pem`.
 
-Jeśli testujesz – robisz to wg [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md) (potrzebna jest `<PELNA-NAZWA-TS>`; tam też instrukcja odkomentowania bloków).
+
+
+
 
 **Sprawdzenie:** `grep -n CHANGE_ME .env synapse/homeserver.yaml` nic nie wypisuje (wszystkie placeholdery podmienione).
 
@@ -526,11 +526,11 @@ docker compose restart synapse
 
 | `ADMIN_BIND` | Kto dotrze do panelu | Uwagi |
 |---|---|---|
-| adres Tailscale (**zalecane**) | tylko urządzenia w Twoim tailnecie | ruch szyfrowany przez Tailscale, bez tunelu SSH |
+| adres serwera w VPN (**zalecane**) | tylko urządzenia podłączone do VPN | ruch szyfrowany przez VPN, bez tunelu SSH |
 | `127.0.0.1` (domyślnie) | tylko VM albo tunel SSH | przez tunel (`ssh -L 8080:127.0.0.1:8080 <UZYTKOWNIK>@<IP_VM>`, adres `https://localhost:8080`) przeglądarka pokaże ostrzeżenie o nazwie certyfikatu, bo jest on wystawiony na `<DOMENA>` |
 | `0.0.0.0` | cała sieć lokalna | niezalecane |
 
-Po zmianie `ADMIN_BIND` w `.env`: `docker compose up -d`. Jeśli kontener `proxy` nie startuje po restarcie VM (adres Tailscale jeszcze nie
+Po zmianie `ADMIN_BIND` w `.env`: `docker compose up -d`. Jeśli kontener `proxy` nie startuje po restarcie VM (adres VPN jeszcze nie
 istnieje), powtórz po chwili `docker compose up -d`.
 
 **Sprawdzenie** (🐧 **VM**; ✅ sprawdzone w praktyce):
@@ -550,9 +550,9 @@ Wynik `HTTP/1.1 200 OK` = panel odpowiada (✅ sprawdzone: komenda zwraca `200 O
 >
 > Co musisz mieć, zanim spróbujesz się zalogować:
 >
-> 1. wpis w `hosts` (na komputerze, z którego wchodzisz): `<IP_TAILSCALE>   <DOMENA>` – **zapisany** (Ctrl+S),
+> 1. wpis w `hosts` (na komputerze, z którego wchodzisz): `<IP_SERWERA>   <DOMENA>` – **zapisany** (Ctrl+S),
 > 2. zainstalowany Root CA (`rootCA.pem`) w Zaufanych głównych urzędach certyfikacji,
-> 3. wpis w `hosts` musi wskazywać adres z `ADMIN_BIND` (przy adresie Tailscale: adres Tailscale, nie adres LAN).
+> 3. wpis w `hosts` musi wskazywać adres z `ADMIN_BIND` (adres serwera w VPN, nie adres LAN, jeśli `ADMIN_BIND` jest adresem VPN).
 >
 > Dopiero potem wejdź na `https://<DOMENA>:8080`, w polu serwera wpisz ten sam adres i zaloguj się jako `synapse-admin`
 > z hasłem z `.env`.
@@ -571,7 +571,7 @@ Wynik `HTTP/1.1 200 OK` = panel odpowiada (✅ sprawdzone: komenda zwraca `200 O
 
 ## Krok 8 – Konta w LLDAP
 
-1. Przeglądarka: `http://<IP_TAILSCALE>:17170` (albo `<IP_VM>`, jeśli jesteś w sieci lokalnej).
+1. Przeglądarka: `http://<IP_SERWERA>:17170` (albo `<IP_VM>`, jeśli jesteś w sieci lokalnej).
 2. Logowanie: użytkownik `admin`, hasło = `LLDAP_ADMIN_PASSWORD` z `.env`.
 3. **Groups → Create group:** utwórz `Zarzad` i `IT`.
 4. **Users → Create user:**
@@ -605,16 +605,16 @@ wyznaczyć ([Etap 0](docs/administrowanie.md#etap-0), opcjonalny). Taką osobę 
 
 Robisz **na każdym komputerze** testowym.
 
-**Tailscale:** zainstaluj (tailscale.com/download) i zaloguj się do tego samego tailnetu co serwer.
+**Dostęp do serwera:** komputer musi mieć łączność z serwerem (sieć lokalna albo VPN firmy; przy teście przez Tailscale zainstaluj Tailscale (tailscale.com/download) i dołącz do tego samego tailnetu co serwer).
 
 **Plik hosts:**
 
 1. Menu Start → `Notatnik` → prawy przycisk → **Uruchom jako administrator**.
 2. Plik → Otwórz → `C:\Windows\System32\drivers\etc\hosts` (filtr: „Wszystkie pliki").
-3. Dopisz na końcu (z adresem Tailscale serwera; w sieci lokalnej możesz użyć `<IP_VM>`, ale wtedy panel Synapse Admin, jeśli `ADMIN_BIND`
-   to adres Tailscale, będzie pod tą nazwą niedostępny):
+3. Dopisz na końcu (z adresem serwera w VPN, czyli `<IP_SERWERA>`; w sieci lokalnej możesz użyć `<IP_VM>`, ale wtedy panel Synapse Admin, jeśli `ADMIN_BIND`
+   to adres VPN, będzie pod tą nazwą niedostępny):
    ```
-   <IP_TAILSCALE>   <DOMENA>
+   <IP_SERWERA>   <DOMENA>
    ```
 4. **Zapisz plik (Ctrl+S)** – niezapisany plik to najczęstsza przyczyna, że domena się nie rozwiązuje.
    Jeśli masz tu stary wpis z innego środowiska o tej samej nazwie, usuń go albo zakomentuj (`#`) i wykonaj `ipconfig /flushdns`.
@@ -647,8 +647,8 @@ domowym i wpisz `https://<DOMENA>`. Zaloguj się loginem i hasłem z LLDAP (np. 
 
 ### 9.2 Komputer w innej lokalizacji (u kolegi)
 
-*Opcjonalne – test z drugiej sieci; ⚠️ niesprawdzone w praktyce.* Kolega dołącza do tailnetu i łączy się po `<PELNA-NAZWA-TS>`, bez
-instalowania certyfikatów. Wymaga wcześniejszej konfiguracji serwera (certyfikat z Tailscale, Nginx, `public_baseurl`). Konfiguracja, plan krok po kroku i lista testów (w tym A/V przez Coturn): [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
+*Opcjonalne – test z drugiej sieci; ⚠️ niesprawdzone w praktyce.* Kolega robi dokładnie to samo co w kroku 9.1 (wpis w `hosts` z adresem serwera, `rootCA.pem`, Element z serwerem `https://<DOMENA>`). Przy połączeniu przez Tailscale dołącza do Twojego tailnetu (zaproszenie albo udostępnienie maszyny), a wpis w `hosts` ma adres serwera w Tailscale. Koledze wystarczy plik `rootCA.pem` (publiczny certyfikat, **nigdy** `pki/rootCA.key`) i ta instrukcja; nie potrzeba osobnego certyfikatu ani dodatkowej konfiguracji serwera.
+Plan krok po kroku i lista testów (w tym A/V przez Coturn): [docs/klienci-dodatkowe.md](docs/klienci-dodatkowe.md).
 
 ---
 
@@ -660,14 +660,14 @@ instalowania certyfikatów. Wymaga wcześniejszej konfiguracji serwera (certyfik
 3. **Wyszukiwanie osoby** – w Elemencie: **+ → Rozpocznij czat** i wpisz fragment imienia, nazwiska albo
    nazwy działu (np. `Sprzedaż`). Kliknięcie znalezionej osoby otwiera rozmowę 1:1 ✅ (patrz [Przygotowanie, A](docs/administrowanie.md#przygotowanie-jednorazowo)).
 4. **Rozmowa audio/wideo 1:1** – w czacie bezpośrednim kliknij ikonę słuchawki / kamery. Wymaga, żeby klient
-   był w Tailscale (adres zewnętrzny Coturn to `TS_IP`). Jeśli nie ma dźwięku lub obrazu, zajrzyj w logi:
-   `docker compose logs --tail=50 coturn`. Porty: 3478 oraz 49160–49200 na IP Tailscale. Test A/V
+   był w tej samej sieci VPN co serwer (adres zewnętrzny Coturn to `SERVER_IP`). Jeśli nie ma dźwięku lub obrazu, zajrzyj w logi:
+   `docker compose logs --tail=50 coturn`. Porty: 3478 oraz 49160–49200 na adresie `SERVER_IP`. Test A/V
    **niepotwierdzony**.
 5. **Panel Synapse Admin** – w przeglądarce `https://<DOMENA>:8080` (wpis w `hosts` i Root CA jak w kroku 9.1; port z `ADMIN_PORT`).
    Zaloguj się jako `synapse-admin` (hasło z `.env`, pole serwera: ten sam adres) – widzisz listę użytkowników. ⚠️ niesprawdzone
    (patrz [krok 7.1](#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
 
-Kolejność testów: najpierw w sieci lokalnej, potem przez Tailscale.
+Kolejność testów: najpierw w sieci lokalnej, potem przez VPN.
 
 ### Drugie konto w Elemencie bez zamykania pierwszego (przydatne w testach)
 

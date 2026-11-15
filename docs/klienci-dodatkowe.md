@@ -1,126 +1,82 @@
-# Komputer w innej lokalizacji i konfiguracja serwera pod dostęp przez nazwę Tailscale
+# Test u kolegi: komputer w innej lokalizacji
 
 > Część dokumentacji projektu Matrix PoC. Podstawowa ścieżka klienta (Windows, Element Desktop) jest w
-> [README – krok 9.1](../README.md#91-windows-element-desktop). Tu jest wariant dodatkowy, potrzebny tylko jeśli
-> testujesz dostęp z zupełnie innej sieci (README, krok 9.2).
+> [README – krok 9.1](../README.md#91-windows-element-desktop); tu jest to samo dla osoby w zupełnie innej sieci
+> (README, krok 9.2).
 
-## Konfiguracja serwera: dostęp przez nazwę MagicDNS z Tailscale
+> ⚠️ **Status: opisane, ale NIESPRAWDZONE w praktyce.** To plan krok po kroku na test „co widzi osoba w innej sieci,
+> u siebie w domu/biurze” – symulacja drugiej lokalizacji firmy. Dopisz tu wynik, gdy kolega faktycznie to przetestuje.
 
-**Dlaczego inaczej niż na Windows w tej samej sieci:** komputer bez wpisu w `hosts` nie rozwiąże `matrix.local`.
-Zamiast tego klient łączy się przez nazwę MagicDNS z Tailscale (`<PELNA-NAZWA-TS>`) i prawdziwy certyfikat
-z Tailscale – **na kliencie nie instalujesz żadnego Root CA**. Poniższe kroki 1–6 robisz raz, na serwerze.
+## Zasada
 
-> Klient musi mieć włączone Tailscale i być w tym samym tailnecie co serwer (albo mieć udostępnioną maszynę serwera).
+Projekt **nie zależy od Tailscale**: serwer jest dostępny pod swoją domeną (`<DOMENA>`, `MATRIX_DOMAIN` z `.env`), a każdy
+klient potrzebuje tylko:
 
-**1. Panel Tailscale** (login.tailscale.com → zakładka **DNS**): włącz **MagicDNS** i **HTTPS Certificates**.
+1. **łączności z serwerem** – przez VPN firmy, sieć lokalną albo (do szybkiego testu) Tailscale,
+2. **wpisu w `hosts`**: `<IP_SERWERA>   <DOMENA>`,
+3. **zainstalowanego `rootCA.pem`** (publiczny certyfikat urzędu, który podpisał certyfikat serwera).
 
-**2. Certyfikat z Tailscale** – 🐧 **VM**:
+Nie ma osobnego certyfikatu ani dodatkowej konfiguracji serwera dla „drugiej lokalizacji”: kolega robi to samo co
+[README, krok 9.1](../README.md#91-windows-element-desktop). Adres w `hosts` to adres serwera **widziany z jego sieci**.
+Przy Tailscale jest to adres Tailscale serwera (`tailscale ip -4` na VM), przy VPN firmy – adres z tego VPN-u.
 
-```bash
-cd /opt/matrix/certs
-sudo tailscale cert <PELNA-NAZWA-TS>
-```
+## Co przekazujesz koledze
 
-Wynik: `Wrote public cert to ...crt` i `Wrote private key to ...key`. Nazwy plików muszą być takie same
-jak w `nginx/conf.d/matrix.conf`.
+- plik **`rootCA.pem`** (z `certs/rootCA.pem` na serwerze; to certyfikat publiczny),
+- **`<IP_SERWERA>`** i **`<DOMENA>`** (do wpisu w `hosts`),
+- login i hasło **konta testowego** (patrz niżej),
+- link do tej instrukcji.
 
-**3. Nginx** – w `nginx/conf.d/matrix.conf` **odkomentuj** dwa ostatnie bloki `server` (usuń `# ` z początku ich linii;
-domyślnie są zakomentowane) i zamień wszystkie wystąpienia `matrix-test.TWOJ-TAILNET.ts.net`
-na `<PELNA-NAZWA-TS>` (pięć miejsc: dwa `server_name`, dwie ścieżki certyfikatu i adres w
-`.well-known`). Drugi blok `server` ma **własny** `/.well-known/matrix/client` wskazujący na tę nazwę – to
-ważne, bo ten z `matrix.local` jest dla klienta bez wpisu w `hosts` nieosiągalny.
+> ⛔ **Nigdy** nie wysyłaj `pki/rootCA.key` (klucz urzędu) ani `certs/matrix.key`. Klucz urzędu zostaje wyłącznie na serwerze.
 
-**4. Synapse (kluczowe!)** – w `synapse/homeserver.yaml` ustaw:
+> ⚠️ **Co to oznacza dla kolegi:** instaluje u siebie zaufany urząd certyfikacji, którym można podpisać certyfikat dla
+> dowolnej strony (nie tylko dla `<DOMENA>`). Do testu to akceptowalne, jeśli ufa Ci i kluczowi `rootCA.key`,
+> ale po teście warto go usunąć (patrz „Po teście”). Bezpieczniejszy wariant: zaimportować `rootCA.pem` tylko do
+> Firefoksa (ma własny magazyn certyfikatów) i testować w nim w przeglądarce, bez instalacji w systemie.
 
-```yaml
-public_baseurl: "https://<PELNA-NAZWA-TS>/"
-```
+## Dostęp do sieci
 
-Synapse dokleja ten adres do odpowiedzi na logowanie, a Element po zalogowaniu przełącza się na niego.
-Przy `https://matrix.local/` klient bez wpisu w `hosts` loguje się, ale potem wisi na „Wstępna synchronizacja – czekanie
-na odpowiedź serwera" (patrz [Rozwiązywanie problemów](rozwiazywanie-problemow.md)). Skutek uboczny: Element na Windowsie przy **nowym**
-logowaniu też przełączy się na tę nazwę (wymaga włączonego Tailscale); zalogowane sesje się nie zmieniają.
+**Tailscale (szybki test):** kolega zakłada konto (tailscale.com, wystarczy darmowe osobiste), a Ty udostępniasz mu
+maszynę serwera: panel Tailscale (login.tailscale.com) → **Machines** → przy VM **Share** → e-mail kolegi. Kolega przyjmuje
+zaproszenie i instaluje Tailscale (tailscale.com/download). Udostępnienie dotyczy tylko tej jednej maszyny, bez dołączania
+do reszty Twojej sieci.
 
-**5. Sprawdzenie i restart** – 🐧 **VM**:
+- **Niesprawdzone:** czy udostępniona w ten sposób maszyna działa identycznie jak pełne członkostwo w tailnecie (adres
+  `100.x.x.x` po stronie kolegi) i czy ruch jest rzeczywiście jednokierunkowy. Jeśli **Share** nie zadziała, alternatywa to
+  zaproszenie kolegi jako pełnego członka tailnetu (**Users** → **Invite**).
 
-```bash
-cd /opt/matrix
-docker compose exec proxy nginx -t
-docker compose restart proxy
-docker compose restart synapse
-```
+**VPN firmy:** kolega łączy się z VPN wg zasad firmy; wpis w `hosts` ma adres serwera z tego VPN-u.
 
-`nginx -t` musi pokazać `syntax is ok` i `test is successful`. Nginx nie wstanie, jeśli plików z kroku 2
-nie ma w `certs/`.
+**Sprawdzenie połączenia** (PowerShell kolegi; przy Tailscale): `tailscale ping <IP_SERWERA>` – ma pokazać odpowiedzi (czas
+w ms), a nie `no response`. Bez Tailscale: `Test-NetConnection <IP_SERWERA> -Port 443` ma dać `TcpTestSucceeded : True`.
 
-**6. Test w przeglądarce klienta** (przed Elementem): otwórz
-`https://<PELNA-NAZWA-TS>/_matrix/client/versions` – ma pokazać JSON, **bez** ostrzeżenia o certyfikacie.
+## Co kolega robi u siebie
 
-**Jeszcze niesprawdzone:**
+1. **Plik `hosts`** i **`rootCA.pem`** – dokładnie jak w [README, krok 9.1](../README.md#91-windows-element-desktop)
+   (Notatnik jako administrator → `C:\Windows\System32\drivers\etc\hosts` → dopisać `<IP_SERWERA>   <DOMENA>` → **Ctrl+S**;
+   certyfikat: PowerShell jako administrator, `certutil -addstore -f "Root" rootCA.pem`; potem `ipconfig /flushdns`).
+2. **Test w przeglądarce** (przed Elementem): `https://<DOMENA>/_matrix/client/versions` – ma pokazać JSON, **bez** ostrzeżenia
+   o certyfikacie.
+3. **Element Desktop** (element.io/download): przy logowaniu **Edytuj** przy serwerze domowym → `https://<DOMENA>`.
+4. **Logowanie** loginem i hasłem z LLDAP. **Zalecane: jedno z testowych kont z Etapu B0** (patrz
+   [Przygotowanie, Etap B0](administrowanie.md#etap-b0--testowa-struktura-firmy-w-lldap), ok. 200 fikcyjnych kont,
+   wspólne hasło testowe), a nie konto prawdziwego pracownika – to dane niezwiązane z żadną realną tożsamością.
 
-- rozmowy audio/wideo z drugiej lokalizacji – `turn_uris` w `homeserver.yaml` wskazują `matrix.local`, którego klient
-  bez wpisu w `hosts` nie rozwiąże; trzeba je zmienić na `<PELNA-NAZWA-TS>` (szkic: [docs/szkic-coturn-webrtc.md](szkic-coturn-webrtc.md)),
-- odnawianie certyfikatu z Tailscale (ważny ok. 90 dni) – trzeba powtórzyć `tailscale cert` i zrestartować
-  proxy, najlepiej w cronie.
+## Co przetestować po zalogowaniu
 
-## Komputer w innej lokalizacji (u kolegi)
+- **Wiadomości:** pokój `Firma-Ogolny` albo nowy DM z kolegi do Ciebie – czy wszystko działa przez prawdziwą sieć (nie LAN).
+- **Rozmowa audio/wideo 1:1** – kluczowy test tego scenariusza (symulacja 2. lokalizacji). **Niesprawdzone:**
+  - czy połączenie A/V przechodzi między dwiema różnymi sieciami przez Coturn (u nas testowane tylko w jednej sieci),
+  - Coturn ogłasza **jeden** zewnętrzny adres (`SERVER_IP` z `.env`, `--external-ip`); musi to być adres, który klient
+    faktycznie widzi (przy teście przez Tailscale: adres Tailscale serwera; przy VPN firmy: adres z tego VPN-u),
+  - Coturn potrzebuje portu **3478** oraz zakresu **49160–49200** na adresie `SERVER_IP` (poza standardowym **443** dla
+    samego Elementa); zawężony firewall/ACL u kolegi albo w VPN to pierwsze podejrzane miejsce.
+- Kolejność zalecana: najpierw zwykłe wiadomości, dopiero potem A/V – łatwiej odróżnić problem połączenia od problemu
+  Coturn/WebRTC (szkic: [szkic-coturn-webrtc.md](szkic-coturn-webrtc.md)).
 
-> ⚠️ **Status: opisane, ale NIESPRAWDZONE w praktyce.** To jest plan krok po kroku na test „co widzi osoba
-> w zupełnie innej sieci, u siebie w domu/biurze” – symulacja drugiej lokalizacji firmy. Dopisz tu wynik,
-> gdy kolega faktycznie to przetestuje.
+## Po teście
 
-**Dlaczego to inny przypadek niż Windows w tej samej sieci:** tam komputer łączył się po
-`matrix.local`, co wymagało ręcznego wpisu w pliku `hosts` i zainstalowania **własnego** Root CA (`rootCA.pem`)
-jako zaufanego urzędu – to ma sens na firmowym komputerze, ale instalowanie prywatnego CA na komputerze
-osoby z zewnątrz to niepotrzebne namieszanie w zaufaniu cudzego systemu. Zamiast tego używamy **drogi opisanej
-wyżej (konfiguracja serwera)** – adresu `<PELNA-NAZWA-TS>` z certyfikatem wydanym przez Tailscale (publicznie
-zaufanym, przez Let's Encrypt) – **kolega NIE instaluje żadnego certyfikatu ani CA**, dzięki czemu ryzyko
-i kłopot po jego stronie są minimalne.
-
-**Co kolega musi zrobić u siebie, krok po kroku:**
-
-1. **Założyć konto w Tailscale** (tailscale.com, może być darmowe konto osobiste – np. logowanie przez
-   Google/Microsoft), jeśli jeszcze nie ma.
-2. **Dostać zaproszenie do sieci (tailnetu)** – to robi administrator (Ty), nie kolega:
-   - Panel Tailscale (login.tailscale.com) → **Access controls** albo wprost przy maszynie VM na liście
-     **Machines** → opcja **Share** → podajesz e-mail kolegi. Kolega dostaje e-mail z linkiem, klika
-     **Accept** – to udostępnia mu **tylko tę jedną maszynę** (VM), bez dołączania do reszty Twojej sieci.
-   - **Niesprawdzone:** czy udostępniona w ten sposób maszyna działa identycznie jak pełne członkostwo
-     w tailnecie (np. czy adres `100.x.x.x` VM wygląda tak samo po stronie kolegi), czy ruch jest
-     rzeczywiście jednokierunkowy (kolega widzi VM, ale czy VM/inni mogliby zobaczyć jego komputer).
-     Jeśli **Share** nie zadziała jak trzeba, alternatywa to zaproszenie kolegi jako pełnego członka
-     Twojego tailnetu (ten sam ekran, zakładka **Users** → **Invite**).
-3. **Zainstalować Tailscale** na swoim komputerze (tailscale.com/download) i zalogować się kontem
-   z punktu 1 – zaakceptuje zaproszenie automatycznie.
-4. **Sprawdzić połączenie** – w terminalu/PowerShellu kolegi:
-   ```powershell
-   tailscale ping <PELNA-NAZWA-TS>
-   ```
-   Powinno pokazać odpowiedzi (czas w ms), a nie `no response`. Jeśli nie działa – sprawdź w panelu
-   Tailscale, czy maszyna kolegi faktycznie jest połączona (status **Connected**).
-5. **Test w przeglądarce** (przed Elementem, tak jak w punkcie 6 wyżej): otwórz
-   `https://<PELNA-NAZWA-TS>/_matrix/client/versions` – ma pokazać JSON, **bez żadnego ostrzeżenia
-   o certyfikacie** (to jest ten test, który potwierdza, że certyfikat jest publicznie zaufany i kolega
-   nie musi niczego instalować).
-6. **Zainstalować Element Desktop** (element.io/download).
-7. **Przy logowaniu** kliknij **Edytuj** przy serwerze domowym i wpisz `https://<PELNA-NAZWA-TS>`
-   (NIE `matrix.local` – tego kolega nie rozwiąże, bo nie ma takiego wpisu w swoim pliku `hosts`).
-8. **Zalogować się** loginem i hasłem z LLDAP. **Zalecane: użyj jednego z testowych kont z Etapu B0**
-   (patrz [Przygotowanie, Etap B0](administrowanie.md#etap-b0--testowa-struktura-firmy-w-lldap), ok. 200
-   fikcyjnych kont, wspólne hasło testowe) zamiast prawdziwego konta pracownika – to dane niezwiązane
-   z żadną realną tożsamością, bezpieczniejsze do testu z kimś spoza zaufanego środowiska.
-
-**Co przetestować po zalogowaniu:**
-
-- **Wiadomości:** pokój `Firma-Ogolny` albo nowy DM z kolegi do Ciebie – podstawowy test, czy w ogóle
-  wszystko działa przez prawdziwą sieć (nie LAN).
-- **Rozmowa audio/wideo 1:1** – to jest kluczowy test tego scenariusza (symulacja 2. lokalizacji firmy).
-  **Niesprawdzone, do zweryfikowania:**
-  - czy połączenie A/V w ogóle przechodzi między dwiema różnymi sieciami przez Coturn (u nas testowane
-    tylko w jednej sieci lokalnej),
-  - jeśli u kolegi jest zawężony firewall/ACL (np. sieć firmowa, router korporacyjny) – Coturn
-    potrzebuje portu **3478** oraz zakresu **49160–49200** na adresie Tailscale serwera (`TS_IP`), poza
-    standardowym **443** dla samego Elementa. Jeśli połączenie głosowe/wideo nie działa, to pierwsze
-    podejrzane miejsce.
-- Kolejność zalecana: najpierw zwykłe wiadomości, dopiero potem A/V – łatwiej odróżnić, czy problem jest
-  w samym połączeniu Tailscale, czy specyficznie w Coturn/WebRTC.
+- Kolega usuwa wpis z `hosts` i certyfikat: `certmgr.msc` → Zaufane główne urzędy certyfikacji → certyfikat o nazwie
+  `Matrix PoC Root CA - <DOMENA>` → Usuń (⚠️ niesprawdzone: `certutil -delstore "Root" "Matrix PoC Root CA - <DOMENA>"`).
+- Ty cofasz udostępnienie maszyny w panelu Tailscale (**Machines** → **Share** → usuń dostęp) i, jeśli to było konto testowe,
+  zmieniasz jego hasło albo dezaktywujesz konto.

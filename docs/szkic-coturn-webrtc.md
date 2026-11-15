@@ -1,60 +1,58 @@
 # Szkic: Coturn / WebRTC (rozmowy A/V) – druga lokalizacja
 
-> ⚠️ **Status: szkic z 2026-10-17, NIEWDROŻONY i NIEPRZETESTOWANY.** Powstał z lektury `docker-compose.yml` i
-> `synapse/homeserver.yaml.example`; nic nie zmieniono na VM ani we wzorach konfiguracji. Test A/V jest w README
-> wciąż oznaczony jako niepotwierdzony.
+> ⚠️ **Status: szkic z 2026-10-17, uzupełniony 2026-11-15 po odpięciu od Tailscale; NIEWDROŻONY i NIEPRZETESTOWANY.**
+> Powstał z lektury `docker-compose.yml` i `synapse/homeserver.yaml.example`. Test A/V jest w README wciąż oznaczony jako
+> niepotwierdzony.
 
 ## Stan obecny (z plików projektu)
 
 - Coturn (`docker-compose.yml`, usługa `coturn`): `network_mode: host`, port `3478`, relay UDP `49160–49200`,
-  uwierzytelnianie wspólnym sekretem (`--use-auth-secret`, `${TURN_SECRET}`), `--external-ip=${TS_IP}`, bez TLS.
-- Synapse (`homeserver.yaml.example`): `turn_uris` wskazują `turn:matrix.local:3478` (UDP i TCP),
-  `turn_shared_secret` = `TURN_SECRET`, `turn_user_lifetime: 86400000`, `turn_allow_guests: false`.
-- Skutek: Windows z wpisem w `hosts` rozwiąże `matrix.local`, **komputer w innej lokalizacji (bez wpisu w `hosts`, README 9.2) nie** –
-  rozmowa z niego nie ma jak dotrzeć do TURN.
+  uwierzytelnianie wspólnym sekretem (`--use-auth-secret`, `${TURN_SECRET}`), `--external-ip=${SERVER_IP}`, bez TLS.
+- Synapse (`homeserver.yaml.example`): `turn_uris` wskazują `turn:matrix.local:3478` (UDP i TCP), czyli domenę serwera
+  (po `render-config.sh`: `<DOMENA>`); `turn_shared_secret` = `TURN_SECRET`, `turn_user_lifetime: 86400000`,
+  `turn_allow_guests: false`.
+- Każdy klient (także w innej lokalizacji, [README, krok 9.2](../README.md#92-komputer-w-innej-lokalizacji-u-kolegi))
+  ma wpis w `hosts` z adresem serwera, więc rozwiązuje `<DOMENA>` także dla TURN. **Żadna zmiana `turn_uris` nie jest
+  potrzebna.** (Wcześniejszy pomysł z nazwą MagicDNS z Tailscale odpadł razem z wariantem dostępu po tej nazwie.)
 
-## Proponowana zmiana (PoC)
+## Jeden zewnętrzny adres
 
-Synapse przekazuje **jedną** listę `turn_uris` wszystkim klientom, więc adres musi działać wszędzie. Nazwa MagicDNS
-z Tailscale działa na każdym kliencie z włączonym Tailscale (co i tak jest warunkiem połączenia).
+`SERVER_IP` w `.env` (`--external-ip` w Coturn) to **jeden** adres, który Coturn podaje klientom jako adres relay. Musi to
+być adres serwera widziany z sieci klienta:
 
-`synapse/homeserver.yaml` (lokalny plik, nie wzór):
+- test przez Tailscale: adres Tailscale serwera (`tailscale ip -4`),
+- VPN firmy: adres serwera z tego VPN-u,
+- sieć lokalna: adres LAN serwera.
 
-```yaml
-turn_uris:
-  - "turn:<PELNA-NAZWA-TS>:3478?transport=udp"
-  - "turn:<PELNA-NAZWA-TS>:3478?transport=tcp"
-```
+Jeśli równocześnie testujesz kilka sieci (np. LAN i Tailscale), jeden adres może nie obsłużyć wszystkich – ⚠️ niesprawdzone;
+w takim razie testuj A/V w jednej sieci naraz.
 
-Potem `docker compose restart synapse`. Coturn i sekret zostają bez zmian. `--realm=matrix.local` w Coturn nie musi
-się rozwiązywać (to tylko etykieta uwierzytelniania), więc można go zostawić.
-
-Wariant awaryjny, gdyby MagicDNS zawodził: wpisać wprost `<IP_TAILSCALE>` zamiast nazwy (adres musi być stały).
+Po zmianie `SERVER_IP`: `docker compose up -d` (odtworzy kontener `coturn`).
 
 ## Do sprawdzenia przed testem
 
 1. **Co Synapse faktycznie rozdaje klientom** – zapytanie `GET /_matrix/client/v3/voip/turnServer` z tokenem
-   użytkownika (w README, sekcja „Token administratora…”, jest przykład logowania w PowerShellu). Odpowiedź ma
-   zawierać nowe `uris`, `username` i `password`.
-2. **Zapora VM i ACL Tailscale** – Coturn potrzebuje na adresie Tailscale serwera: `3478` (UDP i TCP) oraz
-   `49160–49200` (UDP). Sprawdź `ufw status` (README: zapora istnieje) i ewentualne reguły w panelu Tailscale.
-3. **Łączność z klienta** – `tailscale ping <PELNA-NAZWA-TS>` (klienci-dodatkowe.md, sekcja o komputerze w innej lokalizacji, krok 4).
-4. **Logi Coturn w trakcie połączenia** – `docker compose logs -f --tail=0 coturn`; przy udanym połączeniu
-   powinny pojawić się wpisy o utworzonej alokacji (komunikaty `ALLOCATE`). Brak wpisów = połączenie nie dochodzi
-   do Coturn (DNS, zapora albo ACL).
+   użytkownika. Odpowiedź ma zawierać `uris`, `username` i `password`.
+2. **Zapora VM i ACL sieci VPN** – Coturn potrzebuje na adresie `SERVER_IP`: `3478` (UDP i TCP) oraz `49160–49200` (UDP).
+   Sprawdź `ufw status` i ewentualne reguły w VPN (w Tailscale: panel, ACL).
+3. **Łączność z klienta** – `Test-NetConnection <IP_SERWERA> -Port 3478` albo `tailscale ping <IP_SERWERA>`
+   ([klienci-dodatkowe.md](klienci-dodatkowe.md), sekcja „Dostęp do sieci”).
+4. **Logi Coturn w trakcie połączenia** – `docker compose logs -f --tail=0 coturn`; przy udanym połączeniu powinny pojawić
+   się wpisy o utworzonej alokacji (komunikaty `ALLOCATE`). Brak wpisów = połączenie nie dochodzi do Coturn (DNS/`hosts`,
+   zapora albo ACL).
 5. ⚠️ **Hipoteza do sprawdzenia, jeśli alokacja jest, a media nie płyną:** Coturn ma listy dozwolonych/zabronionych
-   adresów peerów (`denied-peer-ip`, `allowed-peer-ip`); adresy Tailscale (zakres `100.64.0.0/10`) mogą wymagać
+   adresów peerów (`denied-peer-ip`, `allowed-peer-ip`); adresy z zakresu VPN (np. Tailscale `100.64.0.0/10`) mogą wymagać
    wpisu. Nie zmieniaj niczego, dopóki objaw tego nie wskaże.
 
 ## Kolejność testów
 
-1. Dwa konta w jednej sieci lokalnej z Tailscale (dwa profile Elementa Desktop, `--profile`) – rozmowa 1:1.
-2. Komputer w innej sieci (README, 9.2) – dopiero gdy 1 działa.
-3. Najpierw zwykłe wiadomości, potem A/V, żeby odróżnić problem z Tailscale od problemu z Coturn.
+1. Dwa konta w jednej sieci (dwa profile Elementa Desktop, `--profile`) – rozmowa 1:1.
+2. Komputer w innej sieci ([README, krok 9.2](../README.md#92-komputer-w-innej-lokalizacji-u-kolegi)) – dopiero gdy 1 działa.
+3. Najpierw zwykłe wiadomości, potem A/V, żeby odróżnić problem z siecią/VPN od problemu z Coturn.
 
 ## Produkcja (osobno, nie PoC)
 
-- Prawdziwy adres i DNS zamiast MagicDNS, publiczny `external-ip` albo adres z DMZ, reguły zapory dla UDP `3478` i
+- Prawdziwy adres i DNS zamiast wpisów w `hosts`, publiczny `external-ip` albo adres z DMZ, reguły zapory dla UDP `3478` i
   zakresu relay.
 - **TURNS** (TLS, zwykle port `5349` lub `443` dla restrykcyjnych sieci firmowych) z certyfikatem zaufanym bez ręcznej
   instalacji; wymaga zmiany `turn_uris` na `turns:` i opcji TLS w Coturn.
