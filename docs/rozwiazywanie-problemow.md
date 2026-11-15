@@ -14,7 +14,7 @@
   przyczyny: brak uprawnień administratora, plik zapisany jako `hosts.txt`.
 - **Diagnoza:** `Get-Content C:\Windows\System32\drivers\etc\hosts` – czy jest tam linia z `matrix.local`.
 - **Rozwiązanie:** zapisz plik albo dopisz z PowerShella jako administrator:
-  `Add-Content C:\Windows\System32\drivers\etc\hosts "`n<IP_TAILSCALE>   matrix.local"`,
+  `Add-Content C:\Windows\System32\drivers\etc\hosts "`n<IP_SERWERA>   matrix.local"`,
   potem `ipconfig /flushdns`.
 
 **3. Element (na komputerze bez wpisu w `hosts`) loguje się, ale „Wstępna synchronizacja – czekanie na odpowiedź serwera" wisi bez końca**
@@ -24,8 +24,8 @@
 - **Przyczyna:** w `homeserver.yaml` było `public_baseurl: "https://matrix.local/"`. Synapse dokleja ten adres
   do odpowiedzi na logowanie, więc Element po zalogowaniu przełączał się na `matrix.local`, którego klient
   nie rozwiązuje – kolejne zapytania nie docierały do serwera.
-- **Rozwiązanie:** `public_baseurl: "https://<PELNA-NAZWA-TS>/"`, `docker compose restart synapse`,
-  wylogowanie (albo wyczyszczenie danych Elementa) i ponowne logowanie na `https://<PELNA-NAZWA-TS>`.
+- **Rozwiązanie:** na komputerze klienta dodaj wpis w `hosts` (adres serwera + `matrix.local`, README – krok 9.1) i zainstaluj Root CA,
+  potem wyloguj się (albo wyczyść dane Elementa) i zaloguj ponownie (⚠️ niesprawdzone jako naprawa tego objawu). Do 2026-11-15 rozwiązaniem była zmiana `public_baseurl` na nazwę z Tailscale; ten wariant usunięto z projektu.
 - **Wskazówka:** `sudo ss -tn | grep IP_KLIENTA` na VM **nic nie pokazuje**, bo Nginx działa w kontenerze –
   do podglądu zapytań użyj logów (`docker compose logs -f --tail=0 proxy`).
 
@@ -77,8 +77,7 @@
 `sed -i 's/\r$//' pki/generate-pki.sh pki/v3.ext`.
 
 **8. Nginx (`matrix-proxy`) nie startuje** – zwykle brakuje certyfikatów w `/opt/matrix/certs`. Sprawdź
-`ls certs` i powtórz [README – krok 6](../README.md#krok-6--certyfikaty-pki). Po dodaniu bloków dla Tailscale brakujące pliki
-`<PELNA-NAZWA-TS>.crt` i `.key` też zatrzymają Nginx.
+`ls certs` i powtórz [README – krok 6](../README.md#krok-6--certyfikaty-pki).
 
 **9. Pracownik ma w książce adresowej „Bez działu” albo nie ma działu w nazwie wyświetlanej** – sprawdź w panelu LLDAP, czy konto ma grupę-dział
 (4 konta testowe nie mają: `j.kowalski`, `a.nowak`, `t.perlik`, `p.wisniewski`); potem
@@ -92,7 +91,7 @@ Po błędzie `host not found in upstream "synapse-admin"` uruchom `docker compos
 Przy `ADMIN_BIND=127.0.0.1` panel jest dostępny tylko z VM albo przez tunel SSH (`https://localhost:8080`; ostrzeżenie o nazwie certyfikatu jest wtedy normalne).
 
 **11. `matrix-proxy` w kółko się restartuje po starcie VM, w logach `cannot assign requested address` albo `Bind for ...:8080 failed`** –
-przy `ADMIN_BIND` = adres Tailscale Docker próbuje zająć ten adres, zanim Tailscale go uruchomi. Sprawdź `tailscale ip -4` (czy adres jest
+przy `ADMIN_BIND` = adres interfejsu VPN (np. Tailscale) Docker próbuje zająć ten adres, zanim VPN go uruchomi. Sprawdź adres interfejsu VPN (np. `tailscale ip -4`; czy adres jest
 ten sam co w `.env`) i po chwili powtórz `docker compose up -d`. Jeśli adres się zmienił, popraw `ADMIN_BIND` w `.env`.
 
 **12. `synapse-admin` nie może się zalogować (panel, Element albo skrypty)** – sprawdź, czy hasło w `.env` (`SYNAPSE_ADMIN_PASSWORD`) jest tym

@@ -14,7 +14,7 @@
    zmiana samego `.env` może go nie zmienić. Jeśli trzeba zmienić po fakcie – zmień hasło w samej bazie /
    w panelu LLDAP albo odtwórz wolumeny (`docker compose down -v` **kasuje dane!**).
 4. Panel LLDAP (port 17170) jest w `docker-compose.yml` otwarty na wszystkich interfejsach VM – rozważ
-   ograniczenie go do adresu Tailscale (*niesprawdzone*).
+   ograniczenie go do adresu serwera w VPN (*niesprawdzone*).
 5. Po zmianach przetestuj ponownie: logowanie kontem z LLDAP (Synapse → LDAP) i rozmowę A/V
    (Synapse ↔ Coturn).
 6. Rozmiar VM (4 GB / 2 vCPU) dla kilkuset użytkowników jest **niesprawdzony**.
@@ -30,7 +30,7 @@
 10. **Kopie zapasowe** (baza, wolumen LLDAP, `synapse/`, media) – opisane, ale nieprzetestowane (patrz
     [docs/administrowanie.md](administrowanie.md)).
 11. **Książka adresowa:** źródło danych (AD zamiast CSV) i cykliczne uruchamianie skryptów – sekcja niżej.
-12. **Synapse Admin (panel):** w PoC działa pod HTTPS na adresie `ADMIN_BIND` z `.env` (zalecany adres Tailscale). Na produkcji ogranicz
+12. **Synapse Admin (panel):** w PoC działa pod HTTPS na adresie `ADMIN_BIND` z `.env` (zalecany adres serwera w VPN). Na produkcji ogranicz
     zasięg portu do sieci administratorów (VPN) albo daj panelowi własną nazwę z zaufanym certyfikatem i ograniczeniem po IP, nie wystawiaj
     go publicznie i ustal procedurę aktualizacji przypiętego obrazu (sekcja niżej).
 
@@ -41,9 +41,9 @@
 - Kto sam wyjdzie z pokoju książki, nie wróci automatycznie (świadoma decyzja skryptu, `--rejoin` to zmienia).
 - Konto trafia do katalogu wyszukiwania dopiero po założeniu w Synapse (`provision_synapse_users.py`) albo
   pierwszym logowaniu.
-- Certyfikat serwera jest ważny 825 dni, Root CA 10 lat; certyfikat z Tailscale ok. 90 dni.
+- Certyfikat serwera jest ważny 825 dni, Root CA 10 lat.
 - Federacja jest wyłączona (`federation_domain_whitelist: []`) – serwer nie łączy się z innymi serwerami Matrix.
-- Panel Synapse Admin działa pod HTTPS na adresie z `ADMIN_BIND` (domyślnie tylko VM; zalecany adres Tailscale). Certyfikat jest z własnego
+- Panel Synapse Admin działa pod HTTPS na adresie z `ADMIN_BIND` (domyślnie tylko VM; zalecany adres serwera w VPN). Certyfikat jest z własnego
   Root CA, więc klient musi go mieć zainstalowanego i wpis `<DOMENA>` w `hosts`. HTTPS chroni tylko przed podsłuchem hasła: `/_synapse/admin`
   na porcie panelu nie ma ograniczenia po IP, a logowanie chroni samo hasło (bez drugiego składnika). Konta i hasła nadal prowadzi LLDAP,
   nie panel (wyjątek: lokalne konto `synapse-admin`).
@@ -79,7 +79,7 @@
 
 ## Synapse Admin (panel)
 
-- **Dostęp.** `ADMIN_BIND` = adres sieci administratorów (VPN/Tailscale) albo panel pod własną nazwą (np. `admin.<domena>`) z prawdziwym
+- **Dostęp.** `ADMIN_BIND` = adres sieci administratorów (VPN) albo panel pod własną nazwą (np. `admin.<domena>`) z prawdziwym
   certyfikatem i ograniczeniem po adresie IP / VPN. Nie używaj `0.0.0.0` i nie wystawiaj panelu publicznie. HTTPS chroni przed podsłuchem
   hasła, ale nie przed zgadywaniem haseł ani przed przejętym kontem.
 - **Osobne konto administratora** (`synapse-admin`, README krok 7.1), hasło poza kodem; kolejni administratorzy jako osobne konta lokalne,

@@ -567,12 +567,12 @@ z przeglądarki: przeglądać i dezaktywować konta, oglądać urządzenia, zarz
   `/_matrix` i `/_synapse/admin` → Synapse. Panel i API są pod **tym samym adresem**, więc nie ma problemu z CORS. Blok używa tego samego
   certyfikatu co port 443 (SAN = domena), więc adres to `https://<DOMENA>:8080`. (Do 2026-11-04 był tu zwykły HTTP po loopbacku i tunelu SSH.)
 - Port publikuje Docker na adresie `ADMIN_BIND` i porcie `ADMIN_PORT` z `.env` (`"${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8080}:8080"`
-  w usłudze `proxy`). Domyślnie loopback VM; zalecany adres Tailscale ([README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
+  w usłudze `proxy`). Domyślnie loopback VM; zalecany adres serwera w VPN ([README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)).
   Zasięg ogranicza więc sam bind, a nie reguła `allow/deny` po adresie IP (która w Dockerze bywa zawodna: połączenia przez loopback
   lub tunel mogą być widziane jako adres bramy mostu Dockera). Docker publikuje porty z pominięciem reguł `ufw`, więc o zasięgu decyduje bind, nie zapora.
-- Panel **nie** jest w blokach 80/443 ani w bloku Tailscale.
+- Panel **nie** jest w blokach 80/443.
 
-**Adres w konfiguracji:** w plikach konfiguracyjnych w repozytorium nie ma żadnego adresu VM; adres Tailscale jest tylko w `.env`
+**Adres w konfiguracji:** w plikach konfiguracyjnych w repozytorium nie ma żadnego adresu VM; adres serwera w VPN jest tylko w `.env`
 (`ADMIN_BIND`). Przy przepięciu serwerów do innej sieci zmieniasz więc `ADMIN_BIND` w `.env`, wpis w `hosts` na PC (musi wskazywać ten sam
 adres) i ewentualnie polecenie tunelu SSH.
 
@@ -585,7 +585,7 @@ więc **zmieniasz je ręcznie**. 🐧 **VM**, w `/opt/matrix`:
 2. `nano nginx/conf.d/matrix.conf` – w bloku `server` z `listen 8080;` zmień na `listen 8080 ssl;` i dopisz pod `server_name _;` trzy linie
    (jak w `matrix.conf.example`): `ssl_certificate /etc/nginx/certs/matrix.crt;`, `ssl_certificate_key /etc/nginx/certs/matrix.key;`,
    `ssl_protocols TLSv1.2 TLSv1.3;`.
-3. `nano .env` – dopisz `ADMIN_BIND=<IP_TAILSCALE>` i `ADMIN_PORT=8080` (zamiast domyślnego loopbacku) oraz `SYNAPSE_ADMIN_LOGIN=synapse-admin` i `SYNAPSE_ADMIN_PASSWORD` (hasło: `openssl rand -hex 24`, [README, krok 5.1](../README.md#51-hasła)).
+3. `nano .env` – dopisz `ADMIN_BIND=<IP_SERWERA>` i `ADMIN_PORT=8080` (zamiast domyślnego loopbacku) oraz `SYNAPSE_ADMIN_LOGIN=synapse-admin` i `SYNAPSE_ADMIN_PASSWORD` (hasło: `openssl rand -hex 24`, [README, krok 5.1](../README.md#51-hasła)).
 4. `nano synapse/homeserver.yaml` – dopisz `registration_shared_secret: "<losowa wartość>"` (wzór: `homeserver.yaml.example`), `docker compose restart synapse`, potem załóż konto administratora wg [README, krok 7.1](../README.md#71-konto-administratora-synapse-i-zabezpieczony-panel-synapse-admin)
    – punkty 2–3 (hasło masz już w `.env`; na końcu usuń sekret z `homeserver.yaml` i zrestartuj Synapse). Kolejni administratorzy: [Etap 0](#etap-0), punkt 2.
 5. `docker compose up -d`, potem `docker compose logs --tail=50 proxy`.
@@ -629,7 +629,7 @@ Przy `ADMIN_BIND=127.0.0.1` panel jest dostępny tylko z VM albo z PC przez tune
 | 5 | Konto bez flagi `admin` (np. `a.nowak`) nie wejdzie do panelu | ✅ |
 | 6 | Zapis na koncie/pokoju **testowym**: dezaktywacja konta, usunięcie pokoju z `purge` (zamyka też niesprawdzony punkt w tabeli „Typowe operacje” wyżej) | ✅ |
 | 7 | Regresja: logowanie w Elemencie oraz `provision_synapse_users.py` (skrypt nie ma trybu `--dry-run`; uruchomienie jest idempotentne) (nie pod rząd – HTTP 429) | ✅ |
-| 8 | Z urządzenia spoza tailnetu (przy `ADMIN_BIND` = adres Tailscale) albo przy `127.0.0.1`: `Test-NetConnection <IP_VM> -Port 8080` → `TcpTestSucceeded : False` (wcześniej ✅ dla loopbacku) | ⚠️ |
+| 8 | Z urządzenia spoza VPN (przy `ADMIN_BIND` = adres serwera w VPN) albo przy `127.0.0.1`: `Test-NetConnection <IP_VM> -Port 8080` → `TcpTestSucceeded : False` (wcześniej ✅ dla loopbacku) | ⚠️ |
 | 9 | Zasięg portu zgodny z `ADMIN_BIND`: `ss -tlnp` pokazuje port 8080 tylko na adresie z `ADMIN_BIND` (wcześniej: `ufw` ✅) | ⚠️ |
 
 **Rollback:** przywróć `docker-compose.yml.bak` i `nginx/conf.d/matrix.conf.bak` na VM, potem
