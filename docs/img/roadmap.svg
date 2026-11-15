@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">Mapa kroków instalacji</title>
-  <desc id="d">Część 1: dziesięć kroków (połączenie z VM, Docker, Tailscale, pliki projektu, sekrety, certyfikaty, uruchomienie usług, konta LLDAP, klienci, testy). Część 2: przygotowanie, Etap 0 (konto administratora), Etap 1 (konta w Synapse), Etap 2 (książka adresowa), Etap 3 (bieżąca praca).</desc>
+  <desc id="d">Część 1: dziesięć kroków (połączenie z VM, Docker, VPN, pliki projektu, sekrety, certyfikaty, uruchomienie usług, konta LLDAP, klienci, testy). Część 2: przygotowanie, Etap 0 (konto administratora), Etap 1 (konta w Synapse), Etap 2 (książka adresowa), Etap 3 (bieżąca praca).</desc>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#7dffb3"/>
@@ -29,7 +29,7 @@
   <!-- 3 -->
   <rect x="505" y="80" width="190" height="150" rx="12" fill="#10231a" stroke="#2e5d45" stroke-width="1.5"/>
   <circle cx="539" cy="112" r="18" fill="#00c853"/><text x="539" y="118" text-anchor="middle" font-size="17" font-weight="800" fill="#04100a">3</text>
-  <text x="521" y="158" font-size="17" font-weight="700" fill="#e8fff1">Tailscale</text>
+  <text x="521" y="158" font-size="17" font-weight="700" fill="#e8fff1">VPN</text>
   <text x="521" y="180" font-size="13" fill="#9bd6b3">prywatna sieć (VPN)</text>
   <rect x="521" y="192" width="50" height="26" rx="13" fill="#1d5a38"/><text x="546" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#c9ffd9">VM</text>
 
