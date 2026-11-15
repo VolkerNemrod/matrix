@@ -59,6 +59,18 @@
 
   Plik `synapse/homeserver.yaml` musi zostać czytelny dla innych (`chmod 644`).
 
+**13. `git pull` na VM kończy się: `Your local changes to the following files would be overwritten by merge: README.md`** (potwierdzone 2026-11-15; numer 13, żeby nie przenumerowywać odsyłaczy do 7-12)
+- **Przyczyna:** plik w katalogu projektu na VM został zmieniony poza gitem (np. wgrany przez `scp` albo edytowany ręcznie), więc git nie chce go nadpisać.
+- **Diagnoza:** `git status --short` (które pliki) i `git diff --stat`; zawartość zmian zapisz do kopii: `git diff README.md > ~/README-vm.diff`. Prawdziwe pliki z hasłami (`.env`, `synapse/homeserver.yaml`, `nginx/conf.d/matrix.conf`) są w `.gitignore`, więc `git pull` ich nie dotyka i nie blokuje.
+- **Rozwiązanie:** jeśli zmiany w kopii `~/README-vm.diff` są niepotrzebne (zwykle to starsza wersja tego, co jest już w repozytorium), odrzuć je i pobierz zmiany:
+
+  ```bash
+  git checkout -- README.md
+  git pull
+  ```
+
+  Nie używaj `git checkout .` – skasowałoby też inne ręczne poprawki. Na VM nie edytuj plików śledzonych przez git (README, `*.example`, skrypty): zmiany rób na PC, commit, push, a na VM tylko `git pull`.
+
 ## ⚠️ Możliwe, niesprawdzone (zajrzyj tu dopiero, jeśli zobaczysz taki objaw)
 
 **7. Błędy `\r` przy uruchamianiu skryptu** – windowsowe końce linii; naprawa:

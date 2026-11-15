@@ -297,6 +297,11 @@ ls -a
 Musisz widzieć m.in. `docker-compose.yml`, `.env.example`, `docker`, `nginx`, `pki`, `synapse`.
 (Plik `.env.example` jest ukryty – dlatego `ls -a`.)
 
+> **Aktualizacja projektu na VM (`git pull`):** zmiany w dokumentacji i skryptach rób na PC (commit, push), a na VM wykonuj tylko `git pull`.
+> Jeśli `git pull` odmówi z komunikatem `Your local changes ... would be overwritten`, to plik na VM był zmieniony poza gitem –
+> patrz [Rozwiązywanie problemów, pkt 13](docs/rozwiazywanie-problemow.md). Pliki z hasłami (`.env`, `synapse/homeserver.yaml`,
+> `nginx/conf.d/matrix.conf`) są w `.gitignore`, więc `git pull` ich nie rusza; zmiany we wzorach `*.example` musisz do nich przenieść ręcznie.
+
 ---
 
 ## Krok 5 – Sekrety i pliki lokalne
@@ -723,8 +728,8 @@ rotacja słabych haseł PoC – wszystkie punkty plus zebrane ramki 🏭 Produkc
 ## Rozwiązywanie problemów
 
 **Pełna lista przeniesiona do [docs/rozwiazywanie-problemow.md](docs/rozwiazywanie-problemow.md)** – zweryfikowane
-problemy 1-6 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, Element wisi na synchronizacji,
-HTTP 429, Admin API 404, `Permission denied` na kluczu podpisu Synapse) i niesprawdzone 7-10.
+problemy 1-6 i 13 (m.in. `Permission denied` przy PKI, `matrix.local` się nie rozwiązuje, Element wisi na synchronizacji,
+HTTP 429, Admin API 404, `Permission denied` na kluczu podpisu Synapse, `git pull` odmawia przez lokalne zmiany) i niesprawdzone 7-12.
 
 ---
 
